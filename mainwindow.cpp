@@ -78,6 +78,8 @@ MainWindow::MainWindow(QMainWindow *parent)
     // 绘制出配置列表
     repaintMappings();
 
+    // 配置下拉添加一个空白配置
+    ui->comboBox_2->addItem("空白配置");
 
     // 扫描用户保存的配置文件
     QDir dir = QDir::current();
@@ -729,6 +731,9 @@ void MainWindow::on_pushButton_4_clicked()
         if(text.toStdString() != currentMappingFileName){
             ui->comboBox_2->addItem(text);
         }
+
+        // 切换到空白配置
+        ui->comboBox_2->setCurrentIndex(0);
     } else {
         showErrorMessage(new string("配置名称不能为空!"));
         return;
@@ -738,6 +743,16 @@ void MainWindow::on_pushButton_4_clicked()
 
 void MainWindow::on_comboBox_2_activated(int index)
 {
+    // 选择了空白配置
+    if(index == 0){
+        // 清空一切
+        mappingList.clear();
+        clearMappingsArea();
+        currentMappingFileName = "";
+
+        return;
+    }
+
     // 获取触发信号的对象
     QComboBox *comboBox = qobject_cast<QComboBox*>(sender());
 
