@@ -41,3 +41,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 # DEPENDPATH += $$PWD/.
 
 LIBS += -L$$PWD/ -lhidapi
+
+RESOURCES += \
+    resource.qrc

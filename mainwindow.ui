@@ -283,12 +283,12 @@
      <rect>
       <x>20</x>
       <y>530</y>
-      <width>271</width>
+      <width>301</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;项目地址(&lt;a href=&quot;https://github.com/InsistonTan&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0078d4;&quot;&gt;InsistonTan (JifengTan)&lt;/span&gt;&lt;/a&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;项目地址: &lt;a href=&quot;https://github.com/InsistonTan/KeyMappingsTool&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0078d4;&quot;&gt;InsistonTan/KeyMappingsTool&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="textFormat">
      <enum>Qt::TextFormat::RichText</enum>
