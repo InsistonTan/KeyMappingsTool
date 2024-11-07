@@ -44,3 +44,5 @@ LIBS += -L$$PWD/ -lhidapi
 
 RESOURCES += \
     resource.qrc
+
+RC_FILE = appicon.rc
