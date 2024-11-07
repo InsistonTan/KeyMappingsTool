@@ -19,6 +19,8 @@ using namespace std;
 #define SPE "#$#"
 #define MAPPINGS_FILENAME "mappings_cache"
 #define LAST_DEVICE_FILENAME "last_device"
+#define USER_MAPPINGS_DIR "userMappings/"
+#define MAPPING_FILE_SUFFIX ".mappings_config"
 
 
 QT_BEGIN_NAMESPACE
@@ -45,21 +47,28 @@ protected:
 
     int listAllDevice();
 
+    // 上一次使用的设备是否在当前设备列表
+    bool hasLastDevInCurrentDeviceList(short lastDevVid, short lastDevPid);
+
     QComboBox* createAKeyBoardComboBox();
 
     void showErrorMessage(string *text);
 
     bool hasAddToMappingList(int btn_pos, int btn_value);
 
-    void saveMappingsToFile();
+    void saveMappingsToFile(string filename);
+    void saveLastDeviceToFile();
 
-    void loadMappingsFile();
+    void loadMappingsFile(string filename);
 
     void loadLastDeviceFile();
 
     void repaintMappings();
 
     void paintOneLineMapping(MappingRelation *mapping, int index);
+
+    // 清空配置列表界面
+    void clearMappingsArea();
 
 private slots:
     // 开启全局映射 按钮的槽函数
@@ -83,6 +92,11 @@ private slots:
     // 删除按钮点击的槽函数
     void onDeleteBtnClicked();
 
+    // 保存配置按钮槽函数
+    void on_pushButton_4_clicked();
+
+    void on_comboBox_2_activated(int index);
+
 private:
     Ui::MainWindow *ui;
 
@@ -93,6 +107,7 @@ private:
     bool isDeviceOpen = false;// 当前设备是否打开
     string deviceDesc; // 设备信息
     string deviceName; // 设备名称
+    string currentMappingFileName;// 当前配置文件的文件名
 
     unsigned char buf[MAX_BUF];
     wchar_t wstr[MAX_STR];

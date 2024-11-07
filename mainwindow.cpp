@@ -13,6 +13,8 @@
 #include<global.h>
 #include<simulate_task.h>
 #include<QFile>
+#include<QInputDialog>
+#include<QDir>
 
 MainWindow::MainWindow(QMainWindow *parent)
     : QMainWindow(parent)
@@ -29,10 +31,10 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     QComboBox *comboBox  = ui->comboBox;
     comboBox->setMaximumHeight(30);
-    comboBox->setStyleSheet("QComboBox { "
-                            "border: 1px solid black; "  // 边框宽度和颜色
-                            "border-radius: 1px; "       // 圆角半径
-                            "} ");
+    // comboBox->setStyleSheet("QComboBox { "
+    //                         "border: 1px solid black; "  // 边框宽度和颜色
+    //                         "border-radius: 1px; "       // 圆角半径
+    //                         "} ");
 
     // 使用迭代器遍历
     for (int i=0; i< (int)deviceList.size(); i++) {
@@ -71,16 +73,47 @@ MainWindow::MainWindow(QMainWindow *parent)
     }
 
     // 加载上一次的映射配置
-    loadMappingsFile();
+    loadMappingsFile("");
 
     // 绘制出配置列表
     repaintMappings();
+
+
+    // 扫描用户保存的配置文件
+    QDir dir = QDir::current();
+    if(dir.exists(USER_MAPPINGS_DIR)){
+        dir.cd(USER_MAPPINGS_DIR);
+        // 获取文件列表，并筛选指定后缀的文件
+        QFileInfoList list = dir.entryInfoList();
+        for (const QFileInfo &fileInfo : list) {
+            if ("." + fileInfo.suffix() == MAPPING_FILE_SUFFIX) {
+                // 匹配指定后缀的文件，加入下拉列表
+                ui->comboBox_2->addItem(fileInfo.completeBaseName());
+            }
+        }
+
+        ui->comboBox_2->setCurrentIndex(-1);
+    }
+
+}
+
+bool MainWindow::hasLastDevInCurrentDeviceList(short lastDevVid, short lastDevPid){
+    for(auto item : deviceList){
+        if(item->getVid() == lastDevVid && item->getPid() == lastDevPid){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void MainWindow::repaintMappings(){
     qDebug("mappingList.size() : %d", (int)mappingList.size());
 
     if(mappingList.size() > 0){
+        // 清空配置页面
+        clearMappingsArea();
+        // 重新添加
         for(int i =0; i < (int)mappingList.size(); i++){
             paintOneLineMapping(mappingList[i], i);
         }
@@ -168,6 +201,18 @@ void MainWindow::on_pushButton_2_clicked()
         return;
     }
 
+    int trueMappingListSize = 0;
+    for(auto item : mappingList){
+        if(item != nullptr){
+            trueMappingListSize++;
+        }
+    }
+
+    if(trueMappingListSize <= 0){
+        showErrorMessage(new string("映射列表为空!"));
+        return;
+    }
+
     if(!isDeviceOpen){
         openDevice(vid, pid);
     }
@@ -195,10 +240,13 @@ void MainWindow::on_pushButton_2_clicked()
     thread->start();
 
     // 显示信息框
-    QMessageBox::information(nullptr, "提醒", "启动全局映射成功!");
+    QMessageBox::information(nullptr, "提醒", "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
 
     // 保存当前配置的映射到本地文件
-    saveMappingsToFile();
+    saveMappingsToFile("");
+
+    // 保存上次使用的设备到本地
+    saveLastDeviceToFile();
 }
 
 
@@ -328,36 +376,7 @@ void MainWindow::on_pushButton_clicked()
     paintOneLineMapping(nullptr, -1);
 }
 
-void MainWindow::saveMappingsToFile(){
-    // 要保存的文本内容
-    QString text;
-
-    // 生成内容
-    for(auto item: mappingList){
-        if(item != nullptr){
-            text.append(to_string(item->dev_btn_pos) + SPE
-                        + to_string(item->dev_btn_value) + SPE
-                        + item->keyboard_name + SPE
-                        + to_string(item->keyboard_value) + SPE
-                        + item->remark + "\n");
-        }
-    }
-
-    // 创建一个 QFile 对象，并打开文件进行写入
-    QFile file((MAPPINGS_FILENAME + to_string(vid) + "_" + to_string(pid)).data());  // 文件路径可以是绝对路径或相对路径
-
-    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&file);  // 创建一个文本流对象
-        out << text;             // 写入文本
-
-        // 关闭文件
-        file.close();
-        qDebug() << "mappings saved successfully!";
-    } else {
-        qDebug() << "Error opening file!";
-    }
-
-
+void MainWindow::saveLastDeviceToFile(){
     // 创建一个 QFile 对象，并打开文件进行写入
     QFile file2(LAST_DEVICE_FILENAME);  // 文件路径可以是绝对路径或相对路径
     QString text2;
@@ -377,12 +396,60 @@ void MainWindow::saveMappingsToFile(){
     }
 }
 
+void MainWindow::saveMappingsToFile(string filename){
+    // 要保存的文本内容
+    QString text;
+
+    // 生成内容
+    for(auto item: mappingList){
+        if(item != nullptr){
+            text.append(to_string(item->dev_btn_pos) + SPE
+                        + to_string(item->dev_btn_value) + SPE
+                        + item->keyboard_name + SPE
+                        + to_string(item->keyboard_value) + SPE
+                        + item->remark + "\n");
+        }
+    }
+
+    // 如果filename不为空, 则检查配置文件文件夹是否存在,不存在就创建
+    if(filename.size() > 0){
+        // 获取当前目录
+        QDir dir = QDir::current();
+
+        // 使用 QDir 创建不存在的目录
+        if (!dir.exists(USER_MAPPINGS_DIR)) {
+            if (!dir.mkdir(USER_MAPPINGS_DIR)) {
+                showErrorMessage(new string("创建存放用户配置的文件夹失败"));
+                return;
+            }
+        }
+    }
+
+    // 创建一个 QFile 对象，并打开文件进行写入
+    // 如果filename不为空, 则使用USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX后缀为文件名
+    QFile file(filename.size() > 0
+                   ? (USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX).data()
+                   : (MAPPINGS_FILENAME + to_string(vid) + "_" + to_string(pid)).data());
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);  // 创建一个文本流对象
+        out << text;             // 写入文本
+
+        // 关闭文件
+        file.close();
+        qDebug() << "mappings saved successfully!";
+    } else {
+        qDebug() << "Error opening file!";
+    }
+}
+
 void MainWindow::loadLastDeviceFile(){
     // 要读取的文件路径
     QFile file(LAST_DEVICE_FILENAME);
 
     // 文件不存在, 操作结束
     if(!file.exists()){
+        qDebug() << "文件不存在: " << LAST_DEVICE_FILENAME;
         return;
     }
 
@@ -407,7 +474,8 @@ void MainWindow::loadLastDeviceFile(){
                         t_pid = line3.toInt();
                     }
 
-                    if(t_vid >0 && t_pid >0){
+                    // 当前设备列表包含这个设备, 自动将此设备设为已选择的设备
+                    if(t_vid >0 && t_pid >0 && hasLastDevInCurrentDeviceList(t_vid, t_pid)){
                         vid = t_vid, pid = t_pid;
                     }
                 }
@@ -421,17 +489,21 @@ void MainWindow::loadLastDeviceFile(){
     }
 }
 
-void MainWindow::loadMappingsFile(){
-    if(vid == 0 || pid == 0){
+void MainWindow::loadMappingsFile(string filename){
+    if((vid == 0 || pid == 0) && filename.size() <= 0 ){
         qDebug() << "设备vid == 0 或 pid == 0, 无法加载历史映射文件!";
         return;
     }
 
     // 要读取的文件路径
-    QFile file((MAPPINGS_FILENAME + to_string(vid) + "_" + to_string(pid)).data());
+    QString filePath = filename.size() > 0
+                           ? (USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX).data()
+                           :(MAPPINGS_FILENAME + to_string(vid) + "_" + to_string(pid)).data();
+    QFile file(filePath);
 
     // 文件不存在, 操作结束
     if(!file.exists()){
+        qDebug() << "文件不存在:" << filePath;
         return;
     }
 
@@ -583,8 +655,8 @@ void MainWindow::onKeyBoardComboBoxActivated(int index){
 
 void MainWindow::on_comboBox_activated(int index)
 {
-    qDebug("index:%d", index);
-    if(index > 0){
+    //qDebug("index:%d", index);
+    if(index >= 0){
         qDebug("设备路径:%s", deviceList[index]->getDevicePath().data());
 
         string str = "设备名称:" + deviceList[index]->getDeviceName() + " 设备路径:" + deviceList[index]->getDevicePath();
@@ -599,25 +671,93 @@ void MainWindow::on_comboBox_activated(int index)
 
             // 清空数组
             mappingList.clear();
+            // 清空界面
+            clearMappingsArea();
 
-            // 遍历布局中的所有项
-            while (QLayoutItem *item = ui->gridLayout->takeAt(0)) {
-                // 如果该项是一个 QWidget，删除它
-                if (QWidget *widget = item->widget()) {
-                    widget->deleteLater();  // 异步删除以防止立即删除导致问题
-                }
-                // 删除布局项
-                delete item;
-            }
+            // 重置配置选择下拉
+            ui->comboBox_2->setCurrentIndex(-1);
+            // 重置当前配置文件名
+            currentMappingFileName = "";
         }
 
         vid = deviceList[index]->getVid();
         pid = deviceList[index]->getPid();
 
         // 尝试加载历史配置文件
-        loadMappingsFile();
+        //loadMappingsFile("");
         // 重画配置列表
-        repaintMappings();
+        //repaintMappings();
     }
+}
+
+void MainWindow::clearMappingsArea(){
+    // 遍历布局中的所有项
+    while (QLayoutItem *item = ui->gridLayout->takeAt(0)) {
+        // 如果该项是一个 QWidget，删除它
+        if (QWidget *widget = item->widget()) {
+            widget->deleteLater();  // 异步删除以防止立即删除导致问题
+        }
+        // 删除布局项
+        delete item;
+    }
+}
+
+
+void MainWindow::on_pushButton_4_clicked()
+{
+    if(mappingList.size() <= 0){
+        showErrorMessage(new string("配置为空, 无法保存!"));
+        return;
+    }
+
+    // 创建一个输入对话框
+    bool ok;
+    QString text = QInputDialog::getText(nullptr, "保存配置", "请输入配置名称:", QLineEdit::Normal, currentMappingFileName.data(), &ok);
+
+    // 如果用户点击了OK，并且输入有效
+    if (ok && !text.isEmpty()) {
+        // 保存配置
+        saveMappingsToFile(text.toStdString());
+
+        // 清空映射列表配置页面
+        clearMappingsArea();
+
+        // 清空映射列表
+        mappingList.clear();
+
+        // 判断是否需要加进配置文件下拉列表
+        if(text.toStdString() != currentMappingFileName){
+            ui->comboBox_2->addItem(text);
+        }
+    } else {
+        showErrorMessage(new string("配置名称不能为空!"));
+        return;
+    }
+}
+
+
+void MainWindow::on_comboBox_2_activated(int index)
+{
+    // 获取触发信号的对象
+    QComboBox *comboBox = qobject_cast<QComboBox*>(sender());
+
+    // 获取配置文件名称
+    string filename = comboBox->currentText().toStdString();
+
+    // 配置没变, 不需要做后续操作
+    if(currentMappingFileName == filename){
+        return;
+    }
+
+    // 设置当前配置文件名
+    currentMappingFileName = filename;
+
+    qDebug() << "选择的配置文件名: " + filename;
+
+    // 加载配置
+    loadMappingsFile(filename);
+
+    // 重画配置映射界面
+    repaintMappings();
 }
 
