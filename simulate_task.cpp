@@ -51,22 +51,25 @@ void SimulateTask::doWork(){
 }
 
 // 模拟按键操作
-void SimulateTask::simulateKeyPress(short vkey) {
-    // 模拟按下按键
-    INPUT input[2] = {};
+void SimulateTask::simulateKeyPress(short scanCode) {
+    INPUT input = {0};
 
-    // 按下按键
-    input[0].type = INPUT_KEYBOARD;
-    input[0].ki.wVk = vkey;  // Virtual key code for 'A'
-    input[0].ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-    input[0].ki.dwFlags = 0;  // KEYEVENTF_KEYDOWN
+    short tmpDwFlags;// 设置为使用硬件扫描码, 并为某些功能按键添加扩展码
+    if(scanCode >= 0xC5 && scanCode <= 0xDF ){
+        tmpDwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_EXTENDEDKEY;
+    }else{
+        tmpDwFlags = KEYEVENTF_SCANCODE;
+    }
 
-    // 松开按键
-    input[1].type = INPUT_KEYBOARD;
-    input[1].ki.wVk = vkey;
-    input[1].ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-    input[1].ki.dwFlags = KEYEVENTF_KEYUP;  // KEYEVENTF_KEYUP
+    // 模拟按下键
+    input.type = INPUT_KEYBOARD;
+    input.ki.dwFlags = tmpDwFlags;
+    input.ki.wScan = scanCode;              // 设置扫描码
+    SendInput(1, &input, sizeof(INPUT));
 
-    // 发送事件
-    SendInput(2, input, sizeof(INPUT));
+    Sleep(50);
+
+    // 模拟释放键
+    input.ki.dwFlags = tmpDwFlags | KEYEVENTF_KEYUP;
+    SendInput(1, &input, sizeof(INPUT));
 }
