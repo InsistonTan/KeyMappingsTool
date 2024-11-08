@@ -12,6 +12,8 @@ using namespace std;
 
 #define MAX_STR 255
 #define MAX_BUF 2048
+#define MOUSE_X_SPEED 16
+#define MOUSE_Y_SPEED 16
 
 class SimulateTask : public QObject {
     Q_OBJECT
@@ -19,6 +21,8 @@ private:
     hid_device *handle;// 当前设备的连接句柄
     vector<MappingRelation*> *mappingList;// 已配置的按键映射列表
     map<string, short> handleMap;
+    bool isMouseLeftHolding = false;// 鼠标左键一直按着
+    bool isMouseRightHolding = false;// 鼠标右键一直按着
 
     unsigned char buf[MAX_BUF];
     wchar_t wstr[MAX_STR];
@@ -37,7 +41,7 @@ signals:
 
 protected:
     bool isMappingValid(MappingRelation* mapping){
-        return mapping != nullptr && mapping->dev_btn_pos > 0 && mapping->dev_btn_value > 0 && mapping->keyboard_value > 0;
+        return mapping != nullptr && mapping->dev_btn_pos > 0 && mapping->dev_btn_value > 0;
     }
 
     // 模拟按键操作

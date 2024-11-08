@@ -23,7 +23,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(800, 600);
-    this->setWindowTitle("KeyMappingsTool v0.0.1");
+    this->setWindowTitle("KeyMappingsTool v0.0.2");
     this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
@@ -676,8 +676,8 @@ void MainWindow::on_comboBox_activated(int index)
             // 清空界面
             clearMappingsArea();
 
-            // 重置配置选择下拉
-            ui->comboBox_2->setCurrentIndex(-1);
+            // 重置配置选择下拉为空白配置
+            ui->comboBox_2->setCurrentIndex(0);
             // 重置当前配置文件名
             currentMappingFileName = "";
         }
@@ -734,6 +734,9 @@ void MainWindow::on_pushButton_4_clicked()
 
         // 切换到空白配置
         ui->comboBox_2->setCurrentIndex(0);
+
+        // 重置当前配置文件名
+        currentMappingFileName = "";
     } else {
         showErrorMessage(new string("配置名称不能为空!"));
         return;
