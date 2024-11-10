@@ -262,7 +262,7 @@
      <string notr="true">color: rgb(170, 0, 0);</string>
     </property>
     <property name="text">
-     <string>注意:点击此按钮后需立刻按一下需要映射的设备按键(如方向盘上的按键)</string>
+     <string>注意:点击此按钮后需在 3s 内按一下需要映射的按键</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_9">

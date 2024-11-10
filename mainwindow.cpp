@@ -291,21 +291,19 @@ bool isClickNewLineBtn(MappingRelation *mapping){
 }
 
 void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
-    if(getIsRunning()){
-        showErrorMessage(new string("请先停止全局模拟"));
-        return;
-    }
-
-    if(vid == 0 || pid == 0){
-        showErrorMessage(nullptr);
-        return;
-    }
-
     // isClickNewLineBtn()为true 代表是新增加的一行, 不是读取历史配置
     MappingRelation *mappingDevBtnData;
     if(isClickNewLineBtn(mapping)){
+
         // 获取设备按下的按键位置和值
         mappingDevBtnData = getDevBtnData();
+
+        if(mappingDevBtnData == nullptr){
+            showErrorMessage(new string("未检测到按键被按下!"));
+            return;
+        }
+
+
         // 检查该设备按键是否已经添加
         if(hasAddToMappingList(mappingDevBtnData->dev_btn_pos, mappingDevBtnData->dev_btn_value)){
             showErrorMessage(new string("该设备按键已经配置了映射!"));
@@ -375,6 +373,17 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
 void MainWindow::on_pushButton_clicked()
 {
+    // 未选择设备
+    if(vid == 0 || pid == 0){
+        showErrorMessage(nullptr);
+        return;
+    }
+
+    if(getIsRunning()){
+        showErrorMessage(new string("请先停止全局模拟"));
+        return;
+    }
+
     paintOneLineMapping(nullptr, -1);
 }
 
@@ -576,7 +585,7 @@ MappingRelation* MainWindow::getDevBtnData(){
         temp[k] = (int) buf[k];
     }
 
-    for(int j=0; j< 1000; j++){
+    for(int j=0; j< 60; j++){
         //qDebug("第%d次读取输入报告--------------------", j);
 
         // Read requested state
@@ -605,6 +614,8 @@ MappingRelation* MainWindow::getDevBtnData(){
     //qDebug("返回数据:%s", buf);
 
     closeDevice();
+
+    return nullptr;
 }
 
 void MainWindow::onLineEditTextChanged(const QString &text){
@@ -746,6 +757,16 @@ void MainWindow::on_pushButton_4_clicked()
 
 void MainWindow::on_comboBox_2_activated(int index)
 {
+    // // 未选择设备
+    // if(vid == 0 || pid == 0){
+    //     showErrorMessage(nullptr);
+    //     return;
+    // }
+
+    // if(getIsRunning()){
+    //     setIsRuning(false);
+    // }
+
     // 选择了空白配置
     if(index == 0){
         // 清空一切

@@ -102,7 +102,7 @@ private:
 
     vector<MappingRelation*> mappingList;// 已配置的按键映射列表
     vector<DeviceInfo*> deviceList;// 设备列表
-    short vid,pid;// 当前设备的vid,pid
+    short vid=0,pid=0;// 当前设备的vid,pid
     hid_device *handle;// 当前设备的连接句柄
     bool isDeviceOpen = false;// 当前设备是否打开
     string deviceDesc; // 设备信息
