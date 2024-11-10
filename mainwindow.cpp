@@ -110,14 +110,16 @@ bool MainWindow::hasLastDevInCurrentDeviceList(short lastDevVid, short lastDevPi
 }
 
 void MainWindow::repaintMappings(){
-    qDebug("mappingList.size() : %d", (int)mappingList.size());
+    qDebug("mappingList.size() : %d", getMappingListActualSize());
 
-    if(mappingList.size() > 0){
+    if(getMappingListActualSize() > 0){
         // 清空配置页面
         clearMappingsArea();
         // 重新添加
         for(int i =0; i < (int)mappingList.size(); i++){
-            paintOneLineMapping(mappingList[i], i);
+            if(mappingList[i] != nullptr){
+                paintOneLineMapping(mappingList[i], i);
+            }
         }
     }
 }
@@ -203,14 +205,8 @@ void MainWindow::on_pushButton_2_clicked()
         return;
     }
 
-    int trueMappingListSize = 0;
-    for(auto item : mappingList){
-        if(item != nullptr){
-            trueMappingListSize++;
-        }
-    }
 
-    if(trueMappingListSize <= 0){
+    if(getMappingListActualSize() <= 0){
         showErrorMessage(new string("映射列表为空!"));
         return;
     }
@@ -718,7 +714,7 @@ void MainWindow::clearMappingsArea(){
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    if(mappingList.size() <= 0){
+    if(getMappingListActualSize() <= 0){
         showErrorMessage(new string("配置为空, 无法保存!"));
         return;
     }
@@ -798,5 +794,16 @@ void MainWindow::on_comboBox_2_activated(int index)
 
     // 重画配置映射界面
     repaintMappings();
+}
+
+int MainWindow::getMappingListActualSize(){
+    int size = 0;
+    for(auto item : mappingList){
+        if(item != nullptr){
+            size++;
+        }
+    }
+
+    return size;
 }
 

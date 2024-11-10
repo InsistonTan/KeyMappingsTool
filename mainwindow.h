@@ -70,6 +70,9 @@ protected:
     // 清空配置列表界面
     void clearMappingsArea();
 
+    // 获取配置列表实际映射数量
+    int getMappingListActualSize();
+
 private slots:
     // 开启全局映射 按钮的槽函数
     void on_pushButton_2_clicked();
