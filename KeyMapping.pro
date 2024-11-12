@@ -17,7 +17,6 @@ SOURCES += \
 HEADERS += \
     device_info.h \
     global.h \
-    hidapi.h \
     key_map.h \
     mainwindow.h \
     mapping_relation.h \
@@ -40,7 +39,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 # INCLUDEPATH += $$PWD/.
 # DEPENDPATH += $$PWD/.
 
-LIBS += -L$$PWD/ -lhidapi
+#LIBS += -L$$PWD/ -lhidapi
 
 LIBS += -L$$PWD/ -lViGEmClient
 
