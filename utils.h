@@ -6,11 +6,9 @@
 #include<mapping_relation.h>
 
 
-using namespace std;
-
 class Utils{
 public:
-    string static convertWcharToString(wchar_t *wText){
+    std::string static convertWcharToString(wchar_t *wText){
         DWORD dwNum = WideCharToMultiByte(CP_OEMCP,NULL,wText,-1,NULL,0,NULL,FALSE);//WideCharToMultiByte的运用
 
         char *psText;  // psText为char*的临时数组，作为赋值给std::string的中间变量
@@ -19,7 +17,7 @@ public:
 
         WideCharToMultiByte (CP_OEMCP,NULL,wText,-1,psText,dwNum,NULL,FALSE);//WideCharToMultiByte的再次运用
 
-        string szDst = psText;// std::string赋值
+        std::string szDst = psText;// std::string赋值
 
         delete []psText;// psText的清除
 

@@ -4,9 +4,63 @@
 #include<string>
 #include<map>
 
-using namespace std;
+// 手柄输入类型枚举
+enum XboxInputType {
+    LeftJoystick = 1,// 左摇杆
+    RightJoystick = 2,// 右摇杆
+    LeftTrigger = 3,// 左扳机
+    RightTrigger = 4,// 右扳机
+    NormalButton = 5,// 普通按键
+};
 
-const static map<string, short> VK_MAP = {
+struct VALUE_RANGE {
+    int minVal;
+    int maxVal;
+};
+
+const static std::map<short, VALUE_RANGE> XBOX_AXIS_VALUE_RANGE_MAP = {
+    {static_cast<int>(LeftJoystick), VALUE_RANGE{-32768, 32767}},
+    {static_cast<int>(RightJoystick), VALUE_RANGE{-32768, 32767}},
+    {static_cast<int>(LeftTrigger), VALUE_RANGE{0, 255}},
+    {static_cast<int>(RightTrigger), VALUE_RANGE{0, 255}},
+};
+
+const static std::map<std::string, short> VK_XBOX_AXIS_MAP = {
+    {"手柄摇杆-左摇杆", static_cast<int>(LeftJoystick)},
+    {"手柄摇杆-右摇杆", static_cast<int>(RightJoystick)},
+    {"手柄扳机-左扳机", static_cast<int>(LeftTrigger)},
+    {"手柄扳机-右扳机", static_cast<int>(RightTrigger)},
+};
+
+const static std::map<std::string, short> VK_XBOX_BTN_MAP = {
+    // 自定义按键
+    {"左摇杆-左移", -1},
+    {"左摇杆-右移", -2},
+    {"左摇杆-上移", -3},
+    {"左摇杆-下移", -4},
+    {"右摇杆-左移", -5},
+    {"右摇杆-右移", -6},
+    {"右摇杆-上移", -7},
+    {"右摇杆-下移", -8},
+    {"扳机-左扳机", -9},
+    {"扳机-右扳机", -10},
+    {"方向键-上键", 0x0001},
+    {"方向键-下键", 0x0002},
+    {"方向键-左键", 0x0004},
+    {"方向键-右键", 0x0008},
+    {"START键", 0x0010},
+    {"BACK键", 0x0020},
+    {"左摇杆按下", 0x0040},
+    {"右摇杆按下", 0x0080},
+    {"左肩键(LB)", 0x0100},
+    {"右肩键(RB)", 0x0200},
+    {"A键", 0x1000},
+    {"B键", 0x2000},
+    {"X键", 0x4000},
+    {"Y键", 0x8000}
+};
+
+const static std::map<std::string, short> VK_MAP = {
     // 以下四个是自定义的四个操作(不是windows标准)
     {"鼠标向左移动",-1},
     {"鼠标向上移动",-2},

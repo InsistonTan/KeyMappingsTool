@@ -12,16 +12,16 @@
 #include<mapping_relation.h>
 
 
-using namespace std;
-
 #define MAX_STR 255
 #define MAX_BUF 2048
 #define SPE "#$#"
-#define MAPPINGS_FILENAME "mappings_cache"
-#define LAST_DEVICE_FILENAME "last_device"
+#define MAPPINGS_FILENAME "di_mappings_cache"
+#define LAST_DEVICE_FILENAME "di_last_device"
 #define USER_MAPPINGS_DIR "userMappings/"
-#define MAPPING_FILE_SUFFIX ".mappings_config"
-
+#define MAPPING_FILE_SUFFIX ".di_mappings_config"
+#define MAPPING_FILE_SUFFIX_XBOX ".di_xbox_mappings_config"
+#define KEYBOARD "keyboard"
+#define XBOX "xbox"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -36,30 +36,53 @@ class MainWindow : public QMainWindow
 public:
 
     MainWindow(QMainWindow *parent = nullptr);
-    ~MainWindow(){};
+    ~MainWindow();
+
+private:
+    Ui::MainWindow *ui;
+
+    std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
+    //std::vector<DeviceInfo*> deviceList;// 设备列表
+    //short vid=0,pid=0;// 当前设备的vid,pid
+    //hid_device *handle;// 当前设备的连接句柄
+    //bool isDeviceOpen = false;// 当前设备是否打开
+    std::string deviceDesc; // 设备信息
+    std::string deviceName; // 设备名称
+    std::string currentMappingFileName;// 当前配置文件的文件名
+
+    //unsigned char buf[MAX_BUF];
+    //wchar_t wstr[MAX_STR];
+    //int res;
+
+
+    QLabel *label;
 
 protected:
     MappingRelation* getDevBtnData();
 
-    int openDevice(short vid, short pid);
+    //int openDevice(short vid, short pid);
 
-    int closeDevice();
+    //int closeDevice();
 
-    int listAllDevice();
+    //int listAllDevice();
+
+    std::map<std::string, short> getConstKeyMap(std::string dev_btn_type);
+
+    void scanMappingFile();
 
     // 上一次使用的设备是否在当前设备列表
-    bool hasLastDevInCurrentDeviceList(short lastDevVid, short lastDevPid);
+    bool hasLastDevInCurrentDeviceList(std::string lastDeviceName);
 
-    QComboBox* createAKeyBoardComboBox();
+    QComboBox* createAKeyBoardComboBox(std::string dev_btn_type);
 
-    void showErrorMessage(string *text);
+    void showErrorMessage(std::string *text);
 
-    bool hasAddToMappingList(int btn_pos, int btn_value);
+    bool hasAddToMappingList(std::string btn_name);
 
-    void saveMappingsToFile(string filename);
+    void saveMappingsToFile(std::string filename);
     void saveLastDeviceToFile();
 
-    void loadMappingsFile(string filename);
+    void loadMappingsFile(std::string filename);
 
     void loadLastDeviceFile();
 
@@ -72,6 +95,10 @@ protected:
 
     // 获取配置列表实际映射数量
     int getMappingListActualSize();
+
+    // 检查驱动
+    bool checkDriverInstalled();
+
 
 private slots:
     // 开启全局映射 按钮的槽函数
@@ -100,23 +127,9 @@ private slots:
 
     void on_comboBox_2_activated(int index);
 
-private:
-    Ui::MainWindow *ui;
+    void on_radioButton_clicked();
 
-    vector<MappingRelation*> mappingList;// 已配置的按键映射列表
-    vector<DeviceInfo*> deviceList;// 设备列表
-    short vid=0,pid=0;// 当前设备的vid,pid
-    hid_device *handle;// 当前设备的连接句柄
-    bool isDeviceOpen = false;// 当前设备是否打开
-    string deviceDesc; // 设备信息
-    string deviceName; // 设备名称
-    string currentMappingFileName;// 当前配置文件的文件名
+    void on_radioButton_2_clicked();
 
-    unsigned char buf[MAX_BUF];
-    wchar_t wstr[MAX_STR];
-    int res;
-
-
-    QLabel *label;
 };
 #endif // MAINWINDOW_H

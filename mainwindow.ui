@@ -76,19 +76,6 @@
      </item>
     </layout>
    </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>50</y>
-      <width>681</width>
-      <height>19</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>暂未选择设备</string>
-    </property>
-   </widget>
    <widget class="QScrollArea" name="scrollArea">
     <property name="geometry">
      <rect>
@@ -233,7 +220,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>模拟成</string>
+     <string>映射成</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_7">
@@ -331,6 +318,32 @@
       <width>221</width>
       <height>31</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>91</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>映射键盘</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_2">
+    <property name="geometry">
+     <rect>
+      <x>120</x>
+      <y>50</y>
+      <width>121</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>映射Xbox手柄</string>
     </property>
    </widget>
   </widget>

@@ -3,28 +3,27 @@
 
 #include <string>
 
-using namespace std;
 
 class DeviceInfo{
 private:
-    string device_name;
-    string device_path;
+    std::string device_name;
+    std::string device_path;
     short vid;
     short pid;
 public:
     DeviceInfo(){}
-    DeviceInfo(string device_name,string device_path,short vid,short pid){
+    DeviceInfo(std::string device_name,std::string device_path,short vid,short pid){
         this->device_name = device_name;
         this->device_path = device_path;
         this->vid = vid;
         this->pid = pid;
     }
 
-    string getDeviceName(){
+    std::string getDeviceName(){
         return device_name;
     }
 
-    string getDevicePath(){
+    std::string getDevicePath(){
         return device_path;
     }
 

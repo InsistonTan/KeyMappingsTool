@@ -42,6 +42,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 LIBS += -L$$PWD/ -lhidapi
 
+LIBS += -L$$PWD/ -lViGEmClient
+
+LIBS += -ldinput8 -ldxguid
+
 RESOURCES += \
     resource.qrc
 
