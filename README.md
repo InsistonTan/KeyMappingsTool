@@ -1,15 +1,15 @@
 # KeyMappingsTool
-方向盘按键模拟键盘按键, 全局模拟, 方向盘按键映射键盘按键
+方向盘映射键盘按键和鼠标, 方向盘映射虚拟xbox手柄
 
 
-本人设备是 魔爪R3方向盘, 系统是windows11, 实测游戏里可用, 测试游戏: 尘埃拉力2.0
+使用DirectInput识别和获取设备数据, 适配多数方向盘
 
 
-经测试:部分游戏, 需要以管理员身份运行本工具才行
+使用ViGEm模拟Xbox手柄
 
 
-其他设备自测, 有能力也可以自己去修改代码适配
+魔爪R3实测, 其他设备请自测
 
 
-![image](https://github.com/user-attachments/assets/34b438f5-3b32-4575-8c78-a1e30c40ba63)
+![image](https://github.com/user-attachments/assets/d7688a37-9c51-4b17-99ac-b668c7b57f7a)
 
