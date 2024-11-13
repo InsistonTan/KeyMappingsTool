@@ -59,6 +59,17 @@ bool initDirectInput() {
     return true;
 }
 
+void scanDevice(){
+    if(g_pDirectInput == nullptr){
+        return;
+    }
+
+    if (FAILED(g_pDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY))) {
+        QMessageBox::critical(nullptr, "错误", "扫描设备列表失败！");
+        return;
+    }
+}
+
 int lastDeviceIndex = -1;
 
 void getDipropRange(long axisCode, std::string axisName){

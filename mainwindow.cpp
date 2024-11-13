@@ -52,6 +52,9 @@ MainWindow::MainWindow(QMainWindow *parent)
         comboBox->addItem(diDeviceList[i].name.data());
     }
     comboBox->setCurrentIndex(-1);
+    if(diDeviceList.empty()){
+        comboBox->setPlaceholderText("未扫描到设备");
+    }
 
 
     // 设置滚动条的样式
@@ -524,9 +527,13 @@ void MainWindow::onDeleteBtnClicked(){
 
 MappingRelation* MainWindow::getDevBtnData(){
     // 初始化DirectInput
-    initDirectInput();
+    if(!initDirectInput()){
+        return nullptr;
+    }
     // 连接设备
-    openDiDevice(ui->comboBox->currentIndex());
+    if(!openDiDevice(ui->comboBox->currentIndex())){
+        return nullptr;
+    }
 
     std::map<std::string, int> tempRecord;
 
@@ -558,52 +565,6 @@ MappingRelation* MainWindow::getDevBtnData(){
     }
 
     return nullptr;
-
-    // 设备没打开, 需要手动打开
-    // if(!isDeviceOpen){
-    //     openDevice(vid,pid);
-    // }
-
-
-
-    // 先读一次数据, 用作后续对比
-    // res = hid_read(handle, buf, MAX_BUF);
-    // int temp[res];
-    // for(int k=0; k<res; k++){
-    //     temp[k] = (int) buf[k];
-    // }
-
-    // for(int j=0; j< 60; j++){
-    //     //qDebug("第%d次读取输入报告--------------------", j);
-
-    //     // Read requested state
-    //     res = hid_read(handle, buf, MAX_BUF);
-
-    //     string str = "";
-    //     // Print out the returned buffer.
-    //     for (int i = 0; i < res; i++){
-    //         str += to_string((int) buf[i]);
-    //         str += " ";
-    //     }
-
-    //     for(int p=3;p<res;p++){
-    //         if((int)buf[p]!=temp[p]){
-    //             qDebug("操作对应数值:%d ,处于报告中的第%d位", (int)buf[p], p+1);
-    //             MappingRelation *mapping = new MappingRelation(p, (int)buf[p], -1, "");
-
-    //             return mapping;
-    //         }
-
-    //     }
-
-    //     Sleep(50);
-    // }
-
-    // //qDebug("返回数据:%s", buf);
-
-    // closeDevice();
-
-    // return nullptr;
 }
 
 void MainWindow::onLineEditTextChanged(const QString &text){
@@ -907,4 +868,64 @@ void MainWindow::on_radioButton_2_clicked()
 
 
 
+
+
+void MainWindow::on_pushButton_5_clicked()
+{
+    QMainWindow *window = new QMainWindow();
+    window->setWindowTitle("请作者喝杯奶茶, 感谢您的支持和鼓励");
+    window->setFixedSize(400, 300);
+
+    // 创建一个 QLabel 来显示图片
+    QLabel* label = new QLabel();
+    QPixmap pixmap(":/icon/shoukuanma.jpg");  // 替换为你的图片路径
+    pixmap = pixmap.scaled(400, 300, Qt::KeepAspectRatio);
+    label->setPixmap(pixmap);
+    label->setAlignment(Qt::AlignCenter);  // 设置图片居中显示
+
+    // 创建一个 QWidget 作为主窗口的中央部件
+    QWidget* centralWidget = new QWidget();
+
+    // 创建一个 QVBoxLayout 布局管理器
+    QVBoxLayout* layout = new QVBoxLayout(centralWidget);
+
+    // 将 QLabel 添加到布局中
+    layout->addWidget(label);
+
+    // 设置布局为中央部件的布局
+    centralWidget->setLayout(layout);
+
+    // 设置中央部件
+    window->setCentralWidget(centralWidget);
+
+    window->show();
+
+
+}
+
+
+void MainWindow::on_pushButton_6_clicked()
+{
+    // 清空设备列表
+    diDeviceList.clear();
+    // 清空下拉
+    ui->comboBox->clear();
+
+    // 重新扫描
+    scanDevice();
+
+    // 设备不为空
+    if(!diDeviceList.empty()){
+        ui->comboBox->setPlaceholderText("");
+        for(auto item : diDeviceList){
+            ui->comboBox->addItem(item.name.data());
+        }
+
+        if(hasLastDevInCurrentDeviceList(deviceName)){
+            ui->comboBox->setCurrentText(deviceName.data());
+        }else{
+            ui->comboBox->setCurrentIndex(-1);
+        }
+    }
+}
 

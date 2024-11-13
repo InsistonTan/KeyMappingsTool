@@ -4,7 +4,6 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <windows.h>
-#include <hidapi.h>
 #include <cstring>
 #include <QVBoxLayout>
 #include <QComboBox>
@@ -131,5 +130,7 @@ private slots:
 
     void on_radioButton_2_clicked();
 
+    void on_pushButton_5_clicked();
+    void on_pushButton_6_clicked();
 };
 #endif // MAINWINDOW_H

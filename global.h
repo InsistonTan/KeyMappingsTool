@@ -34,6 +34,8 @@ bool openDiDevice(int deviceIndex);
 QList<MappingRelation*> getInputState();
 void cleanupDirectInput();
 void getDipropRange(long axisCode, std::string axisName);
+// 扫描设备
+void scanDevice();
 
 void setIsRuning(bool val);
 

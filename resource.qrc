@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/icon">
         <file>wheel_icon.png</file>
+        <file>shoukuanma.jpg</file>
     </qresource>
 </RCC>

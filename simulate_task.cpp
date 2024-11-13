@@ -230,12 +230,12 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
     }else if(inputType == LeftJoystick){
         // 设置左摇杆的X、Y值 (-32768 到 32767)
         report.sThumbLX = inputValue1;
-        report.sThumbLY = inputValue2;
+        //report.sThumbLY = inputValue2;
 
     }else if(inputType == RightJoystick){
         // 设置右摇杆的X、Y值 (-32768 到 32767)
         report.sThumbRX = inputValue1;
-        report.sThumbRY = inputValue2;
+        //report.sThumbRY = inputValue2;
 
     }else if(inputType == LeftTrigger){
         // 设置左扳机的值

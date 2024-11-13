@@ -14,7 +14,7 @@
 #define MOUSE_X_SPEED 6
 #define MOUSE_Y_SPEED 6
 
-#define XBOX_AXIS_SPEED 30000
+#define XBOX_AXIS_SPEED 15000
 #define XBOX_TRIGGER_SPEED 250
 
 class SimulateTask : public QObject {
