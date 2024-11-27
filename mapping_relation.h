@@ -13,6 +13,7 @@ public:
     short keyboard_value;// 键盘按键值
     std::string keyboard_name;// 键盘按键名称
     std::string remark; // 备注
+    int rotateAxis = 0; // 是否反转轴, 0不反转, 1反转
 
     MappingRelation(){}
     MappingRelation(int dev_btn_pos, int dev_btn_value, short keyboard_value, std::string keyboard_name){

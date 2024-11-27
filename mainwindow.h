@@ -121,6 +121,9 @@ private slots:
     // 删除按钮点击的槽函数
     void onDeleteBtnClicked();
 
+    // 反转轴的勾选框槽函数
+    void onCheckBoxToggle(bool checked);
+
     // 保存配置按钮槽函数
     void on_pushButton_4_clicked();
 

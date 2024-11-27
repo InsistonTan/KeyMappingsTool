@@ -1,7 +1,13 @@
 #include <simulate_task.h>
 #include <global.h>
+#include <QMessageBox>
 
 void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
+    // 记录需要反转的轴
+    if(mapping->rotateAxis == 1){
+        rotateAxisList.push_back(mapping->dev_btn_name);
+    }
+
     // handleMap还没有该按键, 直接添加
     if(handleMap.find(mapping->dev_btn_name) == handleMap.end()){
         handleMap.insert_or_assign(mapping->dev_btn_name, mapping->keyboard_value);
@@ -15,6 +21,16 @@ void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
         }
     }
 
+}
+
+bool SimulateTask::isAixsRotate(std::string btnName){
+    for(auto item : rotateAxisList){
+        if(item == btnName){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
@@ -91,27 +107,32 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
     //keyPosMap.erase(keyPos);
 }
 
-void SimulateTask::initXboxController(){
+bool SimulateTask::initXboxController(){
     // 初始化client
     vigemClient = vigem_alloc();
     if (vigemClient == nullptr) {
-        throw std::runtime_error("ViGEmClient allocation failed!");
+        qDebug("ViGEmClient allocation failed!");
+        return false;
     }
 
     if (!VIGEM_SUCCESS(vigem_connect(vigemClient))) {
-        throw std::runtime_error("ViGEmClient connection failed!");
+        qDebug("ViGEmClient connection failed!");
+        return false;
     }
 
     // 虚拟出一个xbox手柄
     vigemTarget = vigem_target_x360_alloc();
     if (!VIGEM_SUCCESS(vigem_target_add(vigemClient, vigemTarget))) {
-        throw std::runtime_error("Adding virtual Xbox 360 controller failed!");
+        qDebug("Adding virtual Xbox 360 controller failed!");
+        return false;
     }
 
     // 初始化模拟报告
     ZeroMemory(&report, sizeof(XUSB_REPORT));
 
     qDebug("初始化虚拟手柄控制器成功!");
+
+    return true;
 }
 
 void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1, int inputValue2, bool isRelease){
@@ -238,11 +259,11 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
         //report.sThumbRY = inputValue2;
 
     }else if(inputType == LeftTrigger){
-        // 设置左扳机的值
+        // 设置左扳机的值 (0 到 255)
         report.bLeftTrigger = inputValue1;
 
     }else if(inputType == RightTrigger){
-        // 设置右扳机的值
+        // 设置右扳机的值 (0 到 255)
         report.bRightTrigger = inputValue1;
     }else{
         return;
@@ -290,7 +311,16 @@ void SimulateTask::doWork(){
 
     // 模拟xbox手柄, 需要初始化
     if(getIsXboxMode()){
-        initXboxController();
+        if(!initXboxController()){
+            QMessageBox::critical(nullptr, "错误", "初始化虚拟xbox手柄失败, 请重试");
+
+            // 关闭虚拟xbox设备
+            closeXboxController();
+
+            // 提交工作结束信号
+            emit workFinished();
+            return;
+        }
     }
 
     while(getIsRunning()){
@@ -334,7 +364,7 @@ void SimulateTask::doWork(){
                         auto currentBtn = res[i];
 
                         // 映射普通xbox按键
-                        if(currentBtn->dev_btn_type == WHEEL_BUTTON){
+                        if(currentBtn->dev_btn_type == (std::string)WHEEL_BUTTON){
                             qDebug("映射Xbox模式-按键按下:%s", btnStr.data());
 
                             // 记录按键按下
@@ -353,13 +383,19 @@ void SimulateTask::doWork(){
                             auto currentRange = axisValueRangeMap.find(currentBtn->dev_btn_name)->second;
                             int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
 
-                            int finalValue = (static_cast<double>(currentBtn->dev_btn_value) /(currentMax - currentMin) * (xboxMax - xboxMin))
+                            int finalValue = ((static_cast<double>(currentBtn->dev_btn_value) - currentMin)
+                                                /(currentMax - currentMin) * (xboxMax - xboxMin))
                                              + xboxMin;
 
-                            // qDebug("轴%s的值:%d, 映射xbox轴:%d, xbox轴的值:%d"
-                            //        , currentBtn->dev_btn_name.data()
-                            //        , currentBtn->dev_btn_value
-                            //        , item->second, finalValue);
+                            // 反转轴的值
+                            if(isAixsRotate(btnStr)){
+                                finalValue = ((currentMax - static_cast<double>(currentBtn->dev_btn_value))
+                                                /(currentMax - currentMin) * (xboxMax - xboxMin))
+                                             + xboxMin;
+
+                                //qDebug("当前值:%d {%d, %d}, xbox范围:{%d, %d}, 转换成xbox值:%d"
+                                //       , currentBtn->dev_btn_value, currentMin, currentMax, xboxMin, xboxMax, finalValue);
+                            }
 
 
                             // 模拟xbox轴

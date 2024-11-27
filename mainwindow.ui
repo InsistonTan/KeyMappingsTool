@@ -83,9 +83,9 @@
     <property name="geometry">
      <rect>
       <x>19</x>
-      <y>99</y>
+      <y>79</y>
       <width>761</width>
-      <height>351</height>
+      <height>371</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -100,7 +100,7 @@
        <x>0</x>
        <y>0</y>
        <width>759</width>
-       <height>349</height>
+       <height>369</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -112,7 +112,7 @@
         <x>-1</x>
         <y>-1</y>
         <width>761</width>
-        <height>351</height>
+        <height>371</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout" rowstretch="0">
@@ -200,45 +200,6 @@
      <string>未开启</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_5">
-    <property name="geometry">
-     <rect>
-      <x>30</x>
-      <y>80</y>
-      <width>69</width>
-      <height>19</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>设备按键</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_6">
-    <property name="geometry">
-     <rect>
-      <x>150</x>
-      <y>80</y>
-      <width>69</width>
-      <height>19</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>映射成</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_7">
-    <property name="geometry">
-     <rect>
-      <x>320</x>
-      <y>80</y>
-      <width>69</width>
-      <height>19</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>键盘按键</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_8">
     <property name="geometry">
      <rect>
@@ -253,19 +214,6 @@
     </property>
     <property name="text">
      <string>注意:点击此按钮后需在 3s 内按一下需要映射的按键</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_9">
-    <property name="geometry">
-     <rect>
-      <x>540</x>
-      <y>80</y>
-      <width>69</width>
-      <height>19</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>备注</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_10">

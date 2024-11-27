@@ -14,7 +14,7 @@
 #define MOUSE_X_SPEED 6
 #define MOUSE_Y_SPEED 6
 
-#define XBOX_AXIS_SPEED 15000
+#define XBOX_AXIS_SPEED 30000
 #define XBOX_TRIGGER_SPEED 250
 
 class SimulateTask : public QObject {
@@ -26,6 +26,8 @@ private:
 
     std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map
     //std::map<int, short> keyPosMap;// 记录按键位置对应键盘扫描码map
+
+    std::vector<std::string> rotateAxisList;// 记录需要反转的轴
 
     bool isMouseLeftHolding = false;// 鼠标左键一直按着
     bool isMouseRightHolding = false;// 鼠标右键一直按着
@@ -51,6 +53,8 @@ signals:
 
 
 protected:
+    bool isAixsRotate(std::string btnName);
+
     bool isMappingValid(MappingRelation* mapping){
         return mapping != nullptr && !mapping->dev_btn_name.empty() && mapping->keyboard_value != 0;
     }
@@ -71,7 +75,7 @@ protected:
     void closeDevice();
 
     // 初始化xbox控制器
-    void initXboxController();
+    bool initXboxController();
     // 关闭xbox控制器
     void closeXboxController();
     // 模拟xbox按键操作

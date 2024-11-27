@@ -17,6 +17,7 @@
 #include <QSettings>
 #include<QProcess>
 #include<cmath>
+#include <QCheckBox>
 
 
 
@@ -31,7 +32,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(800, 600);
-    this->setWindowTitle("KeyMappingsTool v1.0.0");
+    this->setWindowTitle("KeyMappingsTool v1.0.1");
     this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
@@ -189,6 +190,7 @@ void MainWindow::on_pushButton_2_clicked()
     // 任务完成后，退出线程并清理
     QObject::connect(task, &SimulateTask::workFinished, thread, &QThread::quit);
     QObject::connect(task, &SimulateTask::workFinished, task, &SimulateTask::deleteLater);
+    QObject::connect(task, &SimulateTask::workFinished, this, &MainWindow::on_pushButton_3_clicked);
     QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
     // 启动线程
@@ -208,7 +210,7 @@ void MainWindow::on_pushButton_2_clicked()
 void MainWindow::on_pushButton_3_clicked()
 {
     if(!getIsRunning()){
-        showErrorMessage(new std::string("全局映射未启动!"));
+        //showErrorMessage(new std::string("全局映射未启动!"));
         return;
     }
 
@@ -257,7 +259,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         }
 
 
-        // xbox模式检查该设备按键是否已经添加
+        // 检查该设备按键是否已经添加
         if(hasAddToMappingList(mappingDevBtnData->dev_btn_name)){
             showErrorMessage(new std::string("该设备按键已经配置了映射!"));
             return;
@@ -267,10 +269,33 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         mappingList.push_back(mappingDevBtnData);
     }
 
+    // 记录当前行的index值
+    auto currentRowIndex = isClickNewLineBtn(mapping) ? std::to_string(mappingList.size() - 1) : std::to_string(index);
 
     QGridLayout *layout = ui->gridLayout;
     layout->setAlignment(Qt::AlignTop);
     layout->setContentsMargins(7,7,7,7);
+
+    // 画出表头
+    if(index == 0 || getMappingListActualSize() == 1){
+        QLabel *h1 = new QLabel("设备按键");
+        h1->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
+
+        QLabel *h2 = new QLabel("映射成");
+        h2->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
+
+        QLabel *h3 = new QLabel(getIsXboxMode() ? "Xbox按键" : "键盘按键");
+        h3->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
+
+        QLabel *h4 = new QLabel("备注");
+        h4->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
+
+        int col = -1;
+        layout->addWidget(h1, 0, ++col, Qt::AlignLeft);
+        layout->addWidget(h2, 0, ++col, Qt::AlignLeft);
+        layout->addWidget(h3, 0, ++col, Qt::AlignLeft);
+        layout->addWidget(h4, 0, ++col, Qt::AlignCenter);
+    }
 
     QLabel *label1 = new QLabel(isClickNewLineBtn(mapping)
             ? mappingDevBtnData->dev_btn_name.data()
@@ -280,19 +305,19 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label1->setMinimumHeight(30);
     label1->setMaximumWidth(80);
     label1->setStyleSheet("QLabel{color:blue;}");
-    label1->setObjectName(isClickNewLineBtn(mapping) ? std::to_string(mappingList.size() - 1) : std::to_string(index));
+    label1->setObjectName(currentRowIndex);
 
     QLabel *label2 = new QLabel("->");
     label2->setMaximumHeight(30);
     label2->setMinimumHeight(30);
     label2->setMaximumWidth(60);
-    label2->setObjectName(isClickNewLineBtn(mapping) ? std::to_string(mappingList.size() - 1) : std::to_string(index));
+    label2->setObjectName(currentRowIndex);
 
     QComboBox *comboBox = createAKeyBoardComboBox(
         isClickNewLineBtn(mapping) ? mappingDevBtnData->dev_btn_type : mapping->dev_btn_type
         );
     // 设置一个序号, 为后续操作提供一个位置
-    comboBox->setObjectName(isClickNewLineBtn(mapping) ? std::to_string(mappingList.size() - 1) : std::to_string(index));
+    comboBox->setObjectName(currentRowIndex);
     // 历史配置展示
     if(!isClickNewLineBtn(mapping)){
         comboBox->setCurrentText(mapping->keyboard_name.data());
@@ -306,7 +331,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     lineEdit->setMinimumHeight(30);
     lineEdit->setMinimumWidth(150);
     lineEdit->setStyleSheet("QLineEdit{margin:0 0 0 50;}");
-    lineEdit->setObjectName(isClickNewLineBtn(mapping) ? std::to_string(mappingList.size() - 1) : std::to_string(index));
+    lineEdit->setObjectName(currentRowIndex);
     // 连接信号和槽
     QObject::connect(lineEdit, &QLineEdit::textChanged, this, &MainWindow::onLineEditTextChanged);
 
@@ -316,15 +341,48 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     deleteBtn->setMaximumWidth(80);
     deleteBtn->setMinimumWidth(80);
     deleteBtn->setStyleSheet("QPushButton{background-color:rgb(255, 157, 157);margin-left:7;}");
-    deleteBtn->setObjectName(isClickNewLineBtn(mapping) ? std::to_string(mappingList.size() - 1) : std::to_string(index));
+    deleteBtn->setObjectName(currentRowIndex);
     // 绑定信号和槽
     connect(deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteBtnClicked);
 
-    layout->addWidget(label1, index < 0 ? mappingList.size() : index, 0, Qt::AlignLeft);
-    layout->addWidget(label2, index < 0 ? mappingList.size() : index, 1, Qt::AlignLeft);
-    layout->addWidget(comboBox, index < 0 ? mappingList.size() : index, 2, Qt::AlignLeft);
-    layout->addWidget(lineEdit, index < 0 ? mappingList.size() : index, 3, Qt::AlignLeft);
-    layout->addWidget(deleteBtn, index < 0 ? mappingList.size() : index, 4, Qt::AlignLeft);
+
+    int colomnIndex = -1;
+    int row = (index < 0 ? mappingList.size() : index) + 1;
+    layout->addWidget(label1, row, ++colomnIndex, Qt::AlignLeft);
+    layout->addWidget(label2, row, ++colomnIndex, Qt::AlignLeft);
+    layout->addWidget(comboBox, row, ++colomnIndex, Qt::AlignLeft);
+    layout->addWidget(lineEdit, row, ++colomnIndex, Qt::AlignLeft);
+    layout->addWidget(deleteBtn, row, ++colomnIndex, Qt::AlignLeft);
+
+    if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)
+        || (mappingDevBtnData != nullptr && mappingDevBtnData->dev_btn_type == (std::string)WHEEL_AXIS)){
+
+        // 反转轴的勾选
+        QCheckBox *checkBox = new QCheckBox("反转该轴", this);
+        checkBox->setMaximumHeight(30);
+        checkBox->setMinimumHeight(30);
+        checkBox->setMaximumWidth(80);
+        checkBox->setObjectName(currentRowIndex);
+        // 保存的配置, 恢复
+        if(!isClickNewLineBtn(mapping) && mapping->rotateAxis == 1){
+            checkBox->setChecked(true);
+        }
+
+        // 绑定信号和槽
+        connect(checkBox, &QCheckBox::toggled, this, &MainWindow::onCheckBoxToggle);
+
+        layout->addWidget(checkBox, row, ++colomnIndex, Qt::AlignLeft);
+    }
+}
+
+void MainWindow::onCheckBoxToggle(bool checked){
+    // 获取触发信号的对象
+    QCheckBox *checkBox = qobject_cast<QCheckBox*>(sender());
+
+    // 更新改动到mapping列表
+    mappingList[checkBox->objectName().toInt()]->rotateAxis = checkBox->isChecked() ? 1 : 0;
+
+    qDebug("checkBox clicked, index: %d", checkBox->objectName().toInt());
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -373,7 +431,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
                         + item->dev_btn_type + SPE
                         + item->keyboard_name + SPE
                         + std::to_string(item->keyboard_value) + SPE
-                        + item->remark + "\n");
+                        + item->remark + SPE + std::to_string(item->rotateAxis) + "\n");
         }
     }
 
@@ -437,7 +495,7 @@ void MainWindow::loadLastDeviceFile(){
                 if(!in.atEnd()) {
                     if(in.readLine().toStdString() == XBOX){
                         ui->radioButton_2->setChecked(true);
-                        ui->label_7->setText("Xbox按键");
+                        //ui->label_7->setText("Xbox按键");
                         setIsXboxMode(true);
                     }
                 }
@@ -482,13 +540,16 @@ void MainWindow::loadMappingsFile(std::string filename){
         while (!in.atEnd()) {
             QString line = in.readLine(); // 读取一行
             QStringList list = line.split(SPE);
-            if(list.size() == 5){
+            if(list.size() >= 5){
                 MappingRelation *mapping = new MappingRelation();
                 mapping->dev_btn_name = list[0].toStdString();
                 mapping->dev_btn_type = list[1].toStdString();
                 mapping->keyboard_name = list[2].toStdString();
                 mapping->keyboard_value = list[3].toShort();
                 mapping->remark = list[4].toStdString();
+                if(list.size() == 6 && list[5] != nullptr && !list[5].isEmpty() && list[5].toInt() == 1){
+                    mapping->rotateAxis = 1;
+                }
                 mappingList.push_back(mapping);
             }
         }
@@ -543,7 +604,7 @@ MappingRelation* MainWindow::getDevBtnData(){
         if(res.size() > 0){
             for(auto item : res){
                 // 方向盘的轴
-                if(item->dev_btn_type == WHEEL_AXIS){
+                if(item->dev_btn_type == (std::string)WHEEL_AXIS){
                     auto tmpAxis = tempRecord.find(item->dev_btn_name);
                     // 第一次读到该轴的值
                     if(tmpAxis == tempRecord.end()){
@@ -580,7 +641,7 @@ void MainWindow::onLineEditTextChanged(const QString &text){
 
 std::map<std::string, short> MainWindow::getConstKeyMap(std::string dev_btn_type){
     if(getIsXboxMode()){
-        if(dev_btn_type == WHEEL_BUTTON){
+        if(dev_btn_type == (std::string)WHEEL_BUTTON){
             return VK_XBOX_BTN_MAP;
         }
 
@@ -777,10 +838,15 @@ bool MainWindow::checkDriverInstalled() {
     }else{
         //QMessageBox::information(nullptr, "", "");
 
+        //获取当前目录
+        QDir dir = QDir(QCoreApplication::applicationDirPath());
+        dir.cd("driver");
+        std::string dirPath = QDir::toNativeSeparators(dir.absolutePath()).toStdString();
+
         // 创建一个 QMessageBox 对象，带有 OK 和 Cancel 按钮
         QMessageBox msgBox;
         msgBox.setWindowTitle("提醒");
-        msgBox.setText("检测到虚拟手柄驱动未安装, 点击确认将前往资源管理器, 请手动安装驱动程序");
+        msgBox.setText(("检测到虚拟手柄驱动未安装, 点击确认将前往资源管理器, 请手动安装驱动程序\n驱动安装包所在文件夹:\n" + dirPath).data());
         // 设置图标
         msgBox.setIcon(QMessageBox::Warning);
         // 创建并添加自定义按钮
@@ -796,17 +862,19 @@ bool MainWindow::checkDriverInstalled() {
         // 判断用户点击确认按钮
         if (msgBox.clickedButton() == ok) {
             // 用户点击了 OK
-            //获取当前目录
-            QDir dir = QDir::current();
-            dir.cd("driver");
 
-            std::string command = "explorer \"" + QDir::toNativeSeparators(dir.absolutePath()).toStdString() + "\"";  // 使用双引号包裹路径，处理空格
+            //QMessageBox::information(nullptr, "", QDir::toNativeSeparators(dir.absolutePath()).toStdString().data());
+
+            std::string command = "explorer \"" + dirPath + "\"";  // 使用双引号包裹路径，处理空格
 
             // 将窗口最小化
             showMinimized();
 
             // 打开资源管理器
-            system(command.c_str());
+            //std::system(command.c_str());
+
+            // 使用 QProcess 执行命令
+            QProcess::startDetached(command.data());
         }
 
         return false;
@@ -819,7 +887,7 @@ void MainWindow::on_radioButton_clicked()
         return;
     }
 
-    ui->label_7->setText("键盘按键");
+    //ui->label_7->setText("键盘按键");
 
     // 设置为键盘模式
     setIsXboxMode(false);
@@ -844,7 +912,7 @@ void MainWindow::on_radioButton_2_clicked()
         return;
     }
 
-    ui->label_7->setText("Xbox按键");
+    //ui->label_7->setText("Xbox按键");
 
     // 检查驱动
     checkDriverInstalled();
