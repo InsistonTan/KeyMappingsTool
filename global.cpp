@@ -1,6 +1,9 @@
 #include<global.h>
 #include<QDebug>
 #include<QMessageBox>
+#include<QMutexLocker>
+#include<QMutex>
+#include<QDateTime>
 
 bool isRuning = false;
 bool isXboxMode = false;
@@ -8,6 +11,50 @@ LPDIRECTINPUT8 g_pDirectInput = nullptr;
 LPDIRECTINPUTDEVICE8 g_pDevice = nullptr;
 QList<DiDeviceInfo> diDeviceList;
 std::map<std::string, DIPROPRANGE> axisValueRangeMap;
+
+// 全局变量, log队列
+QQueue<QString> logQueue;
+QMutex queueMutex;
+void pushToQueue(QString data){
+    QMutexLocker locker(&queueMutex);
+    logQueue.enqueue(data);
+}
+QString popQueue(){
+    QMutexLocker locker(&queueMutex);
+    if(logQueue.size() > 0){
+        return logQueue.dequeue();
+    }
+    return "";
+}
+int getQueueSize(){
+    QMutexLocker locker(&queueMutex);
+    return logQueue.size();
+}
+
+// 开启按键日志
+bool enableBtnLog = true;
+// 开启轴日志
+bool enableAxisLog = false;
+// 开启摇杆日志
+bool enablePovLog = true;
+void setEnableBtnLog(bool val){
+    enableBtnLog = val;
+}
+bool getEnableBtnLog(){
+    return enableBtnLog;
+}
+void setEnableAxisLog(bool val){
+    enableAxisLog = val;
+}
+bool getEnableAxisLog(){
+    return enableAxisLog;
+}
+void setEnablePovLog(bool val){
+    enablePovLog = val;
+}
+bool getEnablePovLog(){
+    return enablePovLog;
+}
 
 void setIsRuning(bool val){
     isRuning = val;
@@ -154,7 +201,7 @@ bool openDiDevice(int deviceIndex) {
     return true;
 }
 // 获取设备状态信息
-QList<MappingRelation*> getInputState() {
+QList<MappingRelation*> getInputState(bool enableLog) {
     QList<MappingRelation*> list;
 
     // 方向盘按键状态
@@ -178,15 +225,74 @@ QList<MappingRelation*> getInputState() {
 
     // 获取按键状态
     if (SUCCEEDED(g_pDevice->GetDeviceState(sizeof(DIJOYSTATE2), &js))) {
+
+        QString btnLog = "";
+        if(enableLog && getEnableBtnLog()){
+            btnLog.append("按键数据: { ");
+        }
+
+
         // 遍历按键，查看按键是否按下
         for (int i = 0; i < 128; i++) {
             if (js.rgbButtons[i] & 0x80) {
                 //qDebug() << "按键" << i << "被按下";
                 std::string btnStr = "按键" + std::to_string(i);
-
                 list.append(new MappingRelation(btnStr, WHEEL_BUTTON, i, 0, ""));
             }
+
+            // 记录日志
+            if(enableLog && getEnableBtnLog()){
+                int val = static_cast<int>(js.rgbButtons[i]);
+                if(val > 0){
+                    btnLog.append("<span style='color:green;'><b>" + std::to_string(val) + "</b></span>").append(", ");
+                }else{
+                    btnLog.append(std::to_string(val)).append(", ");
+                }
+
+            }
         }
+        if(enableLog && getEnableBtnLog()){
+            btnLog.append("}");
+        }
+
+
+        // 遍历摇杆数据
+        // DWORD	rgdwPOV[4];
+        QString povLog = "";
+        if(enableLog && getEnablePovLog()){
+            povLog.append("摇杆/十字键数据: { ");
+        }
+        for(int j=0; j<4; j++){
+            auto val = static_cast<int>(js.rgdwPOV[j]);
+
+            if(val > -1){
+                // 格式化
+                int formatVal = val;
+                while(true){
+                    if(formatVal < 361){
+                        break;
+                    }
+
+                    formatVal /= 10;
+                }
+                std::string btnStr = "摇杆" + std::to_string(j+1) + "-角度" + std::to_string(formatVal);
+                list.append(new MappingRelation(btnStr, WHEEL_BUTTON, val, 0, ""));
+            }
+
+            // 记录日志
+            if(enableLog && getEnableBtnLog()){
+                if(val > -1){
+                    povLog.append("<span style='color:green;'><b>" + std::to_string(val) + "</b></span>").append(", ");
+                }else{
+                    povLog.append(std::to_string(val)).append(", ");
+                }
+
+            }
+        }
+        if(enableLog && getEnablePovLog()){
+            povLog.append("}");
+        }
+
 
         // 映射xbox
         if(getIsXboxMode()){
@@ -228,6 +334,38 @@ QList<MappingRelation*> getInputState() {
             }
         }
 
+        // 记录日志
+        if(enableLog){
+            // 获取当前日期和时间
+            QDateTime currentDateTime = QDateTime::currentDateTime();
+
+            // 格式化输出当前日期和时间
+            QString logText = "<p>[" + currentDateTime.toString("yyyy-MM-dd HH:mm:ss") + "] 设备状态数据:<br/>";
+
+            if(getEnableBtnLog()){
+                logText.append("    ").append(btnLog).append("<br/>");
+            }
+            if(getEnablePovLog()){
+                logText.append("    ").append(povLog).append("<br/>");
+            }
+
+            if(getEnableAxisLog()){
+                logText.append("    ").append("轴数据: { ");
+                logText.append("X轴: " + std::to_string(js.lX)).append(", ");
+                logText.append("Y轴: " + std::to_string(js.lY)).append(", ");
+                logText.append("Z轴: " + std::to_string(js.lZ)).append(", ");
+                logText.append("X轴旋转: " + std::to_string(js.lRx)).append(", ");
+                logText.append("Y轴旋转: " + std::to_string(js.lRy)).append(", ");
+                logText.append("Z轴旋转: " + std::to_string(js.lRz)).append(", ");
+                logText.append("滑动轴1: " + std::to_string(js.rglSlider[0])).append(", ");
+                logText.append("滑动轴2: " + std::to_string(js.rglSlider[1])).append(", ");
+                logText.append("}");
+            }
+
+            logText.append("</p>");
+
+            pushToQueue(logText);
+        }
     }else{
         qDebug() << "获取设备状态信息失败!";
         qDebug() << "GetDeviceState failed with error:" << HRESULT_CODE(hr);

@@ -5,6 +5,7 @@
 #include <dinput.h>
 #include <mapping_relation.h>
 #include <map>
+#include<QQueue>
 
 #define WHEEL_BUTTON "wheel_button"
 #define WHEEL_AXIS "wheel_axis"
@@ -27,11 +28,30 @@ extern QList<DiDeviceInfo> diDeviceList;
 // 轴名称对应数值范围map
 extern std::map<std::string, DIPROPRANGE> axisValueRangeMap;
 
+// 全局变量, 日志队列
+extern QQueue<QString> logQueue;
+void pushToQueue(QString data);
+QString popQueue();
+int getQueueSize();
+
+// 开启按键日志
+extern bool enableBtnLog;
+// 开启轴日志
+extern bool enableAxisLog;
+// 摇杆日志(十字键)
+extern bool enablePovLog;
+void setEnableBtnLog(bool val);
+bool getEnableBtnLog();
+void setEnableAxisLog(bool val);
+bool getEnableAxisLog();
+void setEnablePovLog(bool val);
+bool getEnablePovLog();
+
 
 BOOL CALLBACK EnumDevicesCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext);
 bool initDirectInput();
 bool openDiDevice(int deviceIndex);
-QList<MappingRelation*> getInputState();
+QList<MappingRelation*> getInputState(bool enableLog);
 void cleanupDirectInput();
 void getDipropRange(long axisCode, std::string axisName);
 // 扫描设备

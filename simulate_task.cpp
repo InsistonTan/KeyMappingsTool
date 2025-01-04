@@ -1,6 +1,5 @@
 #include <simulate_task.h>
 #include <global.h>
-#include <QMessageBox>
 
 void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
     // 记录需要反转的轴
@@ -112,18 +111,23 @@ bool SimulateTask::initXboxController(){
     vigemClient = vigem_alloc();
     if (vigemClient == nullptr) {
         qDebug("ViGEmClient allocation failed!");
+        emit msgboxSignal(true, "虚拟手柄驱动初始化失败!\n如果重试后仍然失败, 请卸载驱动程序:\n设置-应用-安装的应用 找到 vigem bus driver 卸载\n卸载后再点击'开启全局映射'重装驱动");
         return false;
     }
 
-    if (!VIGEM_SUCCESS(vigem_connect(vigemClient))) {
+    auto connectRes = vigem_connect(vigemClient);
+    if (!VIGEM_SUCCESS(connectRes)) {
         qDebug("ViGEmClient connection failed!");
+        emit msgboxSignal(true, "连接虚拟手柄驱动失败!\n如果重试后仍然失败, 请卸载驱动程序:\n设置-应用-安装的应用 找到 vigem bus driver 卸载\n卸载后再点击'开启全局映射'重装驱动");
         return false;
     }
 
     // 虚拟出一个xbox手柄
     vigemTarget = vigem_target_x360_alloc();
-    if (!VIGEM_SUCCESS(vigem_target_add(vigemClient, vigemTarget))) {
+    auto addRes = vigem_target_add(vigemClient, vigemTarget);
+    if (!VIGEM_SUCCESS(addRes)) {
         qDebug("Adding virtual Xbox 360 controller failed!");
+        emit msgboxSignal(true, "添加虚拟手柄失败!\n如果重试后仍然失败, 请卸载驱动程序:\n设置-应用-安装的应用 找到 vigem bus driver 卸载\n卸载后再点击'开启全局映射'重装驱动");
         return false;
     }
 
@@ -312,8 +316,6 @@ void SimulateTask::doWork(){
     // 模拟xbox手柄, 需要初始化
     if(getIsXboxMode()){
         if(!initXboxController()){
-            QMessageBox::critical(nullptr, "错误", "初始化虚拟xbox手柄失败, 请重试");
-
             // 关闭虚拟xbox设备
             closeXboxController();
 
@@ -323,9 +325,13 @@ void SimulateTask::doWork(){
         }
     }
 
+    setIsRuning(true);
+    emit startedSignal();
+    emit msgboxSignal(false, "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
+
     while(getIsRunning()){
         // 轮询设备状态
-        auto res = getInputState();
+        auto res = getInputState(false);
 
         // 根据本次设备状态, 松开本次没有被按下的按键
         releaseAllKey(res);
@@ -419,6 +425,8 @@ void SimulateTask::doWork(){
 
     // 提交工作结束信号
     emit workFinished();
+
+    emit msgboxSignal(false, "全局映射已停止!");
 }
 
 // 模拟按键操作

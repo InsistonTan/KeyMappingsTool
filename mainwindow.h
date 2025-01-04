@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include<device_info.h>
 #include<mapping_relation.h>
+#include"logwindow.h"
 
 
 #define MAX_STR 255
@@ -39,6 +40,8 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    LogWindow *logWindow;// 日志窗口
 
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
     //std::vector<DeviceInfo*> deviceList;// 设备列表
@@ -98,6 +101,10 @@ protected:
     // 检查驱动
     bool checkDriverInstalled();
 
+public slots:
+    // 模拟服务报错的slot
+    void sinmulateMsgboxSolt(bool isError, QString text);
+    void simulateStartedSlot();
 
 private slots:
     // 开启全局映射 按钮的槽函数
@@ -135,5 +142,6 @@ private slots:
 
     void on_pushButton_5_clicked();
     void on_pushButton_6_clicked();
+    void on_pushButton_7_clicked();
 };
 #endif // MAINWINDOW_H

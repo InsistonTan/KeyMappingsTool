@@ -18,6 +18,7 @@
 #include<QProcess>
 #include<cmath>
 #include <QCheckBox>
+#include<QTimer>
 
 
 
@@ -96,6 +97,9 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     // 扫描用户保存的配置文件
     scanMappingFile();
+
+    // 日志窗口
+    this->logWindow = new LogWindow();
 }
 
 void MainWindow::scanMappingFile(){
@@ -173,9 +177,7 @@ void MainWindow::on_pushButton_2_clicked()
         return;
     }
 
-    ui->label_4->setText("已启动");
-    ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
-    setIsRuning(true);
+
 
     // 创建监听设备输入数据的任务
     SimulateTask *task = new SimulateTask(&mappingList);
@@ -191,13 +193,15 @@ void MainWindow::on_pushButton_2_clicked()
     QObject::connect(task, &SimulateTask::workFinished, thread, &QThread::quit);
     QObject::connect(task, &SimulateTask::workFinished, task, &SimulateTask::deleteLater);
     QObject::connect(task, &SimulateTask::workFinished, this, &MainWindow::on_pushButton_3_clicked);
+    QObject::connect(task, &SimulateTask::msgboxSignal, this, &MainWindow::sinmulateMsgboxSolt);
+    QObject::connect(task, &SimulateTask::startedSignal, this, &MainWindow::simulateStartedSlot);
     QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
     // 启动线程
     thread->start();
 
     // 显示信息框
-    QMessageBox::information(nullptr, "提醒", "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
+    //QMessageBox::information(this, "提醒", "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
 
     // 保存当前配置的映射到本地文件
     saveMappingsToFile("");
@@ -224,11 +228,19 @@ void MainWindow::on_pushButton_3_clicked()
     setIsRuning(false);
 
     // 显示信息框
-    QMessageBox::information(nullptr, "提醒", "已停止全局映射!");
+    //QMessageBox::information(this, "提醒", "已停止全局映射!");
 }
 
 void MainWindow::showErrorMessage(std::string *text) {
-    QMessageBox::critical(nullptr, "错误", text == nullptr ? "还未选择任何设备!" : text->data());
+    // 使用定时器来模拟非阻塞的消息框
+    QTimer* timer = new QTimer(this);
+    timer->setSingleShot(true);
+    connect(timer, &QTimer::timeout, this, [=]() {
+        QMessageBox::critical(this, "错误", text == nullptr ? "还未选择任何设备!" : text->data());
+    });
+    // 启动定时器
+    timer->start(100);  // 500毫秒后触发
+
 }
 
 bool MainWindow::hasAddToMappingList(std::string btn_name){
@@ -303,7 +315,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
             : mapping->dev_btn_name.data());
     label1->setMaximumHeight(30);
     label1->setMinimumHeight(30);
-    label1->setMaximumWidth(80);
+    label1->setMaximumWidth(90);
     label1->setStyleSheet("QLabel{color:blue;}");
     label1->setObjectName(currentRowIndex);
 
@@ -600,7 +612,7 @@ MappingRelation* MainWindow::getDevBtnData(){
 
     // 监听设备按键状态
     for(int i=0; i<60; i++){
-        auto res = getInputState();
+        auto res = getInputState(true);
         if(res.size() > 0){
             for(auto item : res){
                 // 方向盘的轴
@@ -995,5 +1007,26 @@ void MainWindow::on_pushButton_6_clicked()
             ui->comboBox->setCurrentIndex(-1);
         }
     }
+}
+
+
+void MainWindow::on_pushButton_7_clicked()
+{
+    this->logWindow->show();
+}
+
+// 模拟服务报错的slot
+void MainWindow::sinmulateMsgboxSolt(bool isError, QString text){
+    if(isError){
+        QMessageBox::critical(this, "错误", text);
+    }else{
+        QMessageBox::information(this, "提醒", text);
+    }
+
+}
+
+void MainWindow::simulateStartedSlot(){
+    ui->label_4->setText("已启动");
+    ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
 }
 

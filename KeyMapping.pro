@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     global.cpp \
+    logwindow.cpp \
     main.cpp \
     mainwindow.cpp \
     simulate_task.cpp
@@ -18,12 +19,15 @@ HEADERS += \
     device_info.h \
     global.h \
     key_map.h \
+    logwindow.h \
+    logworker.h \
     mainwindow.h \
     mapping_relation.h \
     simulate_task.h \
     utils.h
 
 FORMS += \
+    logwindow.ui \
     mainwindow.ui
 
 # Default rules for deployment.

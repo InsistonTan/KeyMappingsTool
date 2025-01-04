@@ -51,6 +51,9 @@ signals:
     // 任务结束信号
     void workFinished();
 
+    void msgboxSignal(bool isError, QString msg);
+    void startedSignal();
+
 
 protected:
     bool isAixsRotate(std::string btnName);
