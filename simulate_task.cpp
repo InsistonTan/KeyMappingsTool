@@ -69,6 +69,22 @@ bool isCurrentBtnInList(QList<MappingRelation*> pressBtnList, std::string curren
     return false;
 }
 
+// bool isAxisEnterValidRange(MappingRelation *currentBtn, bool isPantiAxis){
+//     // 当前轴的值范围
+//     auto currentRange = axisValueRangeMap.find(currentBtn->dev_btn_name)->second;
+//     int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
+//     int mid = (currentMax - currentMin)/2;
+//     // 盘体轴
+//     if(isPantiAxis){
+//         // 左转
+//         if(currentBtn->dev_btn_name.find("左转") != std::string::npos){
+//             return currentBtn->dev_btn_value <= mid * AXIS_VALID_PERCENT;
+//         }else{
+
+//         }
+//     }
+// }
+
 void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
     // 使用迭代器遍历并删除符合条件的键
     for (auto it = keyHoldingMap.begin(); it != keyHoldingMap.end(); ) {
@@ -310,6 +326,74 @@ QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
     }
 }
 
+QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
+    if(!res.isEmpty()){
+        for(auto &currentBtn : res){
+            auto btnStr = currentBtn->dev_btn_name;
+            // 轴映射键盘
+            if(!getIsXboxMode() && btnStr.find("轴") != std::string::npos){
+                // 当前轴的值范围
+                auto currentRange = axisValueRangeMap.find(btnStr)->second;
+                int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
+                int mid = (currentMax - currentMin)/2;
+
+                // 配置了盘面轴左转映射
+                if(handleMap.find(btnStr + "左转")!= handleMap.end()){
+                    // 设置了轴反转
+                    if(isAixsRotate(btnStr + "左转")){
+                        if(currentBtn->dev_btn_value >= static_cast<int>(mid + ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                            //btnStr += "左转";
+                            currentBtn->dev_btn_name += "左转";
+                        }
+                    }else{
+                        //qDebug("当前值: %d, 设定值: %d", currentBtn->dev_btn_value, static_cast<int>(mid - ((currentMax - mid) * getInnerDeadAreaPanti())));
+                        if(currentBtn->dev_btn_value <= static_cast<int>(mid - ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                            //btnStr += "左转";
+                            currentBtn->dev_btn_name += "左转";
+                        }
+                    }
+
+                }
+                // 配置了盘面轴右转映射
+                if(handleMap.find(btnStr + "右转")!= handleMap.end()){
+                    // 设置了轴反转
+                    if(isAixsRotate(btnStr + "右转")){
+                        if(currentBtn->dev_btn_value <= (mid - ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                            //btnStr += "右转";
+                            currentBtn->dev_btn_name += "右转";
+                        }
+                    }else{
+                        if(currentBtn->dev_btn_value >= (mid + ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                            //btnStr += "右转";
+                            currentBtn->dev_btn_name += "右转";
+                        }
+                    }
+
+                }
+                // 配置了踏板轴映射
+                if(handleMap.find(btnStr)!= handleMap.end()){
+                    // 设置了轴反转
+                    if(isAixsRotate(btnStr)){
+                        // 值小于内部死区范围不生效
+                        if(currentBtn->dev_btn_value > (currentMax - ((currentMax - currentMin) * getInnerDeadAreaTaban()))){
+                            //btnStr = "000000";
+                            currentBtn->dev_btn_name += "000000";
+                        }
+                    }else{
+                        // 值小于内部死区范围不生效
+                        if(currentBtn->dev_btn_value < (currentMin + ((currentMax - currentMin) * getInnerDeadAreaTaban()))){
+                            //btnStr = "000000";
+                            currentBtn->dev_btn_name += "000000";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
 void SimulateTask::doWork(){
     qDebug("全局映射启动!");
 
@@ -333,6 +417,9 @@ void SimulateTask::doWork(){
         // 轮询设备状态
         auto res = getInputState(false);
 
+        // 对res进行处理
+        res = handleResult(res);
+
         // 根据本次设备状态, 松开本次没有被按下的按键
         releaseAllKey(res);
 
@@ -348,6 +435,9 @@ void SimulateTask::doWork(){
                     continue;
                 }
 
+                // 当前方向盘按键
+                auto currentBtn = res[i];
+
                 // 查找设备按键映射键盘扫描码map
                 auto item = handleMap.find(btnStr);
 
@@ -358,16 +448,17 @@ void SimulateTask::doWork(){
                     // 映射键盘
                     if(!getIsXboxMode()){
                         // 对映射鼠标移动(-1到-4)之外的按键操作进行按下记录
-                        if(item->second < -4 || item->second > 0){
+                        if((item->second < -4 || item->second > 0)){
                             // 记录按键按下
                             keyHoldingMap.insert_or_assign(btnStr, item->second);
                         }
 
-                        qDebug("映射键盘模式-按键按下");
+                        //qDebug("映射键盘模式-按键按下");
+                        // 模拟键盘按键
                         simulateKeyPress(item->second, false);
                     }else{
                         // 映射xbox
-                        auto currentBtn = res[i];
+                        //auto currentBtn = res[i];
 
                         // 映射普通xbox按键
                         if(currentBtn->dev_btn_type == (std::string)WHEEL_BUTTON){
@@ -378,7 +469,6 @@ void SimulateTask::doWork(){
 
                             // 按下xbox对应按键
                             simulateXboxKeyPress(NormalButton, item->second, 0, false);
-
                         }else{
 
                             // 映射xbox轴
@@ -417,7 +507,7 @@ void SimulateTask::doWork(){
 
         //qDebug(str->toStdString().data());
 
-        Sleep(10);
+        Sleep(5);
     }
 
     // 关闭虚拟xbox设备

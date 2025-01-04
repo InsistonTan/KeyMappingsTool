@@ -47,6 +47,16 @@ bool getEnableAxisLog();
 void setEnablePovLog(bool val);
 bool getEnablePovLog();
 
+// 内部死区比例
+// 盘面轴死区
+extern double innerDeadAreaPanti;
+// 踏板轴死区
+extern double innerDeadAreaTaban;
+void setInnerDeadAreaPanti(double val);
+void setInnerDeadAreaTaban(double val);
+double getInnerDeadAreaPanti();
+double getInnerDeadAreaTaban();
+
 
 BOOL CALLBACK EnumDevicesCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext);
 bool initDirectInput();

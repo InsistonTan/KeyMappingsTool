@@ -14,8 +14,12 @@
 #define MOUSE_X_SPEED 6
 #define MOUSE_Y_SPEED 6
 
+// xbox模拟轴移动的速度
 #define XBOX_AXIS_SPEED 30000
 #define XBOX_TRIGGER_SPEED 250
+
+// 方向盘轴模拟键盘按键时, 轴的内部死区
+#define AXIS_VALID_PERCENT 0.03
 
 class SimulateTask : public QObject {
     Q_OBJECT
@@ -56,6 +60,9 @@ signals:
 
 
 protected:
+
+    QList<MappingRelation*> handleResult(QList<MappingRelation*> res);
+
     bool isAixsRotate(std::string btnName);
 
     bool isMappingValid(MappingRelation* mapping){

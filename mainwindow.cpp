@@ -34,7 +34,7 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     this->setFixedSize(800, 600);
     this->setWindowTitle("KeyMappingsTool v1.0.1");
-    this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
+    //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
     // listAllDevice();
@@ -100,6 +100,9 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     // 日志窗口
     this->logWindow = new LogWindow();
+
+    loadSettings();
+    this->settings = new DeadAreaSettings();
 }
 
 void MainWindow::scanMappingFile(){
@@ -227,6 +230,11 @@ void MainWindow::on_pushButton_3_clicked()
     ui->label_4->setStyleSheet("QLabel{color: rgb(255, 85, 0);}");
     setIsRuning(false);
 
+    if(!getIsXboxMode()){
+        ui->pushButton_8->show();
+    }
+
+
     // 显示信息框
     //QMessageBox::information(this, "提醒", "已停止全局映射!");
 }
@@ -267,6 +275,10 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
         if(mappingDevBtnData == nullptr){
             showErrorMessage(new std::string("未检测到按键被按下!"));
+            return;
+        }
+
+        if(mappingDevBtnData->dev_btn_name.empty()){
             return;
         }
 
@@ -479,6 +491,46 @@ void MainWindow::saveMappingsToFile(std::string filename){
     }
 }
 
+void MainWindow::loadSettings(){
+    // 要读取的文件路径
+    QFile file("settings");
+
+    // 文件不存在, 操作结束
+    if(!file.exists()){
+        qDebug() << "文件不存在: settings";
+        return;
+    }
+
+    // 打开文件进行读取
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+
+        // 逐行读取文件
+        // 逐行读取文件
+        if(!in.atEnd()) {
+            QString line0 = in.readLine(); // 读取一行
+            bool ok1, ok2;
+            double var1 = line0.toDouble(&ok1);
+            if(ok1 && var1 >= 0 && var1 <= 1){
+                innerDeadAreaPanti = var1;
+            }
+
+            if(!in.atEnd()) {
+                QString line1 = in.readLine(); // 读取一行
+                double var2 = line1.toDouble(&ok2);
+                if(ok2 && var2 >= 0 && var2 <= 1){
+                    innerDeadAreaTaban = var2;
+                }
+            }
+        }
+
+        // 关闭文件
+        file.close();
+    } else {
+        qDebug() << "Error opening file!";
+    }
+}
+
 void MainWindow::loadLastDeviceFile(){
     // 要读取的文件路径
     QFile file(LAST_DEVICE_FILENAME);
@@ -509,6 +561,9 @@ void MainWindow::loadLastDeviceFile(){
                         ui->radioButton_2->setChecked(true);
                         //ui->label_7->setText("Xbox按键");
                         setIsXboxMode(true);
+
+                        // 隐藏死区设置
+                        this->ui->pushButton_8->hide();
                     }
                 }
             }
@@ -610,9 +665,11 @@ MappingRelation* MainWindow::getDevBtnData(){
 
     std::map<std::string, int> tempRecord;
 
+
     // 监听设备按键状态
     for(int i=0; i<60; i++){
-        auto res = getInputState(true);
+        // 获取设备状态数据
+        auto res = getInputState((getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog())? true : false);
         if(res.size() > 0){
             for(auto item : res){
                 // 方向盘的轴
@@ -623,8 +680,46 @@ MappingRelation* MainWindow::getDevBtnData(){
                         tempRecord.insert_or_assign(item->dev_btn_name, item->dev_btn_value);
                     }else{
                         // 不是第一次读到该轴的值, 与第一次的值比较, 大于一定量才能确定是该轴要新建映射
-                        if(std::abs(item->dev_btn_value - tmpAxis->second) > 100){
-                            return item;
+                        if(std::abs(item->dev_btn_value - tmpAxis->second) > 500){
+                            // 映射xbox模式
+                            if(getIsXboxMode()){
+                                return item;
+                            }else{
+                                // 映射键盘模式
+                                // 确定是方向盘盘面转动轴还是踏板轴
+                                // 创建一个 QMessageBox
+                                QMessageBox msgBox;
+                                msgBox.setWindowTitle("请确认");
+                                msgBox.setText("检测到轴, 请确认是方向盘盘面转动, 还是踏板踩下");
+                                // 设置图标
+                                msgBox.setIcon(QMessageBox::Information);
+                                // 创建并添加自定义按钮
+                                QPushButton* panti = msgBox.addButton("是盘面轴", QMessageBox::ActionRole);
+                                QPushButton* taban = msgBox.addButton("是踏板轴", QMessageBox::ActionRole);
+                                QPushButton* cancel = msgBox.addButton("取消", QMessageBox::RejectRole);
+                                // 设置默认按钮
+                                msgBox.setDefaultButton(cancel);
+                                // 显示消息框
+                                msgBox.exec();
+                                // 判断用户点击'是盘面轴'按钮
+                                if (msgBox.clickedButton() == panti){
+                                    // 值增大, 说明是盘面轴右转
+                                    if(item->dev_btn_value > tmpAxis->second){
+                                        item->dev_btn_name += "右转";
+                                        return item;
+                                    }else if(item->dev_btn_value < tmpAxis->second){
+                                        item->dev_btn_name += "左转";
+                                        return item;
+                                    }
+                                }else if(msgBox.clickedButton() == taban){
+                                    // 踏板
+                                    return item;
+                                }else{
+                                    // 点击取消, 清空按键名称
+                                    item->dev_btn_name = "";
+                                    return item;
+                                }
+                            }
                         }
                     }
                 }else{
@@ -760,10 +855,10 @@ void MainWindow::on_pushButton_4_clicked()
         saveMappingsToFile(text.toStdString());
 
         // 清空映射列表配置页面
-        clearMappingsArea();
+        //clearMappingsArea();
 
         // 清空映射列表
-        mappingList.clear();
+        //mappingList.clear();
 
         // 判断是否需要加进配置文件下拉列表
         if(ui->comboBox_2->findText(text.toStdString().data()) == -1){
@@ -771,10 +866,14 @@ void MainWindow::on_pushButton_4_clicked()
         }
 
         // 切换到空白配置
-        ui->comboBox_2->setCurrentIndex(0);
+        //ui->comboBox_2->setCurrentIndex(0);
+        ui->comboBox_2->setCurrentText(text);
 
         // 重置当前配置文件名
-        currentMappingFileName = "";
+        //currentMappingFileName = "";
+        currentMappingFileName = text.toStdString();
+
+        QMessageBox::information(this, "提醒", "配置保存成功!");
     } else {
         showErrorMessage(new std::string("配置名称不能为空!"));
         return;
@@ -916,6 +1015,9 @@ void MainWindow::on_radioButton_clicked()
 
     // 重新寻找保存的配置文件(xbox)
     scanMappingFile();
+
+    // 显示死区设置
+    this->ui->pushButton_8->show();
 }
 
 void MainWindow::on_radioButton_2_clicked()
@@ -944,6 +1046,9 @@ void MainWindow::on_radioButton_2_clicked()
 
     // 重新寻找保存的配置文件(xbox)
     scanMappingFile();
+
+    // 隐藏死区设置
+    this->ui->pushButton_8->hide();
 }
 
 
@@ -1028,5 +1133,15 @@ void MainWindow::sinmulateMsgboxSolt(bool isError, QString text){
 void MainWindow::simulateStartedSlot(){
     ui->label_4->setText("已启动");
     ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
+    if(!getIsXboxMode()){
+        ui->pushButton_8->hide();
+    }
+
+}
+
+
+void MainWindow::on_pushButton_8_clicked()
+{
+    this->settings->show();
 }
 

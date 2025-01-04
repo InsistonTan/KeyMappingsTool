@@ -240,12 +240,12 @@
      <rect>
       <x>200</x>
       <y>480</y>
-      <width>221</width>
+      <width>131</width>
       <height>41</height>
      </rect>
     </property>
     <property name="text">
-     <string>保存当前配置, 并开启新配置页</string>
+     <string>保存当前配置</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_11">
@@ -334,6 +334,19 @@
     </property>
     <property name="text">
      <string>log</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_8">
+    <property name="geometry">
+     <rect>
+      <x>642</x>
+      <y>50</y>
+      <width>71</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>设置</string>
     </property>
    </widget>
   </widget>

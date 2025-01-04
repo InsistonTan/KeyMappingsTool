@@ -12,6 +12,24 @@ LPDIRECTINPUTDEVICE8 g_pDevice = nullptr;
 QList<DiDeviceInfo> diDeviceList;
 std::map<std::string, DIPROPRANGE> axisValueRangeMap;
 
+// 内部死区比例
+// 盘面轴死区
+double innerDeadAreaPanti = 0.03;
+// 踏板轴死区
+double innerDeadAreaTaban = 0.03;
+void setInnerDeadAreaPanti(double val){
+    innerDeadAreaPanti = val;
+}
+void setInnerDeadAreaTaban(double val){
+    innerDeadAreaTaban = val;
+}
+double getInnerDeadAreaPanti(){
+    return innerDeadAreaPanti;
+}
+double getInnerDeadAreaTaban(){
+    return innerDeadAreaTaban;
+}
+
 // 全局变量, log队列
 QQueue<QString> logQueue;
 QMutex queueMutex;
@@ -32,11 +50,11 @@ int getQueueSize(){
 }
 
 // 开启按键日志
-bool enableBtnLog = true;
+bool enableBtnLog = false;
 // 开启轴日志
 bool enableAxisLog = false;
 // 开启摇杆日志
-bool enablePovLog = true;
+bool enablePovLog = false;
 void setEnableBtnLog(bool val){
     enableBtnLog = val;
 }
@@ -295,7 +313,8 @@ QList<MappingRelation*> getInputState(bool enableLog) {
 
 
         // 映射xbox
-        if(getIsXboxMode()){
+        //if(getIsXboxMode()){
+        if(true){
             if(js.lX == js.lY && js.lY == js.lRx && js.lZ == js.lRx && js.lRx == js.lRy && js.lRy == js.lRz){
                 return list;
             }else{

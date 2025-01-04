@@ -7,9 +7,10 @@
 #include <cstring>
 #include <QVBoxLayout>
 #include <QComboBox>
-#include<device_info.h>
-#include<mapping_relation.h>
-#include"logwindow.h"
+#include <device_info.h>
+#include <mapping_relation.h>
+#include "logwindow.h"
+#include "deadareasettings.h"
 
 
 #define MAX_STR 255
@@ -42,6 +43,7 @@ private:
     Ui::MainWindow *ui;
 
     LogWindow *logWindow;// 日志窗口
+    DeadAreaSettings *settings;// 死区设置窗口
 
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
     //std::vector<DeviceInfo*> deviceList;// 设备列表
@@ -87,6 +89,7 @@ protected:
     void loadMappingsFile(std::string filename);
 
     void loadLastDeviceFile();
+    void loadSettings();
 
     void repaintMappings();
 
@@ -143,5 +146,6 @@ private slots:
     void on_pushButton_5_clicked();
     void on_pushButton_6_clicked();
     void on_pushButton_7_clicked();
+    void on_pushButton_8_clicked();
 };
 #endif // MAINWINDOW_H

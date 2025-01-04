@@ -9,6 +9,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    deadareasettings.cpp \
     global.cpp \
     logwindow.cpp \
     main.cpp \
@@ -16,6 +17,7 @@ SOURCES += \
     simulate_task.cpp
 
 HEADERS += \
+    deadareasettings.h \
     device_info.h \
     global.h \
     key_map.h \
@@ -27,6 +29,7 @@ HEADERS += \
     utils.h
 
 FORMS += \
+    deadareasettings.ui \
     logwindow.ui \
     mainwindow.ui
 
