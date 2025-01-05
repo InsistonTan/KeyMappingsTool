@@ -1145,3 +1145,24 @@ void MainWindow::on_pushButton_8_clicked()
     this->settings->show();
 }
 
+
+void MainWindow::on_pushButton_9_clicked()
+{
+    //获取配置文件目录
+    QDir dir = QDir(QCoreApplication::applicationDirPath());
+    // 目录存在
+    if(dir.exists() && dir.cd(USER_MAPPINGS_DIR)){
+        std::string dirPath = QDir::toNativeSeparators(dir.absolutePath()).toStdString();
+        std::string command = "explorer \"" + dirPath + "\"";  // 使用双引号包裹路径，处理空格
+
+        // 将窗口最小化
+        showMinimized();
+
+        // 使用 QProcess 执行命令, 打开资源管理器
+        QProcess::startDetached(command.data());
+    }else{
+        QMessageBox::information(this, "提醒", "还没保存过配置");
+    }
+
+}
+

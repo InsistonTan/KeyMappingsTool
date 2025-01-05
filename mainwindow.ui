@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>797</width>
-    <height>606</height>
+    <height>584</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -220,7 +220,7 @@
     <property name="geometry">
      <rect>
       <x>100</x>
-      <y>530</y>
+      <y>550</y>
       <width>341</width>
       <height>31</height>
      </rect>
@@ -238,7 +238,7 @@
    <widget class="QPushButton" name="pushButton_4">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>180</x>
       <y>480</y>
       <width>131</width>
       <height>41</height>
@@ -301,7 +301,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>530</y>
+      <y>550</y>
       <width>81</width>
       <height>21</height>
      </rect>
@@ -349,18 +349,20 @@
      <string>设置</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton_9">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>480</y>
+      <width>111</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>管理配置文件</string>
+    </property>
+   </widget>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>797</width>
-     <height>25</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>
