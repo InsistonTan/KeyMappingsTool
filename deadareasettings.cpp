@@ -4,6 +4,7 @@
 #include<QFile>
 #include<QDoubleValidator>
 #include<QMessageBox>
+#include<QDir>
 
 DeadAreaSettings::DeadAreaSettings(QWidget *parent)
     : QMainWindow(parent)
@@ -12,6 +13,9 @@ DeadAreaSettings::DeadAreaSettings(QWidget *parent)
     ui->setupUi(this);
 
     this->setWindowTitle("设置");
+
+    // 获取软件本地数据目录
+    appDataDirPath = QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
 
     // 输入限制, 只能输入浮点数
     QDoubleValidator* validator = new QDoubleValidator(0.000000, 1.000000, 6, this);  // 设置有效数字范围为 0 到 1，最多保留 6 位小数
@@ -49,7 +53,7 @@ void DeadAreaSettings::on_pushButton_clicked()
 
 
     // 创建一个 QFile 对象，并打开文件进行写入
-    QFile file2("settings");
+    QFile file2(appDataDirPath + "settings");
     QString text2;
     text2.append(ui->lineEdit->text()).append("\n").append(ui->lineEdit_2->text());
 

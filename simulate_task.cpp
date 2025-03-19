@@ -101,7 +101,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
 
         // 本次按下的按键列表为空, 或者当前按下的按键列表中不包含当前按键, 则松开当前按键
         if (pressBtnList.empty() || !isCurrentBtnInList(pressBtnList, btnStr)) {
-            qDebug("按键释放");
+            //qDebug("按键释放");
 
             // 映射键盘
             if(!getIsXboxMode()){

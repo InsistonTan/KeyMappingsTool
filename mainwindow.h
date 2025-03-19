@@ -54,6 +54,8 @@ private:
     std::string deviceName; // 设备名称
     std::string currentMappingFileName;// 当前配置文件的文件名
 
+    QString appDataDirPath; // 软件本地数据存放的路径
+
     //unsigned char buf[MAX_BUF];
     //wchar_t wstr[MAX_STR];
     //int res;

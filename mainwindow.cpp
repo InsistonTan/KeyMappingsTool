@@ -39,6 +39,22 @@ MainWindow::MainWindow(QMainWindow *parent)
     // 遍历所有设备
     // listAllDevice();
 
+    // 获取软件本地数据目录
+    appDataDirPath = QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
+    QDir dir = QDir(QDir::homePath() + "/AppData/Local/");
+    // 使用 QDir 创建不存在的目录
+    if (!dir.exists("KeyMappingToolData")) {
+        if (!dir.mkdir("KeyMappingToolData")) {
+            showErrorMessage(new std::string("创建存放用户配置的文件夹失败"));
+            //return;
+        }
+    }
+    // 文件夹创建失败
+    if(!dir.exists("KeyMappingToolData")){
+        appDataDirPath = "";
+    }
+
+
     // 初始化directInput并扫描设备
     initDirectInput();
 
@@ -106,7 +122,8 @@ MainWindow::MainWindow(QMainWindow *parent)
 }
 
 void MainWindow::scanMappingFile(){
-    QDir dir = QDir::current();
+    QDir dir = appDataDirPath.isEmpty() ? QDir::current() : QDir(appDataDirPath);
+
     if(dir.exists(USER_MAPPINGS_DIR)){
         dir.cd(USER_MAPPINGS_DIR);
         // 获取文件列表，并筛选指定后缀的文件
@@ -451,7 +468,7 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::saveLastDeviceToFile(){
     // 创建一个 QFile 对象，并打开文件进行写入
-    QFile file2(LAST_DEVICE_FILENAME);  // 文件路径可以是绝对路径或相对路径
+    QFile file2(appDataDirPath + LAST_DEVICE_FILENAME);  // 文件路径可以是绝对路径或相对路径
     QString text2;
     text2.append(ui->comboBox->currentText().toStdString() + "\n" + (ui->radioButton->isChecked() ? KEYBOARD : XBOX));
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -481,11 +498,11 @@ void MainWindow::saveMappingsToFile(std::string filename){
         }
     }
 
+    // 获取当前目录
+    QDir dir = appDataDirPath.isEmpty() ? QDir::current() : QDir(appDataDirPath);
+
     // 如果filename不为空, 则检查配置文件文件夹是否存在,不存在就创建
     if(filename.size() > 0){
-        // 获取当前目录
-        QDir dir = QDir::current();
-
         // 使用 QDir 创建不存在的目录
         if (!dir.exists(USER_MAPPINGS_DIR)) {
             if (!dir.mkdir(USER_MAPPINGS_DIR)) {
@@ -498,7 +515,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
     // 创建一个 QFile 对象，并打开文件进行写入
     // 如果filename不为空, 则使用USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX后缀为文件名
     QFile file(filename.size() > 0
-                   ? (USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
+                   ? (appDataDirPath.toStdString() + USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
                    : MAPPINGS_FILENAME);
 
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -515,7 +532,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
 
 void MainWindow::loadSettings(){
     // 要读取的文件路径
-    QFile file("settings");
+    QFile file(appDataDirPath + "settings");
 
     // 文件不存在, 操作结束
     if(!file.exists()){
@@ -555,7 +572,7 @@ void MainWindow::loadSettings(){
 
 void MainWindow::loadLastDeviceFile(){
     // 要读取的文件路径
-    QFile file(LAST_DEVICE_FILENAME);
+    QFile file(appDataDirPath + LAST_DEVICE_FILENAME);
 
     // 文件不存在, 操作结束
     if(!file.exists()){
@@ -608,7 +625,7 @@ void MainWindow::loadMappingsFile(std::string filename){
 
     // 要读取的文件路径
     QString filePath = filename.size() > 0
-                           ? (USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
+                           ? (appDataDirPath.toStdString() + USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
                            : MAPPINGS_FILENAME;
     QFile file(filePath);
 
@@ -1182,7 +1199,13 @@ void MainWindow::on_pushButton_8_clicked()
 void MainWindow::on_pushButton_9_clicked()
 {
     //获取配置文件目录
-    QDir dir = QDir(QCoreApplication::applicationDirPath());
+    QDir dir = appDataDirPath.isEmpty() ? QDir::current() : QDir(appDataDirPath);
+
+    // 用户配置文件夹不存在, 创建一个
+    if(dir.exists() && !dir.exists(USER_MAPPINGS_DIR)){
+        dir.mkdir(USER_MAPPINGS_DIR);
+    }
+
     // 目录存在
     if(dir.exists() && dir.cd(USER_MAPPINGS_DIR)){
         std::string dirPath = QDir::toNativeSeparators(dir.absolutePath()).toStdString();

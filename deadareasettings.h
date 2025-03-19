@@ -20,6 +20,7 @@ private slots:
 
 private:
     Ui::DeadAreaSettings *ui;
+    QString appDataDirPath; // 软件本地数据存放的路径
 };
 
 #endif // DEADAREASETTINGS_H
