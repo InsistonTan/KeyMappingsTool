@@ -33,7 +33,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(800, 600);
-    this->setWindowTitle("KeyMappingsTool v1.0.2");
+    this->setWindowTitle("KeyMappingsTool v1.0.3");
     //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
@@ -196,8 +196,13 @@ void MainWindow::on_pushButton_2_clicked()
     QObject::connect(task, &SimulateTask::workFinished, thread, &QThread::quit);
     QObject::connect(task, &SimulateTask::workFinished, task, &SimulateTask::deleteLater);
     QObject::connect(task, &SimulateTask::workFinished, this, &MainWindow::on_pushButton_3_clicked);
+    // masgbox消息传递的信号
     QObject::connect(task, &SimulateTask::msgboxSignal, this, &MainWindow::sinmulateMsgboxSolt);
+    // 映射任务开启信号
     QObject::connect(task, &SimulateTask::startedSignal, this, &MainWindow::simulateStartedSlot);
+    // 暂停按键被按下的信号
+    QObject::connect(task, &SimulateTask::pauseClickSignal, this, &MainWindow::pauseClickSlot);
+    // 线程结束信号
     QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 
     // 启动线程
@@ -213,6 +218,18 @@ void MainWindow::on_pushButton_2_clicked()
     saveLastDeviceToFile();
 }
 
+void MainWindow::pauseClickSlot(){
+    if(getIsRunning()){
+        if(getIsPause()){
+            ui->label_4->setText("已暂停");
+            ui->label_4->setStyleSheet("QLabel{color: rgb(248, 201, 19);}");
+        }else{
+            ui->label_4->setText("已启动");
+            ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
+        }
+    }
+}
+
 
 void MainWindow::on_pushButton_3_clicked()
 {
@@ -224,6 +241,11 @@ void MainWindow::on_pushButton_3_clicked()
     if(deviceName.empty()){
         showErrorMessage(nullptr);
         return;
+    }
+
+    // 如果处于暂停状态, 将其重置
+    if(getIsPause()){
+        clickPauseBtn();
     }
 
     ui->label_4->setText("未启动");
@@ -765,10 +787,21 @@ QComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type){
 
     std::map<std::string, short> map = getConstKeyMap(dev_btn_type);
 
+    // 手动置顶 暂停按键选项
+    if(map.find(PAUSE_BTN_STR) != map.end()){
+        comboBox->addItem(PAUSE_BTN_STR);
+    }
+
     // 使用迭代器遍历 map
     for (std::map<std::string, short>::const_iterator item = map.cbegin(); item != map.cend(); ++item) {
+        // 跳过暂停按键, 已手动将其置顶
+        if(item->second == PAUSE_BTN_VAL){
+            continue;
+        }
         comboBox->addItem(item->first.data());
     }
+
+
 
     comboBox->setCurrentIndex(-1);
     comboBox->setMaximumHeight(30);

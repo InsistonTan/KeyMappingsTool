@@ -4,6 +4,9 @@
 #include<string>
 #include<map>
 
+#define PAUSE_BTN_STR "暂停/恢复映射快捷键"
+#define PAUSE_BTN_VAL -99
+
 // 手柄输入类型枚举
 enum XboxInputType {
     LeftJoystick = 1,// 左摇杆
@@ -34,6 +37,7 @@ const static std::map<std::string, short> VK_XBOX_AXIS_MAP = {
 
 const static std::map<std::string, short> VK_XBOX_BTN_MAP = {
     // 自定义按键
+    {PAUSE_BTN_STR, PAUSE_BTN_VAL},
     {"左摇杆-左移", -1},
     {"左摇杆-右移", -2},
     {"左摇杆-上移", -3},
@@ -66,6 +70,7 @@ const static std::map<std::string, short> VK_XBOX_BTN_MAP = {
 
 const static std::map<std::string, short> VK_MAP = {
     // 以下四个是自定义的四个操作(不是windows标准)
+    {PAUSE_BTN_STR, PAUSE_BTN_VAL},
     {"鼠标向左移动",-1},
     {"鼠标向上移动",-2},
     {"鼠标向右移动",-3},

@@ -57,7 +57,7 @@ signals:
 
     void msgboxSignal(bool isError, QString msg);
     void startedSignal();
-
+    void pauseClickSignal();
 
 protected:
 

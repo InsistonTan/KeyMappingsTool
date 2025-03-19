@@ -108,6 +108,7 @@ public slots:
     // 模拟服务报错的slot
     void sinmulateMsgboxSolt(bool isError, QString text);
     void simulateStartedSlot();
+    void pauseClickSlot();
 
 private slots:
     // 开启全局映射 按钮的槽函数

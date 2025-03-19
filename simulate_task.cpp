@@ -1,5 +1,6 @@
 #include <simulate_task.h>
 #include <global.h>
+#include <QDebug>
 
 void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
     // 记录需要反转的轴
@@ -444,6 +445,24 @@ void SimulateTask::doWork(){
                 // 该按键存在映射, 模拟映射的键盘按键操作
                 if (item != handleMap.end()) {
                     //qDebug("按键存在映射, 正在模拟对应操作");
+
+                    // 按下了配置的暂停按键
+                    if(item->second == PAUSE_BTN_VAL){
+                        clickPauseBtn();
+                        releaseAllKey({});
+
+                        // 提交暂停按键被按下的信号
+                        emit pauseClickSignal();
+
+                        Sleep(500);
+                    }
+
+                    // qDebug() << "当前isPause值: " << (isPause ? "true" : "false");
+
+                    // 如果当前是暂停状态, 跳过后续的映射操作
+                    if(getIsPause()){
+                        continue;
+                    }
 
                     // 映射键盘
                     if(!getIsXboxMode()){

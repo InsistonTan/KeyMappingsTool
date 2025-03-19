@@ -12,6 +12,16 @@ LPDIRECTINPUTDEVICE8 g_pDevice = nullptr;
 QList<DiDeviceInfo> diDeviceList;
 std::map<std::string, DIPROPRANGE> axisValueRangeMap;
 
+// 是否暂停全局映射
+bool isPause = false;
+// 点击了暂停按键
+void clickPauseBtn(){
+    isPause ? isPause = false : isPause = true;
+}
+bool getIsPause(){
+    return isPause;
+}
+
 // 内部死区比例
 // 盘面轴死区
 double innerDeadAreaPanti = 0.03;

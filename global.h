@@ -16,6 +16,11 @@ extern bool isRuning;
 // 当前运行模式, true为模拟xbox手柄, false为模拟键盘
 extern bool isXboxMode;
 
+// 是否暂停全局映射
+extern bool isPause;
+void clickPauseBtn();
+bool getIsPause();
+
 extern LPDIRECTINPUT8 g_pDirectInput;
 extern LPDIRECTINPUTDEVICE8 g_pDevice;
 struct DiDeviceInfo {
