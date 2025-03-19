@@ -516,7 +516,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
     // 如果filename不为空, 则使用USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX后缀为文件名
     QFile file(filename.size() > 0
                    ? (appDataDirPath.toStdString() + USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
-                   : MAPPINGS_FILENAME);
+                   : (appDataDirPath.toStdString() + MAPPINGS_FILENAME).data());
 
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file);  // 创建一个文本流对象
@@ -626,7 +626,7 @@ void MainWindow::loadMappingsFile(std::string filename){
     // 要读取的文件路径
     QString filePath = filename.size() > 0
                            ? (appDataDirPath.toStdString() + USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
-                           : MAPPINGS_FILENAME;
+                           : (appDataDirPath.toStdString() + MAPPINGS_FILENAME).data();
     QFile file(filePath);
 
     // 文件不存在, 操作结束
