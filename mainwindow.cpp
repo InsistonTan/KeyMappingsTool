@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "key_map.h"
+#include "BtnTriggerTypeEnum.h"
 #include <QApplication>
 #include <QMainWindow>
 #include <QLabel>
@@ -19,6 +20,7 @@
 #include<cmath>
 #include <QCheckBox>
 #include<QTimer>
+#include<QScrollBar>
 
 
 
@@ -32,8 +34,8 @@ MainWindow::MainWindow(QMainWindow *parent)
 {
     ui->setupUi(this);
 
-    this->setFixedSize(800, 600);
-    this->setWindowTitle("KeyMappingsTool v1.0.3");
+    this->setFixedSize(910, 584);
+    this->setWindowTitle("KeyMappingsTool v1.0.4");
     //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
@@ -304,9 +306,23 @@ bool isClickNewLineBtn(MappingRelation *mapping){
     return mapping == nullptr;
 }
 
+void MainWindow::onTriggerTypeComboBoxActivated(int index){
+    qDebug() << "按键触发模式选择: " << index;
+
+    // 获取触发信号的对象
+    QComboBox *comboBox = qobject_cast<QComboBox*>(sender());
+
+    // 获取到该映射的位置
+    int rowIndex = comboBox->objectName().toInt();
+
+    MappingRelation *mapping = mappingList[rowIndex];
+    // 更新选择的触发模式
+    mapping->btnTriggerType = static_cast<TriggerTypeEnum>(index);
+}
+
 void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     // isClickNewLineBtn()为true 代表是新增加的一行, 不是读取历史配置
-    MappingRelation *mappingDevBtnData;
+    MappingRelation *mappingDevBtnData = nullptr;
     if(isClickNewLineBtn(mapping)){
 
         // 获取设备按下的按键位置和值
@@ -350,14 +366,18 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         QLabel *h3 = new QLabel(getIsXboxMode() ? "Xbox按键" : "键盘按键");
         h3->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
-        QLabel *h4 = new QLabel("备注");
+        QLabel *h4 = new QLabel("按键触发模式");
         h4->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
+
+        QLabel *h5 = new QLabel("备注");
+        h5->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
         int col = -1;
         layout->addWidget(h1, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h2, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h3, 0, ++col, Qt::AlignLeft);
-        layout->addWidget(h4, 0, ++col, Qt::AlignCenter);
+        layout->addWidget(h4, 0, ++col, Qt::AlignLeft);
+        layout->addWidget(h5, 0, ++col, Qt::AlignLeft);
     }
 
     QLabel *label1 = new QLabel(isClickNewLineBtn(mapping)
@@ -376,6 +396,8 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label2->setMaximumWidth(60);
     label2->setObjectName(currentRowIndex);
 
+
+    // 键盘按键下拉框
     QComboBox *comboBox = createAKeyBoardComboBox(
         isClickNewLineBtn(mapping) ? mappingDevBtnData->dev_btn_type : mapping->dev_btn_type
         );
@@ -385,15 +407,42 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     if(!isClickNewLineBtn(mapping)){
         comboBox->setCurrentText(mapping->keyboard_name.data());
     }
-
     // 连接信号和槽
     connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);
+
+
+    // 按键触发模式下拉框
+    QComboBox *triggerTypeComboBox = new QComboBox();
+    triggerTypeComboBox->setMaximumHeight(36);
+    triggerTypeComboBox->setMinimumHeight(36);
+    triggerTypeComboBox->setMinimumWidth(160);
+    triggerTypeComboBox->setMaximumWidth(160);
+    triggerTypeComboBox->setStyleSheet("QComboBox{padding-left:10px;}"
+                                       "QComboBox:disabled {"
+                                       "   background-color: #f0f0f0;"
+                                       "   color: #888888;"
+                                       "}"
+                                       );
+    // 添加下拉框选择项
+    for(int i = 0; i < TriggerTypeEnum::End; i++){
+        TriggerTypeEnum enumItem = static_cast<TriggerTypeEnum>(i);
+        triggerTypeComboBox->addItem(TRIGGER_TYPE_ENUM_MAP[enumItem].data());
+    }
+    // 设置一个序号, 为后续操作提供一个位置
+    triggerTypeComboBox->setObjectName(currentRowIndex);
+    // 历史配置展示
+    if(!isClickNewLineBtn(mapping)){
+        triggerTypeComboBox->setCurrentText(TRIGGER_TYPE_ENUM_MAP[mapping->btnTriggerType].data());
+    }
+    // 连接信号和槽
+    connect(triggerTypeComboBox, &QComboBox::activated, this, &MainWindow::onTriggerTypeComboBoxActivated);
+
 
     QLineEdit *lineEdit = new QLineEdit(isClickNewLineBtn(mapping) ? "" : mapping->remark.data());
     lineEdit->setMaximumHeight(30);
     lineEdit->setMinimumHeight(30);
     lineEdit->setMinimumWidth(150);
-    lineEdit->setStyleSheet("QLineEdit{margin:0 0 0 50;}");
+    lineEdit->setStyleSheet("QLineEdit{margin:0 0 0 0; padding-left:5px;}");
     lineEdit->setObjectName(currentRowIndex);
     // 连接信号和槽
     QObject::connect(lineEdit, &QLineEdit::textChanged, this, &MainWindow::onLineEditTextChanged);
@@ -414,11 +463,15 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     layout->addWidget(label1, row, ++colomnIndex, Qt::AlignLeft);
     layout->addWidget(label2, row, ++colomnIndex, Qt::AlignLeft);
     layout->addWidget(comboBox, row, ++colomnIndex, Qt::AlignLeft);
+    layout->addWidget(triggerTypeComboBox, row, ++colomnIndex, Qt::AlignLeft); // triggerTypeComboBox
     layout->addWidget(lineEdit, row, ++colomnIndex, Qt::AlignLeft);
     layout->addWidget(deleteBtn, row, ++colomnIndex, Qt::AlignLeft);
 
     if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)
         || (mappingDevBtnData != nullptr && mappingDevBtnData->dev_btn_type == (std::string)WHEEL_AXIS)){
+
+        // 轴隐藏按键触发模式的下拉框
+        triggerTypeComboBox->setDisabled(true);
 
         // 反转轴的勾选
         QCheckBox *checkBox = new QCheckBox("反转该轴", this);
@@ -464,6 +517,11 @@ void MainWindow::on_pushButton_clicked()
     }
 
     paintOneLineMapping(nullptr, -1);
+
+    QTimer::singleShot(50, [=](){
+        QScrollBar *sbar = ui->scrollArea->verticalScrollBar();
+        sbar->setValue(sbar->maximum());
+    });
 }
 
 void MainWindow::saveLastDeviceToFile(){
@@ -494,7 +552,10 @@ void MainWindow::saveMappingsToFile(std::string filename){
                         + item->dev_btn_type + SPE
                         + item->keyboard_name + SPE
                         + std::to_string(item->keyboard_value) + SPE
-                        + item->remark + SPE + std::to_string(item->rotateAxis) + "\n");
+                        + item->remark + SPE
+                        + std::to_string(item->rotateAxis) + SPE
+                        + std::to_string(item->btnTriggerType)
+                        + "\n");
         }
     }
 
@@ -653,8 +714,15 @@ void MainWindow::loadMappingsFile(std::string filename){
                 mapping->keyboard_name = list[2].toStdString();
                 mapping->keyboard_value = list[3].toShort();
                 mapping->remark = list[4].toStdString();
-                if(list.size() == 6 && list[5] != nullptr && !list[5].isEmpty() && list[5].toInt() == 1){
+                // 是否旋转轴
+                if(list.size() >= 6 && list[5] != nullptr && !list[5].isEmpty() && list[5].toInt() == 1){
                     mapping->rotateAxis = 1;
+                }
+                // 按键触发模式
+                if(list.size() >= 7 && list[6] != nullptr && !list[6].isEmpty() && list[6].toInt() > 0){
+                    mapping->btnTriggerType = static_cast<TriggerTypeEnum>(list[6].toInt());
+                }else{
+                    mapping->btnTriggerType = TriggerTypeEnum::Normal;
                 }
                 mappingList.push_back(mapping);
             }
@@ -821,9 +889,11 @@ QComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type){
 
 
     comboBox->setCurrentIndex(-1);
-    comboBox->setMaximumHeight(30);
-    comboBox->setMinimumHeight(30);
-    comboBox->setMaximumWidth(200);
+    comboBox->setMaximumHeight(36);
+    comboBox->setMinimumHeight(36);
+    comboBox->setMinimumWidth(150);
+    comboBox->setMaximumWidth(150);
+    comboBox->setStyleSheet("QComboBox{padding-left:10px;}");
 
     return comboBox;
 }

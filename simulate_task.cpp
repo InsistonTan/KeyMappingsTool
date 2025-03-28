@@ -1,8 +1,15 @@
 #include <simulate_task.h>
 #include <global.h>
 #include <QDebug>
+#include<QTimer>
+#include<QCoreApplication>
 
 void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
+    // 记录按键触发模式
+    if(mapping != nullptr){
+        keyTriggerTypeMap.insert_or_assign(mapping->dev_btn_name, mapping->btnTriggerType);
+    }
+
     // 记录需要反转的轴
     if(mapping->rotateAxis == 1){
         rotateAxisList.push_back(mapping->dev_btn_name);
@@ -102,17 +109,50 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
         // 本次按下的按键列表为空, 或者当前按下的按键列表中不包含当前按键, 则松开当前按键
         if (pressBtnList.empty() || !isCurrentBtnInList(pressBtnList, btnStr)) {
             //qDebug("按键释放");
-
             // 映射键盘
             if(!getIsXboxMode()){
-                // 释放该位置的按键
-                simulateKeyPress(it->second, true);
+                // 根据触发模式, 进行对应处理
+                switch (keyTriggerTypeMap[btnStr]) {
+                case TriggerTypeEnum::Release:
+                case TriggerTypeEnum::PressAndRelease:
+                    // 松开按键触发
+                    // 模拟按下
+                    simulateKeyPress(it->second, false);
+                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                        //释放按键
+                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                            simulateKeyPress(it->second, true);
+                        });
+                    }, Qt::QueuedConnection);
+                    break;
+                default:{
+                    // 释放该位置的按键
+                    simulateKeyPress(it->second, true);
+                    }
+                }
+
             }else{
                 // 映射xbox
-                // 释放该位置的按键
-                simulateXboxKeyPress(NormalButton, it->second, 0, true);
+                // 根据触发模式, 进行对应处理
+                switch (keyTriggerTypeMap[btnStr]) {
+                case TriggerTypeEnum::Release:
+                case TriggerTypeEnum::PressAndRelease:
+                    // 松开按键触发
+                    // 模拟按下
+                    simulateXboxKeyPress(NormalButton, it->second, 0, false);
+                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                        //释放按键
+                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                            simulateXboxKeyPress(NormalButton, it->second, 0, true);
+                        });
+                    }, Qt::QueuedConnection);
+                    break;
+                default:{
+                    // 释放该位置的按键
+                    simulateXboxKeyPress(NormalButton, it->second, 0, true);
+                }
+                }
             }
-
 
             it = keyHoldingMap.erase(it); // 删除并更新迭代器
         } else {
@@ -472,9 +512,69 @@ void SimulateTask::doWork(){
                             keyHoldingMap.insert_or_assign(btnStr, item->second);
                         }
 
+                        // 根据触发模式, 进行对应处理
+                        switch (keyTriggerTypeMap[currentBtn->dev_btn_name]) {
+                        case TriggerTypeEnum::Delay1s:
+                            qDebug() << "延迟1s触发";
+                            // 延迟1s触发
+                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                                QTimer::singleShot(1000, [=](){
+                                    simulateKeyPress(item->second, false);
+                                    //释放按键
+                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                        simulateKeyPress(item->second, true);
+                                    });
+                                });
+                            }, Qt::QueuedConnection);
+                            break;
+                        case TriggerTypeEnum::Delay3s:
+                            qDebug() << "延迟3s触发";
+                            // 延迟3s触发
+                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                                QTimer::singleShot(3000, [=](){
+                                    simulateKeyPress(item->second, false);
+                                    //释放按键
+                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                        simulateKeyPress(item->second, true);
+                                    });
+                                });
+                            }, Qt::QueuedConnection);
+                            break;
+                        case TriggerTypeEnum::Delay5s:
+                            qDebug() << "延迟5s触发";
+                            // 延迟5s触发
+                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                                QTimer::singleShot(5000, [=](){
+                                    simulateKeyPress(item->second, false);
+                                    //释放按键
+                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                        simulateKeyPress(item->second, true);
+                                    });
+                                });
+                            }, Qt::QueuedConnection);
+                            break;
+                        case TriggerTypeEnum::Release:
+                            // 松开按键才触发
+                            break;
+                        case TriggerTypeEnum::PressAndRelease:
+                            // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
+                            simulateKeyPress(item->second, false);
+                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                               //释放按键
+                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                    simulateKeyPress(item->second, true);
+                                });
+                            }, Qt::QueuedConnection);
+                            break;
+                        default:
+                            qDebug() << "默认的同步模式";
+                            // 默认的同步模式
+                            simulateKeyPress(item->second, false);
+                            break;
+                        }
+
                         //qDebug("映射键盘模式-按键按下");
-                        // 模拟键盘按键
-                        simulateKeyPress(item->second, false);
+
                     }else{
                         // 映射xbox
                         //auto currentBtn = res[i];
@@ -486,8 +586,68 @@ void SimulateTask::doWork(){
                             // 记录按键按下
                             keyHoldingMap.insert_or_assign(btnStr, item->second);
 
-                            // 按下xbox对应按键
-                            simulateXboxKeyPress(NormalButton, item->second, 0, false);
+                            // 根据触发模式, 进行对应处理
+                            switch (keyTriggerTypeMap[currentBtn->dev_btn_name]) {
+                            case TriggerTypeEnum::Delay1s:
+                                qDebug() << "延迟1s触发";
+                                // 延迟1s触发
+                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                                    QTimer::singleShot(1000, [=](){
+                                        simulateXboxKeyPress(NormalButton, item->second, 0, false);
+                                        //释放按键
+                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                            simulateXboxKeyPress(NormalButton, item->second, 0, true);
+                                        });
+                                    });
+                                }, Qt::QueuedConnection);
+                                break;
+                            case TriggerTypeEnum::Delay3s:
+                                qDebug() << "延迟3s触发";
+                                // 延迟3s触发
+                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                                    QTimer::singleShot(3000, [=](){
+                                        simulateXboxKeyPress(NormalButton, item->second, 0, false);
+                                        //释放按键
+                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                            simulateXboxKeyPress(NormalButton, item->second, 0, true);
+                                        });
+                                    });
+                                }, Qt::QueuedConnection);
+                                break;
+                            case TriggerTypeEnum::Delay5s:
+                                qDebug() << "延迟5s触发";
+                                // 延迟5s触发
+                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                                    QTimer::singleShot(5000, [=](){
+                                        simulateXboxKeyPress(NormalButton, item->second, 0, false);
+                                        //释放按键
+                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                            simulateXboxKeyPress(NormalButton, item->second, 0, true);
+                                        });
+                                    });
+                                }, Qt::QueuedConnection);
+                                break;
+                            case TriggerTypeEnum::Release:
+                                // 松开按键才触发
+                                break;
+                            case TriggerTypeEnum::PressAndRelease:
+                                // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
+                                simulateXboxKeyPress(NormalButton, item->second, 0, false);
+                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                                    //释放按键
+                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
+                                        simulateXboxKeyPress(NormalButton, item->second, 0, true);
+                                    });
+                                }, Qt::QueuedConnection);
+                                break;
+                            default:
+                                qDebug() << "默认的同步模式";
+                                // 默认的同步模式
+                                // 按下xbox对应按键
+                                simulateXboxKeyPress(NormalButton, item->second, 0, false);
+                                break;
+                            }
+
                         }else{
 
                             // 映射xbox轴

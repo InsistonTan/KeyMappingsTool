@@ -9,6 +9,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    BtnTriggerTypeEnum.cpp \
     deadareasettings.cpp \
     global.cpp \
     logwindow.cpp \
@@ -17,6 +18,7 @@ SOURCES += \
     simulate_task.cpp
 
 HEADERS += \
+    BtnTriggerTypeEnum.h \
     deadareasettings.h \
     device_info.h \
     global.h \

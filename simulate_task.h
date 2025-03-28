@@ -21,6 +21,9 @@
 // 方向盘轴模拟键盘按键时, 轴的内部死区
 #define AXIS_VALID_PERCENT 0.03
 
+// 模拟释放按键的延迟时间ms
+#define RELEASE_DELAY_MS 100
+
 class SimulateTask : public QObject {
     Q_OBJECT
 private:
@@ -29,6 +32,9 @@ private:
     std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map
 
     std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map
+
+    std::map<std::string, TriggerTypeEnum> keyTriggerTypeMap;// 记录按键触发模式的map
+
     //std::map<int, short> keyPosMap;// 记录按键位置对应键盘扫描码map
 
     std::vector<std::string> rotateAxisList;// 记录需要反转的轴

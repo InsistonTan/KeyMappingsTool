@@ -113,6 +113,9 @@ public slots:
     void pauseClickSlot();
 
 private slots:
+    // 按键触发模式选择下拉框 槽函数
+    void onTriggerTypeComboBoxActivated(int index);
+
     // 开启全局映射 按钮的槽函数
     void on_pushButton_2_clicked();
 

@@ -221,10 +221,10 @@ bool openDiDevice(int deviceIndex) {
 
     qDebug() << "连接设备成功！axisValueRangeMap.size():" << axisValueRangeMap.size();
 
-    if(axisValueRangeMap.size() < 8){
-        QMessageBox::critical(nullptr, "错误", "初始化设备: 获取方向盘各个轴的数值范围失败!");
-        return false;
-    }
+    //if(axisValueRangeMap.size() < 8){
+        //QMessageBox::warning(nullptr, "警告", "初始化设备: 获取方向盘各个轴的数值范围失败, 如果当前选择的设备不是方向盘请忽略此提醒");
+        //return false;
+    //}
 
     return true;
 }
