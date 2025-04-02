@@ -38,6 +38,9 @@ extern QQueue<QString> logQueue;
 void pushToQueue(QString data);
 QString popQueue();
 int getQueueSize();
+QString parseSuccessLog(QString srcText);
+QString parseWarningLog(QString srcText);
+QString parseErrorLog(QString srcText);
 
 // 开启按键日志
 extern bool enableBtnLog;

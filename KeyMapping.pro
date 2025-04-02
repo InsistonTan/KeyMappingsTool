@@ -9,6 +9,8 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    AssistFuncWindow.cpp \
+    AssistFuncWorker.cpp \
     BtnTriggerTypeEnum.cpp \
     deadareasettings.cpp \
     global.cpp \
@@ -18,6 +20,8 @@ SOURCES += \
     simulate_task.cpp
 
 HEADERS += \
+    AssistFuncWindow.h \
+    AssistFuncWorker.h \
     BtnTriggerTypeEnum.h \
     deadareasettings.h \
     device_info.h \
@@ -31,6 +35,7 @@ HEADERS += \
     utils.h
 
 FORMS += \
+    AssistFuncWindow.ui \
     deadareasettings.ui \
     logwindow.ui \
     mainwindow.ui

@@ -26,7 +26,7 @@ LogWindow::LogWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("设备按键数据日志");
+    setWindowTitle("日志");
 
     // 线程开启
     LogWorker *task = new LogWorker();

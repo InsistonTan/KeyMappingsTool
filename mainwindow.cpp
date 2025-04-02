@@ -35,7 +35,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(910, 584);
-    this->setWindowTitle("KeyMappingsTool v1.0.4");
+    this->setWindowTitle("KeyMappingsTool v1.0.5");
     //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
@@ -121,6 +121,8 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     loadSettings();
     this->settings = new DeadAreaSettings();
+
+    this->assistWindow = new AssistFuncWindow();
 }
 
 void MainWindow::scanMappingFile(){
@@ -638,6 +640,7 @@ void MainWindow::loadLastDeviceFile(){
     // 文件不存在, 操作结束
     if(!file.exists()){
         qDebug() << "文件不存在: " << LAST_DEVICE_FILENAME;
+        pushToQueue(parseWarningLog("记录上一次使用的设备的缓存文件不存在!"));
         return;
     }
 
@@ -651,8 +654,12 @@ void MainWindow::loadLastDeviceFile(){
             QString line0 = in.readLine(); // 读取一行
 
             qDebug("读取上一次使用的设备成功");
+            pushToQueue(parseSuccessLog("读取上一次使用的设备成功!"));
+
             if(hasLastDevInCurrentDeviceList(line0.toStdString())){
                 qDebug("上一次使用的设备在当前设备列表中");
+                pushToQueue(parseSuccessLog("上一次使用的设备在当前设备列表中, 自动选择该设备"));
+
                 deviceName = line0.toStdString();
                 ui->comboBox->setCurrentText(deviceName.data());
 
@@ -674,6 +681,7 @@ void MainWindow::loadLastDeviceFile(){
         file.close();
     } else {
         qDebug() << "Error opening file!";
+        pushToQueue(parseErrorLog("打开记录上一次使用的设备的缓存文件失败!"));
     }
 }
 
@@ -1290,5 +1298,11 @@ void MainWindow::on_pushButton_9_clicked()
         QMessageBox::information(this, "提醒", "还没保存过配置");
     }
 
+}
+
+
+void MainWindow::on_pushButton_10_clicked()
+{
+    this->assistWindow->show();
 }
 

@@ -454,6 +454,8 @@ void SimulateTask::doWork(){
     emit startedSignal();
     emit msgboxSignal(false, "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
 
+    pushToQueue(parseSuccessLog("启动全局映射成功!"));
+
     while(getIsRunning()){
         // 轮询设备状态
         auto res = getInputState(false);
@@ -696,6 +698,8 @@ void SimulateTask::doWork(){
     emit workFinished();
 
     emit msgboxSignal(false, "全局映射已停止!");
+
+    pushToQueue("全局映射已停止!");
 }
 
 // 模拟按键操作

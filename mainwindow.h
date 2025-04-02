@@ -11,6 +11,7 @@
 #include <mapping_relation.h>
 #include "logwindow.h"
 #include "deadareasettings.h"
+#include "AssistFuncWindow.h"
 
 
 #define MAX_STR 255
@@ -44,6 +45,7 @@ private:
 
     LogWindow *logWindow;// 日志窗口
     DeadAreaSettings *settings;// 死区设置窗口
+    AssistFuncWindow *assistWindow;// 辅助功能窗口
 
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
     //std::vector<DeviceInfo*> deviceList;// 设备列表
@@ -154,5 +156,6 @@ private slots:
     void on_pushButton_7_clicked();
     void on_pushButton_8_clicked();
     void on_pushButton_9_clicked();
+    void on_pushButton_10_clicked();
 };
 #endif // MAINWINDOW_H

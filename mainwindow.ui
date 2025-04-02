@@ -333,13 +333,13 @@
      </rect>
     </property>
     <property name="text">
-     <string>log</string>
+     <string>日志</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_8">
     <property name="geometry">
      <rect>
-      <x>750</x>
+      <x>660</x>
       <y>50</y>
       <width>71</width>
       <height>28</height>
@@ -360,6 +360,19 @@
     </property>
     <property name="text">
      <string>管理配置文件</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_10">
+    <property name="geometry">
+     <rect>
+      <x>740</x>
+      <y>50</y>
+      <width>81</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>辅助功能</string>
     </property>
    </widget>
   </widget>

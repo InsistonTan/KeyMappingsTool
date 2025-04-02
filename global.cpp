@@ -45,7 +45,12 @@ QQueue<QString> logQueue;
 QMutex queueMutex;
 void pushToQueue(QString data){
     QMutexLocker locker(&queueMutex);
-    logQueue.enqueue(data);
+    // 获取当前日期和时间
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+    // 格式化输出当前日期和时间
+    QString logText = "<p>[" + currentDateTime.toString("yyyy-MM-dd HH:mm:ss") + "] " + data + "</p>";
+
+    logQueue.enqueue(logText);
 }
 QString popQueue(){
     QMutexLocker locker(&queueMutex);
@@ -57,6 +62,15 @@ QString popQueue(){
 int getQueueSize(){
     QMutexLocker locker(&queueMutex);
     return logQueue.size();
+}
+QString parseSuccessLog(QString srcText){
+    return "<span style='color:rgb(0, 151, 144);'>" + srcText + "</span>";
+}
+QString parseWarningLog(QString srcText){
+    return "<span style='color:rgb(206, 122, 58);'>" + srcText + "</span>";
+}
+QString parseErrorLog(QString srcText){
+    return "<span style='color:red;'>" + srcText + "</span>";
 }
 
 // 开启按键日志
@@ -121,7 +135,8 @@ bool initDirectInput() {
         QMessageBox::critical(nullptr, "错误", "初始化DirectInput: 初始化失败！");
         return false;
     }
-    qDebug() << "DirectInput 初始化成功！";
+
+    pushToQueue(parseSuccessLog("DirectInput 初始化成功！"));
 
     // 列出所有连接的游戏控制器设备
     diDeviceList.clear();
@@ -129,7 +144,7 @@ bool initDirectInput() {
         QMessageBox::critical(nullptr, "错误", "初始化DirectInput: 扫描设备列表失败！");
         return false;
     }
-    qDebug() << "扫描设备成功！";
+    pushToQueue(parseSuccessLog("扫描设备成功！"));
 
     return true;
 }
@@ -140,6 +155,7 @@ void scanDevice(){
     }
 
     if (FAILED(g_pDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY))) {
+        pushToQueue(parseErrorLog("扫描设备列表失败！"));
         QMessageBox::critical(nullptr, "错误", "扫描设备列表失败！");
         return;
     }
@@ -159,6 +175,7 @@ void getDipropRange(long axisCode, std::string axisName){
         axisValueRangeMap.insert_or_assign(axisName, dipr1);
     }else{
         qDebug("获取方向盘%s的值范围失败!!", axisName.data());
+        pushToQueue(parseWarningLog("获取方向盘" + QString(axisName.data()) + "的数值范围失败!"));
     }
 }
 
@@ -184,18 +201,21 @@ bool openDiDevice(int deviceIndex) {
     // 创建设备实例
     if (FAILED(g_pDirectInput->CreateDevice(diDeviceList[deviceIndex].guidInstance, &g_pDevice, NULL))) {
         qDebug() << "设备创建失败！";
+        pushToQueue(parseErrorLog("初始化设备: 设备创建失败！"));
         QMessageBox::critical(nullptr, "错误", "初始化设备: 设备创建失败！");
         return false;
     }
 
     if (FAILED(g_pDevice->SetDataFormat(&c_dfDIJoystick2))) {
         qDebug() << "设置数据格式失败！";
+        pushToQueue(parseErrorLog("初始化设备: 设置数据格式失败！"));
         QMessageBox::critical(nullptr, "错误", "初始化设备: 设置数据格式失败！");
         return false;
     }
 
     if (FAILED(g_pDevice->SetCooperativeLevel(GetForegroundWindow(), DISCL_BACKGROUND | DISCL_NONEXCLUSIVE))) {
         qDebug() << "设置协作模式失败！";
+        pushToQueue(parseErrorLog("初始化设备: 设置协作模式失败！"));
         QMessageBox::critical(nullptr, "错误", "初始化设备: 设置协作模式失败！");
         return false;
     }
@@ -205,6 +225,7 @@ bool openDiDevice(int deviceIndex) {
     capabilities.dwSize = sizeof(DIDEVCAPS);
     if (FAILED(g_pDevice->GetCapabilities(&capabilities))) {
         qDebug() << "获取设备能力失败！";
+        pushToQueue(parseErrorLog("初始化设备: 获取设备能力失败！"));
         QMessageBox::critical(nullptr, "错误", "初始化设备: 获取设备能力失败！");
         return false;
     }
@@ -220,6 +241,8 @@ bool openDiDevice(int deviceIndex) {
     getDipropRange(DIJOFS_SLIDER(1), "滑动轴2");
 
     qDebug() << "连接设备成功！axisValueRangeMap.size():" << axisValueRangeMap.size();
+
+    pushToQueue(parseSuccessLog("连接设备成功！"));
 
     //if(axisValueRangeMap.size() < 8){
         //QMessageBox::warning(nullptr, "警告", "初始化设备: 获取方向盘各个轴的数值范围失败, 如果当前选择的设备不是方向盘请忽略此提醒");
@@ -247,7 +270,8 @@ QList<MappingRelation*> getInputState(bool enableLog) {
 
     // 检查是否成功获取
     if (FAILED(hr)) {
-        qDebug() << "设备获取失败，错误代码：" << HRESULT_CODE(hr);
+        qDebug() << "设备poll()失败，错误代码：" << HRESULT_CODE(hr);
+        pushToQueue(parseErrorLog("设备poll()失败，错误代码：" + QString(std::to_string(HRESULT_CODE(hr)).data())));
         return list;
     }
 
@@ -366,10 +390,10 @@ QList<MappingRelation*> getInputState(bool enableLog) {
         // 记录日志
         if(enableLog){
             // 获取当前日期和时间
-            QDateTime currentDateTime = QDateTime::currentDateTime();
+            //QDateTime currentDateTime = QDateTime::currentDateTime();
 
             // 格式化输出当前日期和时间
-            QString logText = "<p>[" + currentDateTime.toString("yyyy-MM-dd HH:mm:ss") + "] 设备状态数据:<br/>";
+            QString logText = "设备状态数据:<br/>";
 
             if(getEnableBtnLog()){
                 logText.append("    ").append(btnLog).append("<br/>");
@@ -398,6 +422,8 @@ QList<MappingRelation*> getInputState(bool enableLog) {
     }else{
         qDebug() << "获取设备状态信息失败!";
         qDebug() << "GetDeviceState failed with error:" << HRESULT_CODE(hr);
+
+        pushToQueue(parseErrorLog("获取设备数据失败，错误代码：" + QString(std::to_string(HRESULT_CODE(hr)).data())));
     }
 
     return list;
