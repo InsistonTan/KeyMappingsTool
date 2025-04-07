@@ -35,7 +35,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(910, 584);
-    this->setWindowTitle("KeyMappingsTool v1.0.5");
+    this->setWindowTitle("KeyMappingsTool v1.0.6");
     //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
@@ -843,6 +843,10 @@ MappingRelation* MainWindow::getDevBtnData(){
                 }
             }
         }
+
+        // 释放res内存
+        qDeleteAll(res);  // 删除所有指针指向的对象
+        res.clear();      // 清空列表
 
         Sleep(50);
     }

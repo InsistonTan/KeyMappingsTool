@@ -688,6 +688,10 @@ void SimulateTask::doWork(){
 
         //qDebug(str->toStdString().data());
 
+        // 释放res内存
+        qDeleteAll(res);  // 删除所有指针指向的对象
+        res.clear();      // 清空列表
+
         Sleep(5);
     }
 
