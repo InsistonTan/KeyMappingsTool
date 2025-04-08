@@ -11,5 +11,6 @@
 魔爪R3实测, 其他设备请自测
 
 
-![image](https://github.com/user-attachments/assets/d7688a37-9c51-4b17-99ac-b668c7b57f7a)
+![image](https://github.com/user-attachments/assets/393755e2-c5c6-438f-8ee4-49ab3e43827e)
+
 
