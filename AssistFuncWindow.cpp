@@ -97,7 +97,7 @@ void copyETS2PluginDll(QString ets2Path, QString pluginDllFile){
                     return;
                 }else{
                     dllPluginFile->copy(ETS2Dir->absolutePath() + "/" + pluginDllFile);
-                    pushToQueue(parseSuccessLog("复制插件成功!"));
+                    pushToQueue(parseSuccessLog("复制插件成功, 重启游戏后生效"));
                 }
             }
         }
