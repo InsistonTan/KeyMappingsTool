@@ -170,73 +170,93 @@ void MainWindow::repaintMappings(){
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    if(deviceName.empty()){
-        showErrorMessage(nullptr);
-        return;
+    if(!getIsRunning()){
+        if(deviceName.empty()){
+            showErrorMessage(nullptr);
+            return;
+        }
+
+        if(getMappingListActualSize() <= 0){
+            showErrorMessage(new std::string("映射列表为空!"));
+            return;
+        }
+
+        // xbox模式, 但驱动未安装, 无法启动
+        if(getIsXboxMode() && !checkDriverInstalled()){
+            qDebug("驱动未安装, 无法启动!");
+            return;
+        }
+
+        // 初始化directInput
+        if(!initDirectInput()){
+            return;
+        }
+        // 连接设备
+        if(!openDiDevice(ui->comboBox->currentIndex())){
+            return;
+        }
+
+        // 创建监听设备输入数据的任务
+        SimulateTask *task = new SimulateTask(&mappingList);
+        QThread *thread = new QThread();
+
+        // 将 worker 移到新线程
+        task->moveToThread(thread);
+
+        // 当线程开始时，启动工作任务
+        QObject::connect(thread, &QThread::started, task, &SimulateTask::doWork);
+
+        // 任务完成后，退出线程并清理
+        QObject::connect(task, &SimulateTask::workFinished, thread, &QThread::quit);
+        QObject::connect(task, &SimulateTask::workFinished, task, &SimulateTask::deleteLater);
+        // masgbox消息传递的信号
+        QObject::connect(task, &SimulateTask::msgboxSignal, this, &MainWindow::sinmulateMsgboxSolt);
+        // 映射任务开启信号
+        QObject::connect(task, &SimulateTask::startedSignal, this, &MainWindow::simulateStartedSlot);
+        // 暂停按键被按下的信号
+        QObject::connect(task, &SimulateTask::pauseClickSignal, this, &MainWindow::pauseClickSlot);
+        // 线程结束信号
+        QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+        // 启动线程
+        thread->start();
+
+        // 显示信息框
+        //QMessageBox::information(this, "提醒", "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
+
+        // 保存当前配置的映射到本地文件
+        saveMappingsToFile("");
+
+        // 保存上次使用的设备到本地
+        saveLastDeviceToFile();
+
+        ui->pushButton_2->setText("停止全局映射");
+        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);}");
     }
+    else{
+        if(deviceName.empty()){
+            showErrorMessage(nullptr);
+            return;
+        }
 
-    if(getIsRunning()){
-        showErrorMessage(new std::string("已经启动了!"));
-        return;
+        // 如果处于暂停状态, 将其重置
+        if(getIsPause()){
+            clickPauseBtn();
+        }
+
+        ui->label_4->setText("未启动");
+        ui->label_4->setStyleSheet("QLabel{color: rgb(255, 85, 0);}");
+        ui->pushButton_2->setText("启动全局映射");
+        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);}");
+        setIsRuning(false);
+
+        if(!getIsXboxMode()){
+            ui->pushButton_8->show();
+        }
+
+        // 显示信息框
+        //QMessageBox::information(this, "提醒", "已停止全局映射!");
     }
-
-
-    if(getMappingListActualSize() <= 0){
-        showErrorMessage(new std::string("映射列表为空!"));
-        return;
-    }
-
-    // xbox模式, 但驱动未安装, 无法启动
-    if(getIsXboxMode() && !checkDriverInstalled()){
-        qDebug("驱动未安装, 无法启动!");
-        return;
-    }
-
-    // 初始化directInput
-    if(!initDirectInput()){
-        return;
-    }
-    // 连接设备
-    if(!openDiDevice(ui->comboBox->currentIndex())){
-        return;
-    }
-
-
-
-    // 创建监听设备输入数据的任务
-    SimulateTask *task = new SimulateTask(&mappingList);
-    QThread *thread = new QThread();
-
-    // 将 worker 移到新线程
-    task->moveToThread(thread);
-
-    // 当线程开始时，启动工作任务
-    QObject::connect(thread, &QThread::started, task, &SimulateTask::doWork);
-
-    // 任务完成后，退出线程并清理
-    QObject::connect(task, &SimulateTask::workFinished, thread, &QThread::quit);
-    QObject::connect(task, &SimulateTask::workFinished, task, &SimulateTask::deleteLater);
-    QObject::connect(task, &SimulateTask::workFinished, this, &MainWindow::on_pushButton_3_clicked);
-    // masgbox消息传递的信号
-    QObject::connect(task, &SimulateTask::msgboxSignal, this, &MainWindow::sinmulateMsgboxSolt);
-    // 映射任务开启信号
-    QObject::connect(task, &SimulateTask::startedSignal, this, &MainWindow::simulateStartedSlot);
-    // 暂停按键被按下的信号
-    QObject::connect(task, &SimulateTask::pauseClickSignal, this, &MainWindow::pauseClickSlot);
-    // 线程结束信号
-    QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-
-    // 启动线程
-    thread->start();
-
-    // 显示信息框
-    //QMessageBox::information(this, "提醒", "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
-
-    // 保存当前配置的映射到本地文件
-    saveMappingsToFile("");
-
-    // 保存上次使用的设备到本地
-    saveLastDeviceToFile();
 }
 
 void MainWindow::pauseClickSlot(){
@@ -249,37 +269,6 @@ void MainWindow::pauseClickSlot(){
             ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
         }
     }
-}
-
-
-void MainWindow::on_pushButton_3_clicked()
-{
-    if(!getIsRunning()){
-        //showErrorMessage(new std::string("全局映射未启动!"));
-        return;
-    }
-
-    if(deviceName.empty()){
-        showErrorMessage(nullptr);
-        return;
-    }
-
-    // 如果处于暂停状态, 将其重置
-    if(getIsPause()){
-        clickPauseBtn();
-    }
-
-    ui->label_4->setText("未启动");
-    ui->label_4->setStyleSheet("QLabel{color: rgb(255, 85, 0);}");
-    setIsRuning(false);
-
-    if(!getIsXboxMode()){
-        ui->pushButton_8->show();
-    }
-
-
-    // 显示信息框
-    //QMessageBox::information(this, "提醒", "已停止全局映射!");
 }
 
 void MainWindow::showErrorMessage(std::string *text) {
