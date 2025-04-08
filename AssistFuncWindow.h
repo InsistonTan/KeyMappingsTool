@@ -4,6 +4,8 @@
 #include <QMainWindow>
 
 #define ASSIST_FUNC_SETTINGS "assist_func_settings.json"
+#define ETS2_BIN_PATH "\\steamapps\\common\\Euro Truck Simulator 2\\bin\\"
+#define ETS2_PLUGINS_DIR "plugins"
 
 namespace Ui {
 class AssistFuncWindow;
