@@ -44,7 +44,7 @@ private:
 
     QString ETS2InstallPath;// 欧卡2安装目录
 
-    bool ETS2_enbaleAutoCancelHandbreak = false;// 开启自动解除手刹
+    bool ETS2_enableAutoCancelHandbrake = false;// 开启自动解除手刹
     bool ETS2_enableMappingAfterOpening = false;// 开启软件后立即开启映射
 
     void scanETS2InstallPath();// 扫描欧卡2安装路径

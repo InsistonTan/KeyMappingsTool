@@ -110,7 +110,7 @@ protected:
 
 public slots:
     // 模拟服务报错的slot
-    void sinmulateMsgboxSolt(bool isError, QString text);
+    void simulateMsgboxSlot(bool isError, QString text);
     void simulateStartedSlot();
     void pauseClickSlot();
 
@@ -120,9 +120,6 @@ private slots:
 
     // 开启全局映射 按钮的槽函数
     void on_pushButton_2_clicked();
-
-    // 停止映射 按钮的槽函数
-    void on_pushButton_3_clicked();
 
     // 点击 新增映射 按钮的槽函数
     void on_pushButton_clicked();

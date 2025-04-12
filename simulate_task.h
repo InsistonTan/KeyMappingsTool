@@ -69,7 +69,7 @@ protected:
 
     QList<MappingRelation*> handleResult(QList<MappingRelation*> res);
 
-    bool isAixsRotate(std::string btnName);
+    bool isAxisRotate(std::string btnName);
 
     bool isMappingValid(MappingRelation* mapping){
         return mapping != nullptr && !mapping->dev_btn_name.empty() && mapping->keyboard_value != 0;
