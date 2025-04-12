@@ -12,7 +12,7 @@ DeadAreaSettings::DeadAreaSettings(QWidget *parent)
 {
     ui->setupUi(this);
 
-    this->setWindowTitle("设置");
+    this->setWindowTitle("死区设置");
 
     // 获取软件本地数据目录
     appDataDirPath = QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
