@@ -507,11 +507,22 @@ void MainWindow::on_pushButton_clicked()
         return;
     }
 
+    // 禁用按钮，防止重复点击
+    ui->pushButton->setEnabled(false); 
+    ui->pushButton->setText("等待输入...");
+
+    // 下面的函数会导致界面卡死, 需要重绘一下
+    this->repaint ();
+
     paintOneLineMapping(nullptr, -1);
 
     QTimer::singleShot(50, [=](){
         QScrollBar *sbar = ui->scrollArea->verticalScrollBar();
         sbar->setValue(sbar->maximum());
+
+        // 恢复按钮状态
+        ui->pushButton->setText("新增按键映射");
+        ui->pushButton->setEnabled(true);
     });
 }
 
