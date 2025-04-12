@@ -110,7 +110,7 @@ protected:
 
 public slots:
     // 模拟服务报错的slot
-    void sinmulateMsgboxSolt(bool isError, QString text);
+    void simulateMsgboxSlot(bool isError, QString text);
     void simulateStartedSlot();
     void pauseClickSlot();
 

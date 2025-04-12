@@ -210,7 +210,7 @@ void MainWindow::on_pushButton_2_clicked()
         QObject::connect(task, &SimulateTask::workFinished, thread, &QThread::quit);
         QObject::connect(task, &SimulateTask::workFinished, task, &SimulateTask::deleteLater);
         // masgbox消息传递的信号
-        QObject::connect(task, &SimulateTask::msgboxSignal, this, &MainWindow::sinmulateMsgboxSolt);
+        QObject::connect(task, &SimulateTask::msgboxSignal, this, &MainWindow::simulateMsgboxSlot);
         // 映射任务开启信号
         QObject::connect(task, &SimulateTask::startedSignal, this, &MainWindow::simulateStartedSlot);
         // 暂停按键被按下的信号
@@ -449,14 +449,14 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     connect(deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteBtnClicked);
 
 
-    int colomnIndex = -1;
+    int columnIndex = -1;
     int row = (index < 0 ? mappingList.size() : index) + 1;
-    layout->addWidget(label1, row, ++colomnIndex, Qt::AlignLeft);
-    layout->addWidget(label2, row, ++colomnIndex, Qt::AlignLeft);
-    layout->addWidget(comboBox, row, ++colomnIndex, Qt::AlignLeft);
-    layout->addWidget(triggerTypeComboBox, row, ++colomnIndex, Qt::AlignLeft); // triggerTypeComboBox
-    layout->addWidget(lineEdit, row, ++colomnIndex, Qt::AlignLeft);
-    layout->addWidget(deleteBtn, row, ++colomnIndex, Qt::AlignLeft);
+    layout->addWidget(label1, row, ++columnIndex, Qt::AlignLeft);
+    layout->addWidget(label2, row, ++columnIndex, Qt::AlignLeft);
+    layout->addWidget(comboBox, row, ++columnIndex, Qt::AlignLeft);
+    layout->addWidget(triggerTypeComboBox, row, ++columnIndex, Qt::AlignLeft); // triggerTypeComboBox
+    layout->addWidget(lineEdit, row, ++columnIndex, Qt::AlignLeft);
+    layout->addWidget(deleteBtn, row, ++columnIndex, Qt::AlignLeft);
 
     if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)
         || (mappingDevBtnData != nullptr && mappingDevBtnData->dev_btn_type == (std::string)WHEEL_AXIS)){
@@ -478,7 +478,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         // 绑定信号和槽
         connect(checkBox, &QCheckBox::toggled, this, &MainWindow::onCheckBoxToggle);
 
-        layout->addWidget(checkBox, row, ++colomnIndex, Qt::AlignLeft);
+        layout->addWidget(checkBox, row, ++columnIndex, Qt::AlignLeft);
     }
 }
 
@@ -1253,7 +1253,7 @@ void MainWindow::on_pushButton_7_clicked()
 }
 
 // 模拟服务报错的slot
-void MainWindow::sinmulateMsgboxSolt(bool isError, QString text){
+void MainWindow::simulateMsgboxSlot(bool isError, QString text){
     if(isError){
         QMessageBox::critical(this, "错误", text);
     }else{

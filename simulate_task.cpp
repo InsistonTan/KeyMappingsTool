@@ -30,7 +30,7 @@ void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
 
 }
 
-bool SimulateTask::isAixsRotate(std::string btnName){
+bool SimulateTask::isAxisRotate(std::string btnName){
     for(auto item : rotateAxisList){
         if(item == btnName){
             return true;
@@ -381,7 +381,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
                 // 配置了盘面轴左转映射
                 if(handleMap.find(btnStr + "左转")!= handleMap.end()){
                     // 设置了轴反转
-                    if(isAixsRotate(btnStr + "左转")){
+                    if(isAxisRotate(btnStr + "左转")){
                         if(currentBtn->dev_btn_value >= static_cast<int>(mid + ((currentMax - mid) * getInnerDeadAreaPanti()))){
                             //btnStr += "左转";
                             currentBtn->dev_btn_name += "左转";
@@ -398,7 +398,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
                 // 配置了盘面轴右转映射
                 if(handleMap.find(btnStr + "右转")!= handleMap.end()){
                     // 设置了轴反转
-                    if(isAixsRotate(btnStr + "右转")){
+                    if(isAxisRotate(btnStr + "右转")){
                         if(currentBtn->dev_btn_value <= (mid - ((currentMax - mid) * getInnerDeadAreaPanti()))){
                             //btnStr += "右转";
                             currentBtn->dev_btn_name += "右转";
@@ -414,7 +414,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
                 // 配置了踏板轴映射
                 if(handleMap.find(btnStr)!= handleMap.end()){
                     // 设置了轴反转
-                    if(isAixsRotate(btnStr)){
+                    if(isAxisRotate(btnStr)){
                         // 值小于内部死区范围不生效
                         if(currentBtn->dev_btn_value > (currentMax - ((currentMax - currentMin) * getInnerDeadAreaTaban()))){
                             //btnStr = "000000";
@@ -665,7 +665,7 @@ void SimulateTask::doWork(){
                                              + xboxMin;
 
                             // 反转轴的值
-                            if(isAixsRotate(btnStr)){
+                            if(isAxisRotate(btnStr)){
                                 finalValue = ((currentMax - static_cast<double>(currentBtn->dev_btn_value))
                                                 /(currentMax - currentMin) * (xboxMax - xboxMin))
                                              + xboxMin;
