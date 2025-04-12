@@ -142,9 +142,9 @@
    <widget class="QPushButton" name="pushButton_2">
     <property name="geometry">
      <rect>
-      <x>780</x>
+      <x>770</x>
       <y>490</y>
-      <width>111</width>
+      <width>121</width>
       <height>51</height>
      </rect>
     </property>
@@ -158,7 +158,7 @@
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
-      <x>770</x>
+      <x>780</x>
       <y>460</y>
       <width>71</width>
       <height>31</height>
@@ -171,9 +171,9 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>840</x>
+      <x>850</x>
       <y>460</y>
-      <width>71</width>
+      <width>51</width>
       <height>31</height>
      </rect>
     </property>
@@ -323,14 +323,14 @@
    <widget class="QPushButton" name="pushButton_8">
     <property name="geometry">
      <rect>
-      <x>660</x>
+      <x>650</x>
       <y>50</y>
-      <width>71</width>
+      <width>81</width>
       <height>28</height>
      </rect>
     </property>
     <property name="text">
-     <string>设置</string>
+     <string>死区设置</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_9">
