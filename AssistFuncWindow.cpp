@@ -43,11 +43,21 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
         ui->checkBox->setChecked(true);
         startAssistFuncWork();
     }
+
+    if(ETS2_enableMappingAfterOpening){
+        pushToQueue("开启 打开软件后立即开启映射");
+        ui->checkBox_2->setChecked(true);
+    }
 }
 
 AssistFuncWindow::~AssistFuncWindow()
 {
     delete ui;
+}
+
+bool AssistFuncWindow::getEnableMappingAfterOpening()
+{
+    return ETS2_enableMappingAfterOpening;
 }
 
 void AssistFuncWindow::saveSettings(){
@@ -56,6 +66,7 @@ void AssistFuncWindow::saveSettings(){
     QString text2;
     text2.append("{");
     text2.append("\n\t\"ETS2_enbaleAutoCancelHandbreak\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",").append("\n");
+    text2.append("\n\t\"ETS2_enableMappingAfterOpening\":").append(ui->checkBox_2->isChecked() ? "true" : "false").append(",").append("\n");
     text2.append("\n\t\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append("\n");
     text2.append("}");
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -92,7 +103,9 @@ void AssistFuncWindow::loadSettings(){
 
     // 读取信息
     bool enableETS2AutoCancelHandbreak = jsonObj["ETS2_enbaleAutoCancelHandbreak"].toBool();
+    bool enableAutoStartMapping = jsonObj["ETS2_enableMappingAfterOpening"].toBool();
     this->ETS2_enbaleAutoCancelHandbreak = enableETS2AutoCancelHandbreak;
+    this->ETS2_enableMappingAfterOpening = enableAutoStartMapping;
     // 欧卡2安装路径
     QString ets2Path = jsonObj["ETS2_installPath"].toString();
     if(!ets2Path.isEmpty()){
@@ -101,6 +114,8 @@ void AssistFuncWindow::loadSettings(){
 }
 
 void AssistFuncWindow::on_checkBox_stateChanged(int state){}
+
+void AssistFuncWindow::on_checkBox_2_stateChanged(int arg1){}
 
 void AssistFuncWindow::scanETS2InstallPath(){
     // 从注册表读取steam路径
@@ -264,3 +279,7 @@ void AssistFuncWindow::on_checkBox_clicked()
     unsave();
 }
 
+void AssistFuncWindow::on_checkBox_2_clicked()
+{
+    unsave();
+}

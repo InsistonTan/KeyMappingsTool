@@ -123,6 +123,10 @@ MainWindow::MainWindow(QMainWindow *parent)
     this->settings = new DeadAreaSettings();
 
     this->assistWindow = new AssistFuncWindow();
+
+    if(this->assistWindow->getEnableMappingAfterOpening()){
+        on_pushButton_2_clicked();
+    }
 }
 
 void MainWindow::scanMappingFile(){
