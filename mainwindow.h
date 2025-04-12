@@ -121,9 +121,6 @@ private slots:
     // 开启全局映射 按钮的槽函数
     void on_pushButton_2_clicked();
 
-    // 停止映射 按钮的槽函数
-    void on_pushButton_3_clicked();
-
     // 点击 新增映射 按钮的槽函数
     void on_pushButton_clicked();
 
