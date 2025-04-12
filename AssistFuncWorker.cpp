@@ -232,7 +232,7 @@ void AssistFuncWorker::doWork(){
     }
 
     // 手刹数据所在位置
-    int handbreakIndex = 501;
+    int handbrakeIndex = 501;
     // 油门数据所在位置的起点
     int acceleratorIndex = 465;
     // 油门值(0-1)
@@ -245,8 +245,8 @@ void AssistFuncWorker::doWork(){
         memcpy(&acceleratorResult, bytesData, sizeof(float));
 
         // 手刹为启用状态, 并且油门踩下大于50%, 模拟键盘的空格键解除手刹
-        //qDebug("手刹:%d, 油门:%.4f", static_cast<int>(bytes[handbreakIndex]), acceleratorResult);
-        if(static_cast<int>(bytes[handbreakIndex]) == 1 && acceleratorResult > 0.5){
+        //qDebug("手刹:%d, 油门:%.4f", static_cast<int>(bytes[handbrakeIndex]), acceleratorResult);
+        if(static_cast<int>(bytes[handbrakeIndex]) == 1 && acceleratorResult > 0.5){
             pushToQueue("当前手刹为启用状态, 且油门大于50%, 正在模拟空格键解除手刹...");
 
             // 模拟空格键按下

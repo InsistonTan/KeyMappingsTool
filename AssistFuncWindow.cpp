@@ -38,7 +38,7 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     }
 
     // 开启线程
-    if(ETS2_enbaleAutoCancelHandbreak){
+    if(ETS2_enableAutoCancelHandbrake){
         pushToQueue("开启 欧卡2自动解除手刹");
         ui->checkBox->setChecked(true);
         startAssistFuncWork();
@@ -55,7 +55,7 @@ void AssistFuncWindow::saveSettings(){
     QFile file2(appDataDirPath + ASSIST_FUNC_SETTINGS);  // 文件路径可以是绝对路径或相对路径
     QString text2;
     text2.append("{");
-    text2.append("\n\t\"ETS2_enbaleAutoCancelHandbreak\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",").append("\n");
+    text2.append("\n\t\"ETS2_enableAutoCancelHandbrake\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",").append("\n");
     text2.append("\n\t\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append("\n");
     text2.append("}");
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -91,8 +91,8 @@ void AssistFuncWindow::loadSettings(){
     QJsonObject jsonObj = doc.object();
 
     // 读取信息
-    bool enableETS2AutoCancelHandbreak = jsonObj["ETS2_enbaleAutoCancelHandbreak"].toBool();
-    this->ETS2_enbaleAutoCancelHandbreak = enableETS2AutoCancelHandbreak;
+    bool enableETS2AutoCancelHandbrake = jsonObj["ETS2_enableAutoCancelHandbrake"].toBool();
+    this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;
     // 欧卡2安装路径
     QString ets2Path = jsonObj["ETS2_installPath"].toString();
     if(!ets2Path.isEmpty()){
@@ -204,7 +204,7 @@ void AssistFuncWindow::on_pushButton_clicked()
 
     // 开启欧卡2自动解除手刹
     if(ui->checkBox->isChecked()){
-        if(ETS2_enbaleAutoCancelHandbreak == false){
+        if(ETS2_enableAutoCancelHandbrake == false){
             pushToQueue("开启 欧卡2自动解除手刹");
         }else{
             emit stopWork();
@@ -218,7 +218,7 @@ void AssistFuncWindow::on_pushButton_clicked()
 
     }else{
         // 关闭自动解除手刹
-        if(ETS2_enbaleAutoCancelHandbreak){
+        if(ETS2_enableAutoCancelHandbrake){
             pushToQueue("关闭 欧卡2自动解除手刹");
             emit stopWork();
         }
