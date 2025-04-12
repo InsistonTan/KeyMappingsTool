@@ -66,7 +66,7 @@
        <rect>
         <x>10</x>
         <y>30</y>
-        <width>451</width>
+        <width>471</width>
         <height>16</height>
        </rect>
       </property>
@@ -75,6 +75,32 @@
       </property>
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_2">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>10</y>
+        <width>111</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>选择欧卡目录</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>10</y>
+        <width>301</width>
+        <height>19</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>未选择欧卡目录!</string>
       </property>
      </widget>
     </widget>

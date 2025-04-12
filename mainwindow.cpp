@@ -35,7 +35,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(910, 584);
-    this->setWindowTitle("KeyMappingsTool v1.0.7");
+    this->setWindowTitle("KeyMappingsTool v1.0.8");
     //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备

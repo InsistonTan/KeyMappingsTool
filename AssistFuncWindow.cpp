@@ -7,6 +7,8 @@
 #include<QJsonDocument>
 #include<QJsonObject>
 #include<QSettings>
+#include<QFileDialog>
+#include<QTimer>
 
 AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -21,6 +23,20 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
 
     // 加载设置
     loadSettings();
+
+    // 扫描欧卡目录
+    if(ETS2InstallPath.isEmpty()){
+        scanETS2InstallPath();
+    }
+
+    if(ETS2InstallPath.isEmpty()){
+        ui->label_2->setStyleSheet("QLabel{color:red;}");
+    }else{
+        ui->label_2->setStyleSheet("QLabel{color:black;}");
+        ui->label_2->setToolTip(ETS2InstallPath);
+        ui->label_2->setText(ETS2InstallPath.size() > 40 ? ETS2InstallPath.left(40) + "..." : ETS2InstallPath);
+    }
+
     // 开启线程
     if(ETS2_enbaleAutoCancelHandbreak){
         pushToQueue("开启 欧卡2自动解除手刹");
@@ -39,7 +55,8 @@ void AssistFuncWindow::saveSettings(){
     QFile file2(appDataDirPath + ASSIST_FUNC_SETTINGS);  // 文件路径可以是绝对路径或相对路径
     QString text2;
     text2.append("{");
-    text2.append("\n\t\"ETS2_enbaleAutoCancelHandbreak\":").append(ETS2_enbaleAutoCancelHandbreak ? "true" : "false").append("\n");
+    text2.append("\n\t\"ETS2_enbaleAutoCancelHandbreak\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",").append("\n");
+    text2.append("\n\t\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append("\n");
     text2.append("}");
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file2);  // 创建一个文本流对象
@@ -76,11 +93,40 @@ void AssistFuncWindow::loadSettings(){
     // 读取信息
     bool enableETS2AutoCancelHandbreak = jsonObj["ETS2_enbaleAutoCancelHandbreak"].toBool();
     this->ETS2_enbaleAutoCancelHandbreak = enableETS2AutoCancelHandbreak;
+    // 欧卡2安装路径
+    QString ets2Path = jsonObj["ETS2_installPath"].toString();
+    if(!ets2Path.isEmpty()){
+        this->ETS2InstallPath = ets2Path;
+    }
 }
 
 void AssistFuncWindow::on_checkBox_stateChanged(int state){}
 
-void copyETS2PluginDll(QString ets2Path, QString pluginDllFile){
+void AssistFuncWindow::scanETS2InstallPath(){
+    // 从注册表读取steam路径
+    QSettings *settings = new QSettings("HKEY_CURRENT_USER\\Software\\Valve\\Steam", QSettings::NativeFormat);
+    // 读取 "SteamPath" 的值
+    QString steamPath = settings->value("SteamPath").toString();
+    // steam路径为空
+    if(steamPath.isEmpty()){
+        pushToQueue(parseErrorLog("从注册表读取steam安装路径失败, 请在 首页-辅助功能-选择欧卡目录 手动选择欧卡安装目录!"));
+        return;
+    }
+
+    pushToQueue("读取steam目录成功: " + steamPath);
+
+    QDir *ETS2Dir = new QDir(steamPath + ETS2_PATH);
+    if(!ETS2Dir->exists()){
+        pushToQueue(parseErrorLog("从steam安装目录读取欧卡2安装目录失败, 请在 首页-辅助功能-选择欧卡目录 手动选择欧卡安装目录!"));
+        return;
+    }
+
+    this->ETS2InstallPath = ETS2Dir->absolutePath();
+
+    pushToQueue("读取欧卡2安装目录成功: " + ETS2Dir->absolutePath());
+}
+
+bool copyETS2PluginDll(QString ets2Path, QString pluginDllFile){
     QDir *ETS2Dir = new QDir(ets2Path);
     if(ETS2Dir->exists()){
         if(!ETS2Dir->exists(ETS2_PLUGINS_DIR)){
@@ -94,40 +140,35 @@ void copyETS2PluginDll(QString ets2Path, QString pluginDllFile){
                 QFile *dllPluginFile = new QFile("plugins/" + pluginDllFile);
                 if(!dllPluginFile->exists()){
                     pushToQueue(parseErrorLog("软件安装目录/plugins/" + pluginDllFile + " 不存在, 无法将该插件复制到欧卡2 plugins 目录!"));
-                    return;
+                    return false;
                 }else{
-                    dllPluginFile->copy(ETS2Dir->absolutePath() + "/" + pluginDllFile);
+                    if(!dllPluginFile->copy(ETS2Dir->absolutePath() + "/" + pluginDllFile)){
+                        pushToQueue(parseErrorLog("复制插件失败!"));
+                        return false;
+                    }
                     pushToQueue(parseSuccessLog("复制插件成功, 重启游戏后生效"));
                 }
             }
         }
+    }else{
+        pushToQueue(parseErrorLog("文件夹不存在: " + ets2Path));
+        return false;
     }
+
+    return true;
 }
 
 // 检查欧卡2的遥测数据共享内存dll是否存在
-bool checkETS2Plugin(){
-    // 从注册表读取steam路径
-    QSettings *settings = new QSettings("HKEY_CURRENT_USER\\Software\\Valve\\Steam", QSettings::NativeFormat);
-    // 读取 "SteamPath" 的值
-    QString steamPath = settings->value("SteamPath").toString();
-    // steam路径为空
-    if(steamPath.isEmpty()){
-        pushToQueue(parseErrorLog("从注册表读取steam安装路径失败, 检测欧卡2遥测数据插件失败!"));
+bool AssistFuncWindow::checkETS2Plugin(){
+    if(this->ETS2InstallPath.isEmpty()){
+        pushToQueue(parseErrorLog("欧卡2安装路径为空!"));
         return false;
     }
 
-    pushToQueue("读取steam路径成功!");
-
-    QDir *ETS2Dir = new QDir(steamPath + ETS2_BIN_PATH);
-    if(!ETS2Dir->exists()){
-        pushToQueue(parseErrorLog("读取欧卡2安装路径失败!"));
+    if(!copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x64"), "ETS2SharedMemoryMapPlugin64.dll")){
         return false;
     }
-
-    pushToQueue("读取欧卡2安装路径成功!");
-
-    copyETS2PluginDll(QString(steamPath + ETS2_BIN_PATH + "win_x64"), "ETS2SharedMemoryMapPlugin64.dll");
-    copyETS2PluginDll(QString(steamPath + ETS2_BIN_PATH + "win_x86"), "ETS2SharedMemoryMapPlugin32.dll");
+    copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x86"), "ETS2SharedMemoryMapPlugin32.dll");
 
     return true;
 }
@@ -135,6 +176,7 @@ bool checkETS2Plugin(){
 void AssistFuncWindow::startAssistFuncWork(){
     // 检查欧卡2的遥测数据共享内存dll是否存在
     if(!checkETS2Plugin()){
+        pushToQueue(parseErrorLog("欧卡2自动解除手刹功能启动失败!"));
         return;
     }
 
@@ -156,28 +198,69 @@ void AssistFuncWindow::startAssistFuncWork(){
 
 void AssistFuncWindow::on_pushButton_clicked()
 {
+    // 保存设置
+    saveSettings();
+    save();
+
     // 开启欧卡2自动解除手刹
     if(ui->checkBox->isChecked()){
         if(ETS2_enbaleAutoCancelHandbreak == false){
             pushToQueue("开启 欧卡2自动解除手刹");
+        }else{
+            emit stopWork();
+        }
 
-            ETS2_enbaleAutoCancelHandbreak = true;
-
+        QTimer::singleShot(500, [=](){
+            pushToQueue("启用 欧卡2自动解除手刹功能");
             // 开启辅助功能任务
             startAssistFuncWork();
-        }
+        });
+
     }else{
         // 关闭自动解除手刹
         if(ETS2_enbaleAutoCancelHandbreak){
             pushToQueue("关闭 欧卡2自动解除手刹");
-
-            ETS2_enbaleAutoCancelHandbreak = false;
             emit stopWork();
         }
     }
 
-    saveSettings();
-
     this->hide();
+}
+
+
+void AssistFuncWindow::on_pushButton_2_clicked()
+{
+    // 打开文件夹选择对话框
+    QString folderPath = QFileDialog::getExistingDirectory(
+        this,                       // 父窗口
+        tr("选择欧卡2文件夹"),            // 对话框标题
+        QDir::homePath(),            // 默认打开的目录（用户主目录）
+        QFileDialog::ShowDirsOnly    // 只显示目录
+            | QFileDialog::DontResolveSymlinks  // 不解析符号链接
+        );
+
+    // 检查用户是否选择了文件夹（没有点击取消）
+    if (!folderPath.isEmpty()) {
+        this->ETS2InstallPath = folderPath;
+
+        ui->label_2->setStyleSheet("QLabel{color:black;}");
+        ui->label_2->setToolTip(ETS2InstallPath);
+        ui->label_2->setText(ETS2InstallPath.size() > 40 ? ETS2InstallPath.left(40) + "..." : ETS2InstallPath);
+
+        unsave();
+    }
+}
+
+void AssistFuncWindow::unsave(){
+    this->setWindowTitle("辅助功能 *设置未保存");
+}
+void AssistFuncWindow::save(){
+    this->setWindowTitle("辅助功能");
+}
+
+
+void AssistFuncWindow::on_checkBox_clicked()
+{
+    unsave();
 }
 
