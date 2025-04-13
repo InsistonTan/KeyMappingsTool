@@ -124,7 +124,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                     // 模拟按下
                     simulateKeyPress(it->second, false);
                     QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                            //释放按键
+                        //释放按键
                         QTimer::singleShot(RELEASE_DELAY_MS, [=](){
                             simulateKeyPress(it->second, true);
                         });
@@ -133,7 +133,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                 default:{
                     // 释放该位置的按键
                     simulateKeyPress(it->second, true);
-                }
+                    }
                 }
 
             }else{
@@ -146,7 +146,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                     // 模拟按下
                     simulateXboxKeyPress(NormalButton, it->second, 0, false);
                     QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                            //释放按键
+                        //释放按键
                         QTimer::singleShot(RELEASE_DELAY_MS, [=](){
                             simulateXboxKeyPress(NormalButton, it->second, 0, true);
                         });
