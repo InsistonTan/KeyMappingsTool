@@ -285,11 +285,14 @@ QList<MappingRelation*> getInputState(bool enableLog) {
 
 
         // 遍历按键，查看按键是否按下
-        for (int i = 0; i < 128; i++) {
+        std::string btnStr = "";
+        BUTTONS_VALUE_TYPE btnValue = 0;
+        for (int i = 0; i < MAX_BUTTONS; i++) {
             if (js.rgbButtons[i] & 0x80) {
                 //qDebug() << "按键" << i << "被按下";
-                std::string btnStr = "按键" + std::to_string(i);
-                list.append(new MappingRelation(btnStr, WHEEL_BUTTON, i, 0, ""));
+                btnStr += "按键" + std::to_string(i) + "+";
+                btnValue |= 1 << i; // 设置对应的位为1
+                // qDebug("%d, 按键被按下:%s, 值:%X", i, btnStr.data(), btnValue);
             }
 
             // 记录日志
@@ -302,6 +305,12 @@ QList<MappingRelation*> getInputState(bool enableLog) {
                 }
 
             }
+        }
+        if (!btnStr.empty()) {
+            // 映射按键
+            btnStr = btnStr.substr(0, btnStr.length() - 1);// 去掉最后的 "+"
+            list.append(new MappingRelation(btnStr, WHEEL_BUTTON, btnValue, 0, ""));
+            // qDebug("按键被按下:%s, 值:%X", btnStr.data(), btnValue);
         }
         if(enableLog && getEnableBtnLog()){
             btnLog.append("}");

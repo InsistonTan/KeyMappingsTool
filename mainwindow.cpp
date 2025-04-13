@@ -201,6 +201,13 @@ void MainWindow::on_pushButton_2_clicked()
         }
 
         // 创建监听设备输入数据的任务
+        // 对mappingList进行对 dev_btn_name长度的排序, 使得映射按键的名称从长到短排列
+        std::sort(mappingList.begin(), mappingList.end(), [](MappingRelation* a, MappingRelation* b) {
+            if (!a || !b) {
+                return false;  // 将空指针排在末尾
+            }
+            return a->dev_btn_name > b->dev_btn_name;
+        });
         SimulateTask *task = new SimulateTask(&mappingList);
         QThread *thread = new QThread();
 
@@ -560,7 +567,8 @@ void MainWindow::saveMappingsToFile(std::string filename){
                         + std::to_string(item->keyboard_value) + SPE
                         + item->remark + SPE
                         + std::to_string(item->rotateAxis) + SPE
-                        + std::to_string(item->btnTriggerType)
+                        + std::to_string(item->btnTriggerType) + SPE
+                        + MappingRelation::buttonsValueTypeToStr(item->dev_btn_value)
                         + "\n");
         }
     }
@@ -735,6 +743,9 @@ void MainWindow::loadMappingsFile(std::string filename){
                     mapping->btnTriggerType = static_cast<TriggerTypeEnum>(list[6].toInt());
                 }else{
                     mapping->btnTriggerType = TriggerTypeEnum::Normal;
+                }
+                if (list.size() >= 8 && list[7] != nullptr && !list[7].isEmpty()) {
+                    mapping->dev_btn_value = MappingRelation::strToButtonsValueType(list[7].toStdString());
                 }
                 mappingList.push_back(mapping);
             }
