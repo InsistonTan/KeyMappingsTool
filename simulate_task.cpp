@@ -47,10 +47,19 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
         }
+        MappingRelation newMapping = *mapping;
         if (mapping->dev_btn_value > 0) {
-            MappingRelation newMapping = *mapping;
             handleMultiBtnVector.push_back(newMapping);
             qDebug("添加按键映射到handleMultiBtnVector: %s, 0x%X,  %d", mapping->dev_btn_name.data(), mapping->dev_btn_value, mapping->keyboard_value);
+        } else if (mapping->dev_btn_value == 0) {
+            // 兼容性处理, 如果没有设置按键值, 则跳过
+            std::string btnStr = mapping->dev_btn_name;
+            if (newMapping.dev_btn_value == 0 && btnStr.find("按键") != std::string::npos && btnStr.find("+") == std::string::npos) {
+                int index = QString(btnStr.data()).right(1).toInt();
+                qDebug("按键值为0, 需要设置按键值, 按键名称: %s, 按键索引: %d", btnStr.data(), index);
+                newMapping.dev_btn_value = 1 << index; // 设置按键值
+                handleMultiBtnVector.push_back(newMapping);
+            }
         }
     }
 }
