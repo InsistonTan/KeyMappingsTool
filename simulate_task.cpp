@@ -78,10 +78,6 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         // 如果加号数量相同, 则字符串大小比较
         return a.dev_btn_name > b.dev_btn_name;
     });
-    // 打印排序后的结果
-    for (auto item : handleMultiBtnVector) {
-        qDebug("排序后的按键名称: %s", item.dev_btn_name.data());
-    }
 }
 
 void SimulateTask::closeDevice(){
