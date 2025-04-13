@@ -373,7 +373,6 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
         int col = -1;
         layout->addWidget(h1, 0, ++col, Qt::AlignLeft);
-        // layout->addWidget(h2, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h3, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h4, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h5, 0, ++col, Qt::AlignLeft);
