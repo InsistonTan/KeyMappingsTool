@@ -252,7 +252,7 @@ bool openDiDevice(int deviceIndex) {
     return true;
 }
 // 获取设备状态信息
-QList<MappingRelation*> getInputState(bool enableLog) {
+QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelation> multiBtnVector) {
     QList<MappingRelation*> list;
 
     // 方向盘按键状态
@@ -307,10 +307,23 @@ QList<MappingRelation*> getInputState(bool enableLog) {
             }
         }
         if (!btnStr.empty()) {
-            // 映射按键
             btnStr = btnStr.substr(0, btnStr.length() - 1);// 去掉最后的 "+"
-            list.append(new MappingRelation(btnStr, WHEEL_BUTTON, btnValue, 0, ""));
-            // qDebug("按键被按下:%s, 值:%X", btnStr.data(), btnValue);
+            if (multiBtnVector.size() > 0) {
+                // 多按键映射， 需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
+                for (auto multiBtn : multiBtnVector) {
+                    BUTTONS_VALUE_TYPE multiBtnValue = multiBtn.dev_btn_value;
+                    if ((multiBtnValue) && ((multiBtnValue & btnValue) == multiBtnValue)) {
+                        // 找到对应的按键, 进行映射
+                        btnValue &= (~multiBtnValue);  // 清除当前按键的值
+                        list.append(new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, multiBtnValue, 0, ""));
+                        // qDebug("btnValue    :%s 0x%X", MappingRelation::toBitStr(btnValue).data() ,btnValue);
+                        // qDebug("multiBtnValue:%s 0x%X %s",  MappingRelation::toBitStr(multiBtnValue).data() ,multiBtnValue, multiBtn.dev_btn_name.data());
+                    }
+                }
+            }else{
+                list.append(new MappingRelation(btnStr, WHEEL_BUTTON, btnValue, 0, ""));
+                // qDebug("按键被按下:%s, 值:%X", btnStr.data(), btnValue);
+            }
         }
         if(enableLog && getEnableBtnLog()){
             btnLog.append("}");

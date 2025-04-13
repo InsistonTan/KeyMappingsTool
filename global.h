@@ -69,7 +69,7 @@ double getInnerDeadAreaTaban();
 BOOL CALLBACK EnumDevicesCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext);
 bool initDirectInput();
 bool openDiDevice(int deviceIndex);
-QList<MappingRelation*> getInputState(bool enableLog);
+QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelation> multiBtnVector = {});
 void cleanupDirectInput();
 void getDipropRange(long axisCode, std::string axisName);
 // 扫描设备

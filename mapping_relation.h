@@ -4,8 +4,8 @@
 #include<string>
 
 //using namespace std;
-#define BUTTONS_VALUE_TYPE int64_t
-#define MAX_BUTTONS (sizeof(BUTTONS_VALUE_TYPE) * 8) // 64位整数, 最大按键数为64个
+#define BUTTONS_VALUE_TYPE int32_t
+#define MAX_BUTTONS (sizeof(BUTTONS_VALUE_TYPE) * 8)
 
 class MappingRelation{
 public:
@@ -52,20 +52,30 @@ public:
     }
 
     static BUTTONS_VALUE_TYPE strToButtonsValueType(const std::string& str) {
-        BUTTONS_VALUE_TYPE result = 0;
-        for (char c : str) {
-            result = result * 10 + (c - '0');
-        }
-        return result;
+        // BUTTONS_VALUE_TYPE result = 0;
+        // for (char c : str) {
+        //     result = result * 10 + (c - '0');
+        // }
+        // return result;
+        return std::stoi(str);
     }
 
     static std::string buttonsValueTypeToStr(BUTTONS_VALUE_TYPE value) {
-        std::string result;
-        while (value > 0) {
-            result = static_cast<char>('0' + (value % 10)) + result;
-            value /= 10;
+        // std::string result;
+        // while (value > 0) {
+        //     result = static_cast<char>('0' + (value % 10)) + result;
+        //     value /= 10;
+        // }
+        // return result.empty() ? "0" : result;
+        return std::to_string(value);
+    }
+
+    static std::string toBitStr(BUTTONS_VALUE_TYPE value) {
+        std::string bitStr;
+        for (int i = 0; i < sizeof(BUTTONS_VALUE_TYPE) * 8; ++i) {
+            bitStr += (value & (1 << i)) ? '1' : '0';
         }
-        return result.empty() ? "0" : result;
+        return bitStr;
     }
 };
 

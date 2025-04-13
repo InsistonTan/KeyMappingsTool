@@ -47,6 +47,11 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
         }
+        if (mapping->dev_btn_value > 0) {
+            MappingRelation newMapping = *mapping;
+            handleMultiBtnVector.push_back(newMapping);
+            qDebug("添加按键映射到handleMultiBtnVector: %s, 0x%X,  %d", mapping->dev_btn_name.data(), mapping->dev_btn_value, mapping->keyboard_value);
+        }
     }
 }
 
@@ -119,7 +124,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                     // 模拟按下
                     simulateKeyPress(it->second, false);
                     QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                        //释放按键
+                            //释放按键
                         QTimer::singleShot(RELEASE_DELAY_MS, [=](){
                             simulateKeyPress(it->second, true);
                         });
@@ -128,7 +133,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                 default:{
                     // 释放该位置的按键
                     simulateKeyPress(it->second, true);
-                    }
+                }
                 }
 
             }else{
@@ -141,7 +146,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                     // 模拟按下
                     simulateXboxKeyPress(NormalButton, it->second, 0, false);
                     QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                        //释放按键
+                            //释放按键
                         QTimer::singleShot(RELEASE_DELAY_MS, [=](){
                             simulateXboxKeyPress(NormalButton, it->second, 0, true);
                         });
@@ -458,7 +463,7 @@ void SimulateTask::doWork(){
 
     while(getIsRunning()){
         // 轮询设备状态
-        auto res = getInputState(false);
+        auto res = getInputState(false, handleMultiBtnVector);
 
         // 对res进行处理
         res = handleResult(res);
