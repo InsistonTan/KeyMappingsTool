@@ -201,13 +201,6 @@ void MainWindow::on_pushButton_2_clicked()
         }
 
         // 创建监听设备输入数据的任务
-        // 对mappingList进行对 dev_btn_name长度的排序, 使得映射按键的名称从长到短排列
-        std::sort(mappingList.begin(), mappingList.end(), [](MappingRelation* a, MappingRelation* b) {
-            if (!a || !b) {
-                return false;  // 将空指针排在末尾
-            }
-            return a->dev_btn_name > b->dev_btn_name;
-        });
         SimulateTask *task = new SimulateTask(&mappingList);
         QThread *thread = new QThread();
 

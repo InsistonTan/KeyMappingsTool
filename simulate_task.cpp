@@ -63,6 +63,25 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
             // qDebug("添加按键映射到handleMultiBtnVector: %s, 0x%X,  %d", mapping->dev_btn_name.data(), mapping->dev_btn_value, mapping->keyboard_value);
         }  
     }
+
+    // 对handleMultiBtnVector进行对 dev_btn_name长度的排序, 使得映射按键的名称从长到短排列
+    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
+        if (a.dev_btn_value == 0 || b.dev_btn_value == 0) {
+            return false;  // 将空的排在末尾
+        }
+        // 比较加号的数量
+        int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
+        int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
+        if (aPlusCount != bPlusCount) {
+            return aPlusCount > bPlusCount;  // 按加号数量降序排列
+        }
+        // 如果加号数量相同, 则字符串大小比较
+        return a.dev_btn_name > b.dev_btn_name;
+    });
+    // 打印排序后的结果
+    for (auto item : handleMultiBtnVector) {
+        qDebug("排序后的按键名称: %s", item.dev_btn_name.data());
+    }
 }
 
 void SimulateTask::closeDevice(){
