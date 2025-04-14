@@ -44,10 +44,40 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
     this->mappingList = mappingList;
 
     for(MappingRelation* mapping : *mappingList){
+        // 兼容性处理, 如果没有设置按键值, 则根据按键名称设置按键值
+        if (mapping->dev_btn_value == 0) {
+            std::string btnStr = mapping->dev_btn_name;
+            if (btnStr.find("按键") != std::string::npos && btnStr.find("+") == std::string::npos) {
+                int index = QString(btnStr.data()).right(1).toInt();
+                mapping->dev_btn_value = 1 << index; // 设置按键值
+                qDebug("%s 按键值为0, 索引: %d, 设置为:0x%X", btnStr.data(), index, mapping->dev_btn_value);
+            }
+        }
+
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
         }
+        if (mapping->dev_btn_value > 0) {
+            MappingRelation newMapping = *mapping;
+            handleMultiBtnVector.push_back(newMapping);
+            // qDebug("添加按键映射到handleMultiBtnVector: %s, 0x%X,  %d", mapping->dev_btn_name.data(), mapping->dev_btn_value, mapping->keyboard_value);
+        }  
     }
+
+    // 对handleMultiBtnVector进行对 dev_btn_name长度的排序, 使得映射按键的名称从长到短排列
+    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
+        if (a.dev_btn_value == 0 || b.dev_btn_value == 0) {
+            return false;  // 将空的排在末尾
+        }
+        // 比较加号的数量
+        int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
+        int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
+        if (aPlusCount != bPlusCount) {
+            return aPlusCount > bPlusCount;  // 按加号数量降序排列
+        }
+        // 如果加号数量相同, 则字符串大小比较
+        return a.dev_btn_name > b.dev_btn_name;
+    });
 }
 
 void SimulateTask::closeDevice(){
@@ -458,7 +488,7 @@ void SimulateTask::doWork(){
 
     while(getIsRunning()){
         // 轮询设备状态
-        auto res = getInputState(false);
+        auto res = getInputState(false, handleMultiBtnVector);
 
         // 对res进行处理
         res = handleResult(res);

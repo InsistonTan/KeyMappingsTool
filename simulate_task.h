@@ -30,6 +30,7 @@ private:
     //hid_device *handle;// 当前设备的连接句柄
     std::vector<MappingRelation*> *mappingList;// 已配置的按键映射列表
     std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map
+    std::vector<MappingRelation> handleMultiBtnVector;// 设备多个按键对应键盘扫描码map
 
     std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map
 

@@ -361,10 +361,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         QLabel *h1 = new QLabel("设备按键");
         h1->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
-        QLabel *h2 = new QLabel("映射成");
-        h2->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
-
-        QLabel *h3 = new QLabel(getIsXboxMode() ? "Xbox按键" : "键盘按键");
+        QLabel *h3 = new QLabel(getIsXboxMode() ? "映射成 -> Xbox按键" : "映射成 -> 键盘按键");
         h3->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
         QLabel *h4 = new QLabel("按键触发模式");
@@ -375,7 +372,6 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
         int col = -1;
         layout->addWidget(h1, 0, ++col, Qt::AlignLeft);
-        layout->addWidget(h2, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h3, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h4, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h5, 0, ++col, Qt::AlignLeft);
@@ -387,16 +383,9 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
             : mapping->dev_btn_name.data());
     label1->setMaximumHeight(30);
     label1->setMinimumHeight(30);
-    label1->setMaximumWidth(90);
+    label1->setMaximumWidth(150);
     label1->setStyleSheet("QLabel{color:blue;}");
     label1->setObjectName(currentRowIndex);
-
-    QLabel *label2 = new QLabel("->");
-    label2->setMaximumHeight(30);
-    label2->setMinimumHeight(30);
-    label2->setMaximumWidth(60);
-    label2->setObjectName(currentRowIndex);
-
 
     // 键盘按键下拉框
     QComboBox *comboBox = createAKeyBoardComboBox(
@@ -462,7 +451,6 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     int columnIndex = -1;
     int row = (index < 0 ? mappingList.size() : index) + 1;
     layout->addWidget(label1, row, ++columnIndex, Qt::AlignLeft);
-    layout->addWidget(label2, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(comboBox, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(triggerTypeComboBox, row, ++columnIndex, Qt::AlignLeft); // triggerTypeComboBox
     layout->addWidget(lineEdit, row, ++columnIndex, Qt::AlignLeft);
@@ -565,12 +553,14 @@ void MainWindow::saveMappingsToFile(std::string filename){
 
             text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
             text.append("\"dev_btn_type\":\"" + item->dev_btn_type + "\"").append(", ");
+            text.append("\"dev_btn_value\":\"" + MappingRelation::buttonsValueTypeToStr(item->dev_btn_value) + "\"").append(", ");
             text.append("\"keyboard_name\":\"" + (item->keyboard_name == "\\" ? "\\\\" : item->keyboard_name) + "\"").append(", ");
             text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
             text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
             text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType));// 最后一个, 后面不用加逗号
-
+            
+          
             text.append("},\n\t");
         }
     }
@@ -753,6 +743,7 @@ void MainWindow::loadMappingsFile(std::string filename){
                 QJsonObject jsonObj = value.toObject();
                 // 从json对象读取信息
                 MappingRelation *mapping = new MappingRelation();
+              
                 mapping->dev_btn_name = (jsonObj["dev_btn_name"] != QJsonValue::Undefined) ? jsonObj["dev_btn_name"].toString().toStdString() : "";
                 mapping->dev_btn_type = (jsonObj["dev_btn_type"] != QJsonValue::Undefined) ? jsonObj["dev_btn_type"].toString().toStdString() : "";
                 mapping->keyboard_name = (jsonObj["keyboard_name"] != QJsonValue::Undefined) ? jsonObj["keyboard_name"].toString().toStdString() : "";
@@ -763,6 +754,11 @@ void MainWindow::loadMappingsFile(std::string filename){
                     (jsonObj["btnTriggerType"] != QJsonValue::Undefined && jsonObj["btnTriggerType"].toInt() > 0)
                                               ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
                                               : TriggerTypeEnum::Normal;
+                mapping->dev_btn_value = 
+                    (jsonObj["dev_btn_value"] != QJsonValue::Undefined && !jsonObj["dev_btn_value"].toString().isEmpty())
+                                              ? MappingRelation::strToButtonsValueType(jsonObj["dev_btn_value"].toString().toStdString())
+                                              : 0;
+
 
 
                 mappingList.push_back(mapping);
