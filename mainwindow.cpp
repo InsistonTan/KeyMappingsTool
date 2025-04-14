@@ -568,7 +568,8 @@ void MainWindow::saveMappingsToFile(std::string filename){
 
             text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
             text.append("\"dev_btn_type\":\"" + item->dev_btn_type + "\"").append(", ");
-            text.append("\"dev_btn_value\":\"" + MappingRelation::buttonsValueTypeToStr(item->dev_btn_value) + "\"").append(", ");
+            text.append("\"dev_btn_value\":\"" + std::to_string(item->dev_btn_value) + "\"").append(", ");
+            text.append("\"dev_btn_bit_value\":\"" + item->dev_btn_bit_value.toString() + "\"").append(", ");
             text.append("\"keyboard_name\":\"" + (item->keyboard_name == "\\" ? "\\\\" : item->keyboard_name) + "\"").append(", ");
             text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
@@ -771,10 +772,17 @@ void MainWindow::loadMappingsFile(std::string filename){
                                               : TriggerTypeEnum::Normal;
                 mapping->dev_btn_value = 
                     (jsonObj["dev_btn_value"] != QJsonValue::Undefined && !jsonObj["dev_btn_value"].toString().isEmpty())
-                                              ? MappingRelation::strToButtonsValueType(jsonObj["dev_btn_value"].toString().toStdString())
+                                              ? (jsonObj["dev_btn_value"].toString().toInt())
                                               : 0;
 
-
+                if (jsonObj["dev_btn_bit_value"] != QJsonValue::Undefined && !jsonObj["dev_btn_bit_value"].toString().isEmpty())
+                {
+                    mapping->dev_btn_bit_value = 
+                        (BUTTONS_VALUE_TYPE)(jsonObj["dev_btn_bit_value"].toString().toStdString());
+                }
+                else {
+                    mapping->dev_btn_bit_value.clear();
+                }
 
                 mappingList.push_back(mapping);
             }

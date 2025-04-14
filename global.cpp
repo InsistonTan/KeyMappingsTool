@@ -286,10 +286,11 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
         // 遍历按键，查看按键是否按下
         std::string btnStr = "";
-        BUTTONS_VALUE_TYPE btnValue = 0;
+        BUTTONS_VALUE_TYPE btnBitValue;
         for (int i = 0; i < MAX_BUTTONS; i++) {
             if (js.rgbButtons[i] & 0x80) {
                 btnStr += "按键" + std::to_string(i) + "+";
+                btnBitValue.setBit(i, true);
             }
 
             // 记录日志
@@ -311,26 +312,18 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
             if (multiBtnVector.size() > 0) {
                 // 多按键映射，需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
                 for (auto multiBtn : multiBtnVector) {
-                    QString configBtnStr(multiBtn.dev_btn_name.data());
-                    auto configBtnStrList = configBtnStr.split("+");
-                    if(configBtnStrList.size() > 0){
-                        // 记录当前按下的按键数量
-                        int btnPressNum = 0;
-                        for(auto str : configBtnStrList){
-                            // 当前按键被按下
-                            if(str.startsWith("按键") && str.length() >= 3 && (js.rgbButtons[str.remove(0, 2).toInt()] & 0x80)){
-                                btnPressNum++;
-                            }
-                        }
-                        // 配置的按键都被按下
-                        if(btnPressNum == configBtnStrList.size()){
-                            list.append(new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, 0, 0, ""));
-                        }
+                    BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
+                    if ((multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue)) {
+                        // 找到对应的按键, 进行映射
+                        btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
+                        qDebug() << btnBitValue;
+                        MappingRelation *mapping = new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, 0, 0, "");
+                        mapping->setBtnBitValue(multiBtnBitValue);  // 设置按键值
+                        list.append(mapping);
                     }
-
                 }
             }else{
-                list.append(new MappingRelation(btnStr, WHEEL_BUTTON, btnValue, 0, ""));
+                list.append(new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, ""));
             }
         }
         if(enableLog && getEnableBtnLog()){

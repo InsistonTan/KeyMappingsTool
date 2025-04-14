@@ -44,13 +44,40 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
     this->mappingList = mappingList;
 
     for(MappingRelation* mapping : *mappingList){
+        // 兼容性处理, 如果没有设置按键值, 则根据按键名称设置按键值
+        if (mapping->dev_btn_bit_value == BIGKEY_ZERO) {
+            std::string btnStr = mapping->dev_btn_name;
+            if (btnStr.find("按键") != std::string::npos && btnStr.find("+") == std::string::npos) {
+                int index = QString(btnStr.data()).mid(2).toInt(); // 获取按键索引
+                mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
+                qDebug("%s 按键值为0, 索引: %d, 设置为:0x%s", btnStr.data(), index, mapping->dev_btn_bit_value.toString().data());
+            }
+        }
+
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
-            // 将映射添加进多按键映射列表
+        }
+        if (mapping->dev_btn_bit_value != BIGKEY_ZERO) {
             MappingRelation newMapping = *mapping;
             handleMultiBtnVector.push_back(newMapping);
-        }
+            // qDebug("添加按键映射到handleMultiBtnVector: %s, 0x%s,  %d", mapping->dev_btn_name.data(), mapping->dev_btn_bit_value.toString().data(), mapping->keyboard_value);
+        }  
     }
+
+    // 对handleMultiBtnVector进行对 dev_btn_name长度的排序, 使得映射按键的名称从长到短排列
+    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
+        if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
+            return false;  // 将空的排在末尾
+        }
+        // 比较加号的数量
+        int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
+        int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
+        if (aPlusCount != bPlusCount) {
+            return aPlusCount > bPlusCount;  // 按加号数量降序排列
+        }
+        // 如果加号数量相同, 则字符串大小比较
+        return a.dev_btn_name > b.dev_btn_name;
+    });
 }
 
 void SimulateTask::closeDevice(){
