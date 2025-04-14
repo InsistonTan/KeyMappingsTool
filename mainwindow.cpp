@@ -21,7 +21,9 @@
 #include <QCheckBox>
 #include<QTimer>
 #include<QScrollBar>
-
+#include<QJsonDocument>
+#include<QJsonObject>
+#include<QJsonArray>
 
 
 MainWindow::~MainWindow(){
@@ -554,20 +556,28 @@ void MainWindow::saveLastDeviceToFile(){
 void MainWindow::saveMappingsToFile(std::string filename){
     // 要保存的文本内容
     QString text;
+    text.append("[\n\t");
 
     // 生成内容
     for(auto item: mappingList){
         if(item != nullptr){
-            text.append(item->dev_btn_name + SPE
-                        + item->dev_btn_type + SPE
-                        + item->keyboard_name + SPE
-                        + std::to_string(item->keyboard_value) + SPE
-                        + item->remark + SPE
-                        + std::to_string(item->rotateAxis) + SPE
-                        + std::to_string(item->btnTriggerType)
-                        + "\n");
+            text.append("{");
+
+            text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
+            text.append("\"dev_btn_type\":\"" + item->dev_btn_type + "\"").append(", ");
+            text.append("\"keyboard_name\":\"" + item->keyboard_name + "\"").append(", ");
+            text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
+            text.append("\"remark\":\"" + item->remark + "\"").append(", ");
+            text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
+            text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType));// 最后一个, 后面不用加逗号
+
+            text.append("},\n\t");
         }
     }
+    if (text.endsWith(",\n\t")) {
+        text.chop(3); // 删除最后多余的 ",\n\t"
+    }
+    text.append("\n]");
 
     // 获取当前目录
     QDir dir = appDataDirPath.isEmpty() ? QDir::current() : QDir(appDataDirPath);
@@ -712,42 +722,96 @@ void MainWindow::loadMappingsFile(std::string filename){
         return;
     }
 
-    // 打开文件进行读取
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&file);
+    // 新版配置文件以json格式存储
+    // 尝试以json文件格式读取, 如果读取失败再使用旧版配置文件的格式读取
+    // 打开 JSON 文件
+    if (!file.open(QIODevice::ReadOnly)) {
+        pushToQueue(parseWarningLog("打开配置文件["+filePath+"]失败!"));
+        return;
+    }
+
+    // 读取文件内容并解析为 JSON 文档
+    QByteArray jsonData = file.readAll();
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+    if (!doc.isNull() && doc.isArray()) {
+        // 获取 JSON 对象数组
+        QJsonArray jsonArray = doc.array();
 
         // 清空映射列表
         mappingList.clear();
 
-        // 逐行读取文件
-        while (!in.atEnd()) {
-            QString line = in.readLine(); // 读取一行
-            QStringList list = line.split(SPE);
-            if(list.size() >= 5){
+        // 遍历json数组
+        for (const QJsonValue &value : jsonArray) {
+            if(value.isObject()){
+                QJsonObject jsonObj = value.toObject();
+                // 从json对象读取信息
                 MappingRelation *mapping = new MappingRelation();
-                mapping->dev_btn_name = list[0].toStdString();
-                mapping->dev_btn_type = list[1].toStdString();
-                mapping->keyboard_name = list[2].toStdString();
-                mapping->keyboard_value = list[3].toShort();
-                mapping->remark = list[4].toStdString();
-                // 是否旋转轴
-                if(list.size() >= 6 && list[5] != nullptr && !list[5].isEmpty() && list[5].toInt() == 1){
-                    mapping->rotateAxis = 1;
-                }
-                // 按键触发模式
-                if(list.size() >= 7 && list[6] != nullptr && !list[6].isEmpty() && list[6].toInt() > 0){
-                    mapping->btnTriggerType = static_cast<TriggerTypeEnum>(list[6].toInt());
-                }else{
-                    mapping->btnTriggerType = TriggerTypeEnum::Normal;
-                }
+                mapping->dev_btn_name = (jsonObj["dev_btn_name"] != QJsonValue::Undefined) ? jsonObj["dev_btn_name"].toString().toStdString() : "";
+                mapping->dev_btn_type = (jsonObj["dev_btn_type"] != QJsonValue::Undefined) ? jsonObj["dev_btn_type"].toString().toStdString() : "";
+                mapping->keyboard_name = (jsonObj["keyboard_name"] != QJsonValue::Undefined) ? jsonObj["keyboard_name"].toString().toStdString() : "";
+                mapping->keyboard_value = (jsonObj["keyboard_value"] != QJsonValue::Undefined) ? jsonObj["keyboard_value"].toInt() : 0;
+                mapping->remark = (jsonObj["remark"] != QJsonValue::Undefined) ? jsonObj["remark"].toString().toStdString() : "";
+                mapping->rotateAxis = (jsonObj["rotateAxis"] != QJsonValue::Undefined && jsonObj["rotateAxis"].toInt() == 1) ? 1 : 0;
+                mapping->btnTriggerType =
+                    (jsonObj["btnTriggerType"] != QJsonValue::Undefined && jsonObj["btnTriggerType"].toInt() > 0)
+                                              ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
+                                              : TriggerTypeEnum::Normal;
+
+
                 mappingList.push_back(mapping);
             }
         }
 
         // 关闭文件
         file.close();
-    } else {
-        qDebug() << "Error opening file!";
+    }else{
+        // 读取旧版配置文件
+
+        // 关闭文件
+        if(file.isOpen()){
+            file.close();
+        }
+
+        // 打开文件进行读取
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream in(&file);
+
+            // 清空映射列表
+            mappingList.clear();
+
+            // 逐行读取文件
+            while (!in.atEnd()) {
+                QString line = in.readLine(); // 读取一行
+                QStringList list = line.split(SPE);
+                if(list.size() >= 5){
+                    MappingRelation *mapping = new MappingRelation();
+                    mapping->dev_btn_name = list[0].toStdString();
+                    mapping->dev_btn_type = list[1].toStdString();
+                    mapping->keyboard_name = list[2].toStdString();
+                    mapping->keyboard_value = list[3].toShort();
+                    mapping->remark = list[4].toStdString();
+                    // 是否旋转轴
+                    if(list.size() >= 6 && list[5] != nullptr && !list[5].isEmpty() && list[5].toInt() == 1){
+                        mapping->rotateAxis = 1;
+                    }
+                    // 按键触发模式
+                    if(list.size() >= 7 && list[6] != nullptr && !list[6].isEmpty() && list[6].toInt() > 0){
+                        mapping->btnTriggerType = static_cast<TriggerTypeEnum>(list[6].toInt());
+                    }else{
+                        mapping->btnTriggerType = TriggerTypeEnum::Normal;
+                    }
+                    mappingList.push_back(mapping);
+                }
+            }
+
+            // 关闭文件
+            file.close();
+        } else {
+            qDebug() << "Error opening file!";
+        }
+
+        // 将旧版配置文件转为新版配置文件
+        saveMappingsToFile(filename);
     }
 }
 
