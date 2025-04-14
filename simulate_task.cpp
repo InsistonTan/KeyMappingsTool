@@ -406,7 +406,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
                 // 当前轴的值范围
                 auto currentRange = axisValueRangeMap.find(btnStr)->second;
                 int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
-                int mid = (currentMax - currentMin)/2;
+                int mid = (currentMax + currentMin)/2;
 
                 // 配置了盘面轴左转映射
                 if(handleMap.find(btnStr + "左转")!= handleMap.end()){

@@ -103,12 +103,12 @@ void AssistFuncWindow::loadSettings(){
     QJsonObject jsonObj = doc.object();
 
     // 读取信息
-    bool enableETS2AutoCancelHandbrake = jsonObj["ETS2_enableAutoCancelHandbrake"].toBool();
-    bool enableAutoStartMapping = jsonObj["SYSTEM_enableMappingAfterOpening"].toBool();
+    bool enableETS2AutoCancelHandbrake = (jsonObj["ETS2_enableAutoCancelHandbrake"] != QJsonValue::Undefined) ? jsonObj["ETS2_enableAutoCancelHandbrake"].toBool() : false;
+    bool enableAutoStartMapping = (jsonObj["SYSTEM_enableMappingAfterOpening"] != QJsonValue::Undefined) ? jsonObj["SYSTEM_enableMappingAfterOpening"].toBool() : false;
     this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;
     this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;
     // 欧卡2安装路径
-    QString ets2Path = jsonObj["ETS2_installPath"].toString();
+    QString ets2Path = (jsonObj["ETS2_installPath"]!= QJsonValue::Undefined) ? jsonObj["ETS2_installPath"].toString() : "";
     if(!ets2Path.isEmpty()){
         this->ETS2InstallPath = ets2Path;
     }

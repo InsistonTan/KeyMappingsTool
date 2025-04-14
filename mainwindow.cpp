@@ -21,7 +21,9 @@
 #include <QCheckBox>
 #include<QTimer>
 #include<QScrollBar>
-
+#include<QJsonDocument>
+#include<QJsonObject>
+#include<QJsonArray>
 
 
 MainWindow::~MainWindow(){
@@ -109,6 +111,10 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     // 绘制出配置列表
     repaintMappings();
+
+    if(getMappingListActualSize() > 0){
+        ui->comboBox_2->setPlaceholderText("上一次使用的配置");
+    }
 
     // 配置下拉添加一个空白配置
     ui->comboBox_2->addItem("空白配置");
@@ -538,21 +544,30 @@ void MainWindow::saveLastDeviceToFile(){
 void MainWindow::saveMappingsToFile(std::string filename){
     // 要保存的文本内容
     QString text;
+    text.append("[\n\t");
 
     // 生成内容
     for(auto item: mappingList){
         if(item != nullptr){
-            text.append(item->dev_btn_name + SPE
-                        + item->dev_btn_type + SPE
-                        + item->keyboard_name + SPE
-                        + std::to_string(item->keyboard_value) + SPE
-                        + item->remark + SPE
-                        + std::to_string(item->rotateAxis) + SPE
-                        + std::to_string(item->btnTriggerType) + SPE
-                        + MappingRelation::buttonsValueTypeToStr(item->dev_btn_value)
-                        + "\n");
+            text.append("{");
+
+            text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
+            text.append("\"dev_btn_type\":\"" + item->dev_btn_type + "\"").append(", ");
+            text.append("\"dev_btn_value\":\"" + MappingRelation::buttonsValueTypeToStr(item->dev_btn_value) + "\"").append(", ");
+            text.append("\"keyboard_name\":\"" + (item->keyboard_name == "\\" ? "\\\\" : item->keyboard_name) + "\"").append(", ");
+            text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
+            text.append("\"remark\":\"" + item->remark + "\"").append(", ");
+            text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
+            text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType));// 最后一个, 后面不用加逗号
+            
+          
+            text.append("},\n\t");
         }
     }
+    if (text.endsWith(",\n\t")) {
+        text.chop(3); // 删除最后多余的 ",\n\t"
+    }
+    text.append("\n]");
 
     // 获取当前目录
     QDir dir = appDataDirPath.isEmpty() ? QDir::current() : QDir(appDataDirPath);
@@ -697,45 +712,110 @@ void MainWindow::loadMappingsFile(std::string filename){
         return;
     }
 
-    // 打开文件进行读取
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&file);
+    // 新版配置文件以json格式存储
+    // 尝试以json文件格式读取, 如果读取失败再使用旧版配置文件的格式读取
+    // 打开 JSON 文件
+    if (!file.open(QIODevice::ReadOnly)) {
+        pushToQueue(parseWarningLog("打开配置文件["+filePath+"]失败!"));
+        return;
+    }
+
+    // 读取文件内容并解析为 JSON 文档
+    QByteArray jsonData = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData, &error);
+    // json格式错误
+    if (error.error != QJsonParseError::NoError) {
+        qDebug() << "JSON Parse Error:" << error.errorString();
+        //return;
+    }
+
+    if (!doc.isNull() && doc.isArray()) {
+        // 获取 JSON 对象数组
+        QJsonArray jsonArray = doc.array();
 
         // 清空映射列表
         mappingList.clear();
 
-        // 逐行读取文件
-        while (!in.atEnd()) {
-            QString line = in.readLine(); // 读取一行
-            QStringList list = line.split(SPE);
-            if(list.size() >= 5){
+        // 遍历json数组
+        for (const QJsonValue &value : jsonArray) {
+            if(value.isObject()){
+                QJsonObject jsonObj = value.toObject();
+                // 从json对象读取信息
                 MappingRelation *mapping = new MappingRelation();
-                mapping->dev_btn_name = list[0].toStdString();
-                mapping->dev_btn_type = list[1].toStdString();
-                mapping->keyboard_name = list[2].toStdString();
-                mapping->keyboard_value = list[3].toShort();
-                mapping->remark = list[4].toStdString();
-                // 是否旋转轴
-                if(list.size() >= 6 && list[5] != nullptr && !list[5].isEmpty() && list[5].toInt() == 1){
-                    mapping->rotateAxis = 1;
-                }
-                // 按键触发模式
-                if(list.size() >= 7 && list[6] != nullptr && !list[6].isEmpty() && list[6].toInt() > 0){
-                    mapping->btnTriggerType = static_cast<TriggerTypeEnum>(list[6].toInt());
-                }else{
-                    mapping->btnTriggerType = TriggerTypeEnum::Normal;
-                }
-                if (list.size() >= 8 && list[7] != nullptr && !list[7].isEmpty()) {
-                    mapping->dev_btn_value = MappingRelation::strToButtonsValueType(list[7].toStdString());
-                }
+              
+                mapping->dev_btn_name = (jsonObj["dev_btn_name"] != QJsonValue::Undefined) ? jsonObj["dev_btn_name"].toString().toStdString() : "";
+                mapping->dev_btn_type = (jsonObj["dev_btn_type"] != QJsonValue::Undefined) ? jsonObj["dev_btn_type"].toString().toStdString() : "";
+                mapping->keyboard_name = (jsonObj["keyboard_name"] != QJsonValue::Undefined) ? jsonObj["keyboard_name"].toString().toStdString() : "";
+                mapping->keyboard_value = (jsonObj["keyboard_value"] != QJsonValue::Undefined) ? jsonObj["keyboard_value"].toInt() : 0;
+                mapping->remark = (jsonObj["remark"] != QJsonValue::Undefined) ? jsonObj["remark"].toString().toStdString() : "";
+                mapping->rotateAxis = (jsonObj["rotateAxis"] != QJsonValue::Undefined && jsonObj["rotateAxis"].toInt() == 1) ? 1 : 0;
+                mapping->btnTriggerType =
+                    (jsonObj["btnTriggerType"] != QJsonValue::Undefined && jsonObj["btnTriggerType"].toInt() > 0)
+                                              ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
+                                              : TriggerTypeEnum::Normal;
+                mapping->dev_btn_value = 
+                    (jsonObj["dev_btn_value"] != QJsonValue::Undefined && !jsonObj["dev_btn_value"].toString().isEmpty())
+                                              ? MappingRelation::strToButtonsValueType(jsonObj["dev_btn_value"].toString().toStdString())
+                                              : 0;
+
+
+
                 mappingList.push_back(mapping);
             }
         }
 
         // 关闭文件
         file.close();
-    } else {
-        qDebug() << "Error opening file!";
+        return;
+    }else{
+        // 读取旧版配置文件
+
+        // 关闭文件
+        if(file.isOpen()){
+            file.close();
+        }
+
+        // 打开文件进行读取
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream in(&file);
+
+            // 清空映射列表
+            mappingList.clear();
+
+            // 逐行读取文件
+            while (!in.atEnd()) {
+                QString line = in.readLine(); // 读取一行
+                QStringList list = line.split(SPE);
+                if(list.size() >= 5){
+                    MappingRelation *mapping = new MappingRelation();
+                    mapping->dev_btn_name = list[0].toStdString();
+                    mapping->dev_btn_type = list[1].toStdString();
+                    mapping->keyboard_name = list[2].toStdString();
+                    mapping->keyboard_value = list[3].toShort();
+                    mapping->remark = list[4].toStdString();
+                    // 是否旋转轴
+                    if(list.size() >= 6 && list[5] != nullptr && !list[5].isEmpty() && list[5].toInt() == 1){
+                        mapping->rotateAxis = 1;
+                    }
+                    // 按键触发模式
+                    if(list.size() >= 7 && list[6] != nullptr && !list[6].isEmpty() && list[6].toInt() > 0){
+                        mapping->btnTriggerType = static_cast<TriggerTypeEnum>(list[6].toInt());
+                    }else{
+                        mapping->btnTriggerType = TriggerTypeEnum::Normal;
+                    }
+                    mappingList.push_back(mapping);
+                }
+            }
+
+            // 关闭文件
+            file.close();
+        } else {
+            qDebug() << "Error opening file!";
+        }
+
+        // 将旧版配置文件转为新版配置文件
+        saveMappingsToFile(filename);
     }
 }
 
@@ -1177,43 +1257,6 @@ void MainWindow::on_radioButton_2_clicked()
 
     // 隐藏死区设置
     this->ui->pushButton_8->hide();
-}
-
-
-
-
-
-void MainWindow::on_pushButton_5_clicked()
-{
-    QMainWindow *window = new QMainWindow();
-    window->setWindowTitle("请作者喝杯奶茶, 感谢您的支持和鼓励");
-    window->setFixedSize(400, 300);
-
-    // 创建一个 QLabel 来显示图片
-    QLabel* label = new QLabel();
-    QPixmap pixmap(":/icon/shoukuanma.jpg");  // 替换为你的图片路径
-    pixmap = pixmap.scaled(400, 300, Qt::KeepAspectRatio);
-    label->setPixmap(pixmap);
-    label->setAlignment(Qt::AlignCenter);  // 设置图片居中显示
-
-    // 创建一个 QWidget 作为主窗口的中央部件
-    QWidget* centralWidget = new QWidget();
-
-    // 创建一个 QVBoxLayout 布局管理器
-    QVBoxLayout* layout = new QVBoxLayout(centralWidget);
-
-    // 将 QLabel 添加到布局中
-    layout->addWidget(label);
-
-    // 设置布局为中央部件的布局
-    centralWidget->setLayout(layout);
-
-    // 设置中央部件
-    window->setCentralWidget(centralWidget);
-
-    window->show();
-
-
 }
 
 
