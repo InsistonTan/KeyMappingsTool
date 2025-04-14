@@ -565,7 +565,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
 
             text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
             text.append("\"dev_btn_type\":\"" + item->dev_btn_type + "\"").append(", ");
-            text.append("\"keyboard_name\":\"" + item->keyboard_name + "\"").append(", ");
+            text.append("\"keyboard_name\":\"" + (item->keyboard_name == "\\" ? "\\\\" : item->keyboard_name) + "\"").append(", ");
             text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
             text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
@@ -732,7 +732,14 @@ void MainWindow::loadMappingsFile(std::string filename){
 
     // 读取文件内容并解析为 JSON 文档
     QByteArray jsonData = file.readAll();
-    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData, &error);
+    // json格式错误
+    if (error.error != QJsonParseError::NoError) {
+        qDebug() << "JSON Parse Error:" << error.errorString();
+        //return;
+    }
+
     if (!doc.isNull() && doc.isArray()) {
         // 获取 JSON 对象数组
         QJsonArray jsonArray = doc.array();
@@ -764,6 +771,7 @@ void MainWindow::loadMappingsFile(std::string filename){
 
         // 关闭文件
         file.close();
+        return;
     }else{
         // 读取旧版配置文件
 
