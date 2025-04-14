@@ -361,7 +361,10 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         QLabel *h1 = new QLabel("设备按键");
         h1->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
-        QLabel *h3 = new QLabel(getIsXboxMode() ? "映射成 -> Xbox按键" : "映射成 -> 键盘按键");
+        QLabel *h2 = new QLabel("映射成");
+        h2->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
+
+        QLabel *h3 = new QLabel(getIsXboxMode() ? "Xbox按键" : "键盘按键");
         h3->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
         QLabel *h4 = new QLabel("按键触发模式");
@@ -372,20 +375,31 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
         int col = -1;
         layout->addWidget(h1, 0, ++col, Qt::AlignLeft);
+        layout->addWidget(h2, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h3, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h4, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h5, 0, ++col, Qt::AlignLeft);
     }
 
-    QLabel *label1 = new QLabel(isClickNewLineBtn(mapping)
-            ? mappingDevBtnData->dev_btn_name.data()
-            // 历史配置展示
-            : mapping->dev_btn_name.data());
+    QString label1Text = isClickNewLineBtn(mapping)
+                             ? mappingDevBtnData->dev_btn_name.data()
+                             // 历史配置展示
+                             : mapping->dev_btn_name.data();
+
+    QLabel *label1 = new QLabel(label1Text.length() > 14 ? label1Text.left(14) + "..." : label1Text);
     label1->setMaximumHeight(30);
     label1->setMinimumHeight(30);
-    label1->setMaximumWidth(150);
-    label1->setStyleSheet("QLabel{color:blue;}");
+    label1->setMaximumWidth(160);
+    label1->setStyleSheet("QLabel{color:blue;padding-right:10px;}");
     label1->setObjectName(currentRowIndex);
+    label1->setToolTip(label1Text);
+
+    QLabel *label2 = new QLabel("->");
+    label2->setMaximumHeight(30);
+    label2->setMinimumHeight(30);
+    label2->setMaximumWidth(50);
+    label2->setStyleSheet("QLabel{color:black;}");
+    label2->setObjectName(currentRowIndex);
 
     // 键盘按键下拉框
     QComboBox *comboBox = createAKeyBoardComboBox(
@@ -451,6 +465,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     int columnIndex = -1;
     int row = (index < 0 ? mappingList.size() : index) + 1;
     layout->addWidget(label1, row, ++columnIndex, Qt::AlignLeft);
+    layout->addWidget(label2, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(comboBox, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(triggerTypeComboBox, row, ++columnIndex, Qt::AlignLeft); // triggerTypeComboBox
     layout->addWidget(lineEdit, row, ++columnIndex, Qt::AlignLeft);
