@@ -52,12 +52,14 @@ public:
     }
 
     static BUTTONS_VALUE_TYPE strToButtonsValueType(const std::string& str) {
-        // BUTTONS_VALUE_TYPE result = 0;
-        // for (char c : str) {
-        //     result = result * 10 + (c - '0');
-        // }
-        // return result;
-        return std::stoi(str);
+        if (str.empty()) {
+            return 0;
+        }
+        BUTTONS_VALUE_TYPE result = 0;
+        for (char c : str) {
+            result = result * 10 + (c - '0');
+        }
+        return result;
     }
 
     static std::string buttonsValueTypeToStr(BUTTONS_VALUE_TYPE value) {
