@@ -110,6 +110,10 @@ MainWindow::MainWindow(QMainWindow *parent)
     // 绘制出配置列表
     repaintMappings();
 
+    if(getMappingListActualSize() > 0){
+        ui->comboBox_2->setPlaceholderText("上一次使用的配置");
+    }
+
     // 配置下拉添加一个空白配置
     ui->comboBox_2->addItem("空白配置");
 

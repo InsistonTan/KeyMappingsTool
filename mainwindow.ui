@@ -72,6 +72,15 @@
          <height>0</height>
         </size>
        </property>
+       <property name="styleSheet">
+        <string notr="true">QComboBox {
+    padding-left: 10px;
+}
+
+QComboBox QAbstractItemView {
+    padding-left: 0px;
+}</string>
+       </property>
        <property name="minimumContentsLength">
         <number>0</number>
        </property>
@@ -149,7 +158,8 @@
      </rect>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(170, 255, 255);</string>
+     <string notr="true">background-color: rgb(170, 255, 255);
+</string>
     </property>
     <property name="text">
      <string>开启全局映射</string>
@@ -253,6 +263,15 @@
       <width>241</width>
       <height>31</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QComboBox {
+    padding-left: 10px;
+}
+
+QComboBox QAbstractItemView {
+    padding-left: 0px;
+}</string>
     </property>
    </widget>
    <widget class="QRadioButton" name="radioButton">
