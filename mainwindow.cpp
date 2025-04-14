@@ -1188,43 +1188,6 @@ void MainWindow::on_radioButton_2_clicked()
 }
 
 
-
-
-
-void MainWindow::on_pushButton_5_clicked()
-{
-    QMainWindow *window = new QMainWindow();
-    window->setWindowTitle("请作者喝杯奶茶, 感谢您的支持和鼓励");
-    window->setFixedSize(400, 300);
-
-    // 创建一个 QLabel 来显示图片
-    QLabel* label = new QLabel();
-    QPixmap pixmap(":/icon/shoukuanma.jpg");  // 替换为你的图片路径
-    pixmap = pixmap.scaled(400, 300, Qt::KeepAspectRatio);
-    label->setPixmap(pixmap);
-    label->setAlignment(Qt::AlignCenter);  // 设置图片居中显示
-
-    // 创建一个 QWidget 作为主窗口的中央部件
-    QWidget* centralWidget = new QWidget();
-
-    // 创建一个 QVBoxLayout 布局管理器
-    QVBoxLayout* layout = new QVBoxLayout(centralWidget);
-
-    // 将 QLabel 添加到布局中
-    layout->addWidget(label);
-
-    // 设置布局为中央部件的布局
-    centralWidget->setLayout(layout);
-
-    // 设置中央部件
-    window->setCentralWidget(centralWidget);
-
-    window->show();
-
-
-}
-
-
 void MainWindow::on_pushButton_6_clicked()
 {
     // 清空设备列表
