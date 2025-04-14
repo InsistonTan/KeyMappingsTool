@@ -46,11 +46,16 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
     for(MappingRelation* mapping : *mappingList){
         // 兼容性处理, 如果没有设置按键值, 则根据按键名称设置按键值
         if (mapping->dev_btn_bit_value == BIGKEY_ZERO) {
-            std::string btnStr = mapping->dev_btn_name;
-            if (btnStr.find("按键") != std::string::npos && btnStr.find("+") == std::string::npos) {
-                int index = QString(btnStr.data()).mid(2).toInt(); // 获取按键索引
-                mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                qDebug("%s 按键值为0, 索引: %d, 设置为:0x%s", btnStr.data(), index, mapping->dev_btn_bit_value.toString().data());
+            std::string btn_name = mapping->dev_btn_name;
+            if (btn_name.find("按键") != std::string::npos) {
+                qDebug("%s 按键值为0, 索引: ", btn_name.data());
+                QStringList btnStrList = QString::fromStdString(btn_name).split("+");
+                for (const QString& btn : btnStrList) {
+                    int index = btn.mid(2).toInt(); // 获取按键索引
+                    mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
+                    qDebug("%d, ", index);
+                }
+                qDebug("设置为:0x%s", mapping->dev_btn_bit_value.toString().data());
             }
         }
 
@@ -64,7 +69,7 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         }  
     }
 
-    // 对handleMultiBtnVector进行对 dev_btn_name长度的排序, 使得映射按键的名称从长到短排列
+    // 多按键优先级高, 先处理多按键映射,故排序
     std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
         if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
             return false;  // 将空的排在末尾
