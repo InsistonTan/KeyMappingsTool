@@ -203,7 +203,7 @@
    <widget class="QLabel" name="label_10">
     <property name="geometry">
      <rect>
-      <x>100</x>
+      <x>20</x>
       <y>550</y>
       <width>341</width>
       <height>31</height>
@@ -279,19 +279,6 @@
     </property>
     <property name="text">
      <string>映射Xbox手柄</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton_5">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>550</y>
-      <width>81</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>支持作者</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_6">
