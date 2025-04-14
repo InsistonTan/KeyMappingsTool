@@ -5,7 +5,7 @@
 
 //using namespace std;
 #define BUTTONS_VALUE_TYPE int32_t
-#define MAX_BUTTONS (sizeof(BUTTONS_VALUE_TYPE) * 8)
+#define MAX_BUTTONS 128
 
 class MappingRelation{
 public:
