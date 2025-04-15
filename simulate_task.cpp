@@ -55,7 +55,7 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
                     mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
                     qDebug("%d, ", index);
                 }
-                qDebug("设置为:0x%s", mapping->dev_btn_bit_value.toString().data());
+                qDebug("设置为:0x%s", mapping->dev_btn_bit_value);
             }
         }
 
@@ -65,7 +65,6 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         if (mapping->dev_btn_bit_value != BIGKEY_ZERO) {
             MappingRelation newMapping = *mapping;
             handleMultiBtnVector.push_back(newMapping);
-            // qDebug("添加按键映射到handleMultiBtnVector: %s, 0x%s,  %d", mapping->dev_btn_name.data(), mapping->dev_btn_bit_value.toString().data(), mapping->keyboard_value);
         }  
     }
 

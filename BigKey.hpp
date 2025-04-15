@@ -29,8 +29,8 @@ class BigKey {
     friend BigKey operator|=(BigKey&, const BigKey&);  // 按位或重载
 
     // 比较重载
-    const friend bool operator==(const BigKey&, const BigKey&);  // 等于重载
-    const friend bool operator!=(const BigKey&, const BigKey&);  // 不等于重载
+    friend bool operator==(const BigKey&, const BigKey&);  // 等于重载
+    friend bool operator!=(const BigKey&, const BigKey&);  // 不等于重载
 
     friend bool operator&&(const BigKey&, const BigKey&);  // 逻辑与重载
     friend bool operator&&(const BigKey&, const bool&);    // 逻辑与重载
@@ -239,12 +239,12 @@ inline istream& operator>>(istream& in, BigKey& num)  // 输入重载
     return in;
 }
 
-const inline bool operator==(const BigKey& num1, const BigKey& num2)  // 等于重载
+inline bool operator==(const BigKey& num1, const BigKey& num2)  // 等于重载
 {
     return num1.key == num2.key;  // 比较字符串是否相等
 }
 
-const inline bool operator!=(const BigKey& num1, const BigKey& num2)  // 不等于重载
+inline bool operator!=(const BigKey& num1, const BigKey& num2)  // 不等于重载
 {
     return !(num1 == num2);  // 调用等于重载函数
 }

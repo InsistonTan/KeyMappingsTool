@@ -316,7 +316,6 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                     if ((multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue)) {
                         // 找到对应的按键, 进行映射
                         btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
-                        qDebug() << btnBitValue;
                         MappingRelation *mapping = new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, 0, 0, "");
                         mapping->setBtnBitValue(multiBtnBitValue);  // 设置按键值
                         list.append(mapping);

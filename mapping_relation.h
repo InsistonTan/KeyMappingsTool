@@ -2,7 +2,7 @@
 #define MAPPING_RELATION_H
 #include "BtnTriggerTypeEnum.h"
 #include<string>
-#include "keyValType.hpp"
+#include "BigKey.hpp"
 //using namespace std;
 #define BUTTONS_VALUE_TYPE BigKey
 
