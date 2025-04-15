@@ -44,7 +44,7 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
     this->mappingList = mappingList;
 
     for(MappingRelation* mapping : *mappingList){
-        // 兼容性处理, 如果没有设置按键值, 则根据按键名称设置按键值
+        // 根据按键名称设置按键值，不从文件中获取
         if (mapping->dev_btn_bit_value == BIGKEY_ZERO) {
             std::string btn_name = mapping->dev_btn_name;
             if (btn_name.find("按键") != std::string::npos) {
@@ -65,7 +65,7 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         if (mapping->dev_btn_bit_value != BIGKEY_ZERO) {
             MappingRelation newMapping = *mapping;
             handleMultiBtnVector.push_back(newMapping);
-        }  
+        }
     }
 
     // 多按键优先级高, 先处理多按键映射,故排序
