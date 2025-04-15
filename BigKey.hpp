@@ -33,7 +33,7 @@ class BigKey {
     friend BigKey operator&=(BigKey&, const BigKey&);  // 按位与重载
     friend BigKey operator|=(BigKey&, const BigKey&);  // 按位或重载
 
-            // 比较重载
+    // 比较重载
     friend bool operator==(const BigKey&, const BigKey&);  // 等于重载
     friend bool operator!=(const BigKey&, const BigKey&);  // 不等于重载
 
@@ -41,7 +41,7 @@ class BigKey {
     friend bool operator&&(const BigKey&, const bool&);    // 逻辑与重载
     friend bool operator&&(const bool&, const BigKey&);    // 逻辑与重载
 
-            // 输入输出重载
+    // 输入输出重载
     friend ostream& operator<<(ostream&, const BigKey&);  // 输出重载
     friend istream& operator>>(istream&, BigKey&);        // 输入重载
 #if ENABLE_QT
@@ -56,7 +56,7 @@ public:
     BigKey operator=(const BigKey&);      // 赋值函数
     BigKey operator=(BigKey&&) noexcept;  // 移动赋值
 
-            // 转换为字符串
+    // 转换为字符串
     string toString() const;              // decimalNum 用于控制小数位数，赋值为0时小数部分全部输出
     void setBit(size_t pos, bool value);  // 设置按键值
     void clear();                         // 清空按键值
@@ -69,12 +69,12 @@ public:
 #define BIGKEY_ZERO BigKey::ZERO()
 
 private:
-#define BIGKEY_NUMBER 1  // 128位按键值，使用uint32_t数组存储
-#define BIGKEY_TYPE_INTERNAL __uint128_t  // 内部存储类型
+#define BIGKEY_NUMBER 2  // 128位按键值，使用数组存储
+#define BIGKEY_TYPE_INTERNAL uint64_t  // 内部存储类型
 
-#define MAX_BUTTONS (BIGKEY_NUMBER * (sizeof(BIGKEY_TYPE_INTERNAL) * 8))  // 128位按键值，使用uint32_t数组存储
+#define MAX_BUTTONS (BIGKEY_NUMBER * (sizeof(BIGKEY_TYPE_INTERNAL) * 8))
 
-    BIGKEY_TYPE_INTERNAL key[BIGKEY_NUMBER];  // 128位按键值，使用uint32_t数组存储
+    BIGKEY_TYPE_INTERNAL key[BIGKEY_NUMBER];  // 128位按键值，使用数组存储
 };
 
 inline BigKey::BigKey()  // 默认构造函数
@@ -158,9 +158,9 @@ inline void BigKey::setBit(size_t pos, bool value) {
     }
     // 设置按键值
     if (value) {
-        key[pos / (sizeof(BIGKEY_TYPE_INTERNAL) * 8)] |= (1 << (pos % (sizeof(BIGKEY_TYPE_INTERNAL) * 8)));  // 设置为1
+        key[pos / (sizeof(BIGKEY_TYPE_INTERNAL) * 8)] |= ((BIGKEY_TYPE_INTERNAL)1 << (pos % (sizeof(BIGKEY_TYPE_INTERNAL) * 8)));  // 设置为1
     } else {
-        key[pos / (sizeof(BIGKEY_TYPE_INTERNAL) * 8)] &= ~(1 << (pos % (sizeof(BIGKEY_TYPE_INTERNAL) * 8)));  // 设置为0
+        key[pos / (sizeof(BIGKEY_TYPE_INTERNAL) * 8)] &= ~((BIGKEY_TYPE_INTERNAL)1 << (pos % (sizeof(BIGKEY_TYPE_INTERNAL) * 8)));  // 设置为0
     }
 }
 
