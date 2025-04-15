@@ -44,6 +44,10 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
     this->mappingList = mappingList;
 
     for(MappingRelation* mapping : *mappingList){
+        if(isMappingValid(mapping)){
+            addMappingToHandleMap(mapping);
+        }
+
         // 根据按键名称设置按键值，不从文件中获取
         std::string btn_name = mapping->dev_btn_name;
         if (btn_name.find("按键") != std::string::npos) {
@@ -55,12 +59,8 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
                 debugStr += QString::number(index) + " ";
             }
             qDebug().noquote().nospace() << debugStr << ", 设置为:" << mapping->dev_btn_bit_value;
-        }
 
-        if(isMappingValid(mapping)){
-            addMappingToHandleMap(mapping);
-        }
-        if (mapping->dev_btn_bit_value != BIGKEY_ZERO) {
+            // 将映射添加进多按键映射列表
             MappingRelation newMapping = *mapping;
             handleMultiBtnVector.push_back(newMapping);
         }
