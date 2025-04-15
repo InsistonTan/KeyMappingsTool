@@ -45,18 +45,16 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
 
     for(MappingRelation* mapping : *mappingList){
         // 根据按键名称设置按键值，不从文件中获取
-        if (mapping->dev_btn_bit_value == BIGKEY_ZERO) {
-            std::string btn_name = mapping->dev_btn_name;
-            if (btn_name.find("按键") != std::string::npos) {
-                QString debugStr =  QString(btn_name.data()) + ", 索引: ";
-                QStringList btnStrList = QString::fromStdString(btn_name).split("+");
-                for (const QString& btn : btnStrList) {
-                    int index = btn.mid(2).toInt(); // 获取按键索引
-                    mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                    debugStr += QString::number(index) + " ";
-                }
-                qDebug().noquote().nospace() << debugStr << ", 设置为:" << mapping->dev_btn_bit_value;
+        std::string btn_name = mapping->dev_btn_name;
+        if (btn_name.find("按键") != std::string::npos) {
+            QString debugStr =  QString(btn_name.data()) + ", 索引: ";
+            QStringList btnStrList = QString::fromStdString(btn_name).split("+");
+            for (const QString& btn : btnStrList) {
+                int index = btn.mid(2).toInt(); // 获取按键索引
+                mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
+                debugStr += QString::number(index) + " ";
             }
+            qDebug().noquote().nospace() << debugStr << ", 设置为:" << mapping->dev_btn_bit_value;
         }
 
         if(isMappingValid(mapping)){
