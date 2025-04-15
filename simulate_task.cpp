@@ -48,14 +48,14 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         if (mapping->dev_btn_bit_value == BIGKEY_ZERO) {
             std::string btn_name = mapping->dev_btn_name;
             if (btn_name.find("按键") != std::string::npos) {
-                qDebug("%s 按键值为0, 索引: ", btn_name.data());
+                QString debugStr =  QString(btn_name.data()) + ", 索引: ";
                 QStringList btnStrList = QString::fromStdString(btn_name).split("+");
                 for (const QString& btn : btnStrList) {
                     int index = btn.mid(2).toInt(); // 获取按键索引
                     mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                    qDebug("%d, ", index);
+                    debugStr += QString::number(index) + " ";
                 }
-                qDebug("设置为:0x%s", mapping->dev_btn_bit_value);
+                qDebug().noquote().nospace() << debugStr << ", 设置为:" << mapping->dev_btn_bit_value;
             }
         }
 
