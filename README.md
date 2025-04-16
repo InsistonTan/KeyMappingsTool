@@ -42,7 +42,7 @@
 ---
 
 ## 感谢
-- [ViGEmClient](https://github.com/nefarius/ViGEmClient) `感谢项目的开源, 才使得方向盘能映射xbox手柄`
+- [ViGEmClient](https://github.com/nefarius/ViGEmClient) , [ViGEmBus](https://github.com/nefarius/ViGEmBus) `感谢项目的开源, 才使得方向盘能映射xbox手柄`
 - [m-RNA](https://github.com/m-RNA) `感谢m-RNA修复bug和新增多个功能`
 
 
