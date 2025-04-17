@@ -227,7 +227,7 @@ void AssistFuncWorker::doWork(){
     byte* bytes = readETS2Data();
 
     if(bytes == nullptr){
-        pushToQueue(parseErrorLog("欧卡2辅助功能线程即将结束!"));
+        //pushToQueue(parseErrorLog("欧卡2辅助功能线程即将结束!"));
         isWorkerRunning = false;
     }
 
@@ -267,7 +267,7 @@ void AssistFuncWorker::doWork(){
 
 
     //qDebug("finished");
-    pushToQueue("欧卡2辅助功能线程结束");
+    //pushToQueue("欧卡2辅助功能线程结束");
 
     emit workFinished();
 }
