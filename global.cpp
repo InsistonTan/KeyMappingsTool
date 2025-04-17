@@ -288,7 +288,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
         // 遍历按键，查看按键是否按下
         std::string btnStr = "";
         BUTTONS_VALUE_TYPE btnBitValue;
-        for (int i = 0; i < MAX_BUTTONS; i++) {
+        for (size_t i = 0; i < MAX_BUTTONS; i++) {
             if (js.rgbButtons[i] & 0x80) {
                 btnStr += "按键" + std::to_string(i) + "+";
                 btnBitValue.setBit(i, true);
