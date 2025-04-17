@@ -130,7 +130,7 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     this->assistWindow = new AssistFuncWindow();
 
-    if(this->assistWindow->getEnableMappingAfterOpening()){
+    if(AssistFuncWindow::getEnableMappingAfterOpening()){
         on_pushButton_2_clicked();
     }
 }
@@ -568,7 +568,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
 
             text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
             text.append("\"dev_btn_type\":\"" + item->dev_btn_type + "\"").append(", ");
-            text.append("\"dev_btn_value\":\"" + MappingRelation::buttonsValueTypeToStr(item->dev_btn_value) + "\"").append(", ");
+            text.append("\"dev_btn_value\":\"" + std::to_string(item->dev_btn_value) + "\"").append(", ");
             text.append("\"keyboard_name\":\"" + (item->keyboard_name == "\\" ? "\\\\" : item->keyboard_name) + "\"").append(", ");
             text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
@@ -771,11 +771,8 @@ void MainWindow::loadMappingsFile(std::string filename){
                                               : TriggerTypeEnum::Normal;
                 mapping->dev_btn_value = 
                     (jsonObj["dev_btn_value"] != QJsonValue::Undefined && !jsonObj["dev_btn_value"].toString().isEmpty())
-                                              ? MappingRelation::strToButtonsValueType(jsonObj["dev_btn_value"].toString().toStdString())
+                                              ? (jsonObj["dev_btn_value"].toString().toInt())
                                               : 0;
-
-
-
                 mappingList.push_back(mapping);
             }
         }
