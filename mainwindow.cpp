@@ -130,7 +130,7 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     this->assistWindow = new AssistFuncWindow();
 
-    if(this->assistWindow->getEnableMappingAfterOpening()){
+    if(AssistFuncWindow::getEnableMappingAfterOpening()){
         on_pushButton_2_clicked();
     }
 }

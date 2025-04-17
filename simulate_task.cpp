@@ -1,4 +1,5 @@
 #include <simulate_task.h>
+#include "AssistFuncWindow.h"
 #include <global.h>
 #include <QDebug>
 #include<QTimer>
@@ -66,20 +67,22 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         }
     }
 
-    // 多按键优先级高, 先处理多按键映射,故排序
-    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
-        if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
-            return false;  // 将空的排在末尾
-        }
-        // 比较加号的数量
-        int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
-        int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
-        if (aPlusCount != bPlusCount) {
-            return aPlusCount > bPlusCount;  // 按加号数量降序排列
-        }
-        // 如果加号数量相同, 则字符串大小比较
-        return a.dev_btn_name > b.dev_btn_name;
-    });
+    // 组合键按下时只执行组合键映射，映射多按键优先级高, 故排序先处理多按键映射；当还执行子键映射时，就按配置文件的顺序
+    if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
+        std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
+            if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
+                return false;  // 将空的排在末尾
+            }
+            // 比较加号的数量
+            int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
+            int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
+            if (aPlusCount != bPlusCount) {
+                return aPlusCount > bPlusCount;  // 按加号数量降序排列
+            }
+            // 如果加号数量相同, 则字符串大小比较
+            return a.dev_btn_name > b.dev_btn_name;
+        });
+    }
 }
 
 void SimulateTask::closeDevice(){

@@ -19,8 +19,8 @@ public:
     explicit AssistFuncWindow(QWidget *parent = nullptr);
     ~AssistFuncWindow();
 
-    bool getEnableMappingAfterOpening();
-    bool getEnableOnlyLongestMapping();
+    static bool getEnableMappingAfterOpening();
+    static bool getEnableOnlyLongestMapping();
 
 signals:
     void stopWork();
@@ -47,9 +47,9 @@ private:
 
     QString ETS2InstallPath;// 欧卡2安装目录
 
-    bool ETS2_enableAutoCancelHandbrake = false;// 欧卡2辅助功能_开启自动解除手刹
-    bool SYSTEM_enableMappingAfterOpening = false;// 映射软件的系统功能_开启软件后立即开启映射
-    bool SYSTEM_enableOnlyLongestMapping = false;// 组合键按下时只执行组合键映射，不执行对应子键映射
+    static bool ETS2_enableAutoCancelHandbrake;// 欧卡2辅助功能_开启自动解除手刹
+    static bool SYSTEM_enableMappingAfterOpening;// 映射软件的系统功能_开启软件后立即开启映射
+    static bool SYSTEM_enableOnlyLongestMapping;// 组合键按下时只执行组合键映射，不执行对应子键映射
 
     void scanETS2InstallPath();// 扫描欧卡2安装路径
 

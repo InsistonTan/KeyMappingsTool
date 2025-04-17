@@ -10,6 +10,10 @@
 #include<QFileDialog>
 #include<QTimer>
 
+bool AssistFuncWindow::ETS2_enableAutoCancelHandbrake = false;
+bool AssistFuncWindow::SYSTEM_enableMappingAfterOpening = false;
+bool AssistFuncWindow::SYSTEM_enableOnlyLongestMapping = false;
+
 AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::AssistFuncWindow)

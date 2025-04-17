@@ -4,6 +4,7 @@
 #include<QMutexLocker>
 #include<QMutex>
 #include<QDateTime>
+#include "AssistFuncWindow.h"
 
 bool isRuning = false;
 bool isXboxMode = false;
@@ -315,7 +316,9 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                     BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
                     if ((multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue)) {
                         // 找到对应的按键, 进行映射
-                        btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
+                        if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
+                            btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
+                        }
                         MappingRelation *mapping = new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, 0, 0, "");
                         mapping->setBtnBitValue(multiBtnBitValue);  // 设置按键值
                         list.append(mapping);
