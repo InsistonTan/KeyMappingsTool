@@ -155,6 +155,22 @@
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
      </widget>
+     <widget class="QCheckBox" name="checkBox_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>180</y>
+        <width>491</width>
+        <height>19</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>组合键按下时只执行组合键映射，不执行对应子键映射</string>
+      </property>
+      <property name="text">
+       <string>启用最长组合键优先模式</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QPushButton" name="pushButton">

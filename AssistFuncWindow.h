@@ -20,6 +20,7 @@ public:
     ~AssistFuncWindow();
 
     bool getEnableMappingAfterOpening();
+    bool getEnableOnlyLongestMapping();
 
 signals:
     void stopWork();
@@ -37,6 +38,8 @@ private slots:
 
     void on_checkBox_2_clicked();
 
+    void on_checkBox_3_clicked();
+
 private:
     Ui::AssistFuncWindow *ui;
 
@@ -46,6 +49,7 @@ private:
 
     bool ETS2_enableAutoCancelHandbrake = false;// 欧卡2辅助功能_开启自动解除手刹
     bool SYSTEM_enableMappingAfterOpening = false;// 映射软件的系统功能_开启软件后立即开启映射
+    bool SYSTEM_enableOnlyLongestMapping = false;// 组合键按下时只执行组合键映射，不执行对应子键映射
 
     void scanETS2InstallPath();// 扫描欧卡2安装路径
 

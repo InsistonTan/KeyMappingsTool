@@ -48,6 +48,11 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
         pushToQueue("开启 打开软件后立即开启映射");
         ui->checkBox_2->setChecked(true);
     }
+
+    if(SYSTEM_enableOnlyLongestMapping){
+        pushToQueue("开启 启用最长组合键优先模式");
+        ui->checkBox_3->setChecked(true);
+    }
 }
 
 AssistFuncWindow::~AssistFuncWindow()
@@ -60,6 +65,11 @@ bool AssistFuncWindow::getEnableMappingAfterOpening()
     return SYSTEM_enableMappingAfterOpening;
 }
 
+bool AssistFuncWindow::getEnableOnlyLongestMapping()
+{
+    return SYSTEM_enableOnlyLongestMapping;
+}
+
 void AssistFuncWindow::saveSettings(){
     // 创建一个 QFile 对象，并打开文件进行写入
     QFile file2(appDataDirPath + ASSIST_FUNC_SETTINGS);  // 文件路径可以是绝对路径或相对路径
@@ -68,6 +78,7 @@ void AssistFuncWindow::saveSettings(){
 
     text2.append("\n\t\"ETS2_enableAutoCancelHandbrake\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",").append("\n");
     text2.append("\n\t\"SYSTEM_enableMappingAfterOpening\":").append(ui->checkBox_2->isChecked() ? "true" : "false").append(",").append("\n");
+    text2.append("\n\t\"SYSTEM_enableOnlyLongestMapping\":").append(ui->checkBox_3->isChecked() ? "true" : "false").append(",").append("\n");
     text2.append("\n\t\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append("\n");
     text2.append("}");
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -105,8 +116,10 @@ void AssistFuncWindow::loadSettings(){
     // 读取信息
     bool enableETS2AutoCancelHandbrake = (jsonObj["ETS2_enableAutoCancelHandbrake"] != QJsonValue::Undefined) ? jsonObj["ETS2_enableAutoCancelHandbrake"].toBool() : false;
     bool enableAutoStartMapping = (jsonObj["SYSTEM_enableMappingAfterOpening"] != QJsonValue::Undefined) ? jsonObj["SYSTEM_enableMappingAfterOpening"].toBool() : false;
+    bool enableOnlyLongestMapping = (jsonObj["SYSTEM_enableOnlyLongestMapping"] != QJsonValue::Undefined) ? jsonObj["SYSTEM_enableOnlyLongestMapping"].toBool() : false;
     this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;
     this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;
+    this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;
     // 欧卡2安装路径
     QString ets2Path = (jsonObj["ETS2_installPath"]!= QJsonValue::Undefined) ? jsonObj["ETS2_installPath"].toString() : "";
     if(!ets2Path.isEmpty()){
@@ -284,3 +297,9 @@ void AssistFuncWindow::on_checkBox_2_clicked()
 {
     unsave();
 }
+
+void AssistFuncWindow::on_checkBox_3_clicked()
+{
+    unsave();
+}
+
