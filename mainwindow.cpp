@@ -681,7 +681,7 @@ void MainWindow::loadLastDeviceFile(){
 
             if(hasLastDevInCurrentDeviceList(line0.toStdString())){
                 qDebug("上一次使用的设备在当前设备列表中");
-                pushToQueue(parseSuccessLog("上一次使用的设备在当前设备列表中, 自动选择该设备"));
+                pushToQueue("上一次使用的设备在当前设备列表中, 自动选择该设备");
 
                 deviceName = line0.toStdString();
                 ui->comboBox->setCurrentText(deviceName.data());
