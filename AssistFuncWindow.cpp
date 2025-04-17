@@ -1,6 +1,7 @@
 #include "AssistFuncWindow.h"
 #include "ui_AssistFuncWindow.h"
 #include "AssistFuncWorker.h"
+#include "simulate_task.h"
 #include<QThread>
 #include"global.h"
 #include<QDir>
@@ -9,6 +10,7 @@
 #include<QSettings>
 #include<QFileDialog>
 #include<QTimer>
+#include<QMessageBox>
 
 bool AssistFuncWindow::ETS2_enableAutoCancelHandbrake = false;
 bool AssistFuncWindow::SYSTEM_enableMappingAfterOpening = false;
@@ -43,18 +45,18 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
 
     // 开启线程
     if(ETS2_enableAutoCancelHandbrake){
-        pushToQueue("开启 欧卡2自动解除手刹");
+        pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 欧卡2自动解除手刹");
         ui->checkBox->setChecked(true);
         startAssistFuncWork();
     }
 
     if(SYSTEM_enableMappingAfterOpening){
-        pushToQueue("开启 打开软件后立即开启映射");
+        pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 打开软件后立即开启映射");
         ui->checkBox_2->setChecked(true);
     }
 
     if(SYSTEM_enableOnlyLongestMapping){
-        pushToQueue("开启 启用最长组合键优先模式");
+        pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 最长组合键优先模式");
         ui->checkBox_3->setChecked(true);
     }
 }
@@ -92,9 +94,10 @@ void AssistFuncWindow::saveSettings(){
         // 关闭文件
         file2.close();
         qDebug() << "保存辅助功能设置成功!";
-        pushToQueue(parseSuccessLog("保存辅助功能设置成功!"));
+        //pushToQueue(parseSuccessLog("保存辅助功能设置成功!"));
     } else {
         qDebug() << "打开辅助功能设置文件失败!";
+        QMessageBox::critical(this, "保存失败", "打开/创建辅助功能设置文件失败!");
         pushToQueue(parseErrorLog("打开/创建辅助功能设置文件失败!"));
     }
 }
@@ -238,24 +241,43 @@ void AssistFuncWindow::on_pushButton_clicked()
     // 开启欧卡2自动解除手刹
     if(ui->checkBox->isChecked()){
         if(ETS2_enableAutoCancelHandbrake == false){
-            pushToQueue("开启 欧卡2自动解除手刹");
+            pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 欧卡2自动解除手刹");
         }else{
             emit stopWork();
         }
 
         QTimer::singleShot(500, [=](){
-            pushToQueue("启用 欧卡2自动解除手刹功能");
             // 开启辅助功能任务
             startAssistFuncWork();
         });
 
+        ETS2_enableAutoCancelHandbrake = true;
+
     }else{
         // 关闭自动解除手刹
         if(ETS2_enableAutoCancelHandbrake){
-            pushToQueue("关闭 欧卡2自动解除手刹");
+            pushToQueue("<b style='color:red;'>关闭</b> 欧卡2自动解除手刹");
             emit stopWork();
+
+            ETS2_enableAutoCancelHandbrake = false;
         }
     }
+
+    // SYSTEM_enableOnlyLongestMapping值发生变化
+    if(SYSTEM_enableOnlyLongestMapping != ui->checkBox_3->isChecked()){
+
+        // SYSTEM_enableOnlyLongestMapping变量值更新
+        SYSTEM_enableOnlyLongestMapping = ui->checkBox_3->isChecked();
+        SYSTEM_enableOnlyLongestMapping ? pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 最长组合键优先模式")
+                                        : pushToQueue("<b style='color:red;'>关闭</b> 最长组合键优先模式");
+
+        // 提交信号
+        SimulateTask::changeEnableOnlyLongestMapping();
+    }
+
+
+
+
 
     this->hide();
 }

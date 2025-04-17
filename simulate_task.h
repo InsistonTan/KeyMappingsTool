@@ -30,7 +30,9 @@ private:
     //hid_device *handle;// 当前设备的连接句柄
     std::vector<MappingRelation*> *mappingList;// 已配置的按键映射列表
     std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map
-    std::vector<MappingRelation> handleMultiBtnVector;// 设备多个按键对应键盘扫描码map
+    static std::vector<MappingRelation> handleMultiBtnVector;// 当前在使用的 设备组合键映射列表
+    static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
+    static std::vector<MappingRelation> handleMultiBtnVectorSorted;// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
 
     std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map
 
@@ -54,10 +56,12 @@ private:
 
 public:
     SimulateTask(std::vector<MappingRelation*> *mappingList);
-
+    // 辅助功能-最长组合键优先模式发生改动
+    static void changeEnableOnlyLongestMapping();
 public slots:
     // 工作任务
     void doWork();
+
 signals:
     // 任务结束信号
     void workFinished();

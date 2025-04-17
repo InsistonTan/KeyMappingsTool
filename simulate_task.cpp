@@ -5,6 +5,10 @@
 #include<QTimer>
 #include<QCoreApplication>
 
+std::vector<MappingRelation> SimulateTask::handleMultiBtnVector = {};// 当前在使用的 设备组合键映射列表
+std::vector<MappingRelation> SimulateTask::handleMultiBtnVectorUnsort = {};// 未排序的 设备组合键映射列表
+std::vector<MappingRelation> SimulateTask::handleMultiBtnVectorSorted = {};// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
+
 void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
     // 记录按键触发模式
     if(mapping != nullptr){
@@ -52,14 +56,14 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         // 根据按键名称设置按键值，不从文件中获取
         std::string btn_name = mapping->dev_btn_name;
         if (btn_name.find("按键") != std::string::npos) {
-            QString debugStr =  QString(btn_name.data()) + ", 索引: ";
+            //QString debugStr =  QString(btn_name.data()) + ", 索引: ";
             QStringList btnStrList = QString::fromStdString(btn_name).split("+");
             for (const QString& btn : btnStrList) {
                 int index = btn.mid(2).toInt(); // 获取按键索引
                 mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                debugStr += QString::number(index) + " ";
+                //debugStr += QString::number(index) + " ";
             }
-            qDebug().noquote().nospace() << debugStr << ", 设置为:" << mapping->dev_btn_bit_value;
+            // qDebug().noquote().nospace() << debugStr << ", 设置为:" << mapping->dev_btn_bit_value;
 
             // 将映射添加进多按键映射列表
             MappingRelation newMapping = *mapping;
@@ -67,21 +71,30 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
         }
     }
 
-    // 组合键按下时只执行组合键映射，映射多按键优先级高, 故排序先处理多按键映射；当还执行子键映射时，就按配置文件的顺序
-    if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
-        std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
-            if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
-                return false;  // 将空的排在末尾
-            }
-            // 比较加号的数量
-            int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
-            int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
-            if (aPlusCount != bPlusCount) {
-                return aPlusCount > bPlusCount;  // 按加号数量降序排列
-            }
-            // 如果加号数量相同, 则字符串大小比较
-            return a.dev_btn_name > b.dev_btn_name;
-        });
+    // 未排序的组合键映射列表
+    handleMultiBtnVectorUnsort = handleMultiBtnVector;
+
+    // 对组合键映射列表排序, 按子键的数量倒序
+    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
+        if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
+            return false;  // 将空的排在末尾
+        }
+        // 比较加号的数量
+        int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
+        int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
+        if (aPlusCount != bPlusCount) {
+            return aPlusCount > bPlusCount;  // 按加号数量降序排列
+        }
+        // 如果加号数量相同, 则字符串大小比较
+        return a.dev_btn_name > b.dev_btn_name;
+    });
+
+    // 已排序的组合键映射列表
+    handleMultiBtnVectorSorted = handleMultiBtnVector;
+
+    // 如果不启用最长组合键优先模式, 就使用 未排序的
+    if (!AssistFuncWindow::getEnableOnlyLongestMapping()) {
+        handleMultiBtnVector = handleMultiBtnVectorUnsort;
     }
 }
 
@@ -602,7 +615,7 @@ void SimulateTask::doWork(){
 
                         // 映射普通xbox按键
                         if(currentBtn->dev_btn_type == (std::string)WHEEL_BUTTON){
-                            qDebug("映射Xbox模式-按键按下:%s", btnStr.data());
+                            // qDebug("映射Xbox模式-按键按下:%s", btnStr.data());
 
                             // 记录按键按下
                             keyHoldingMap.insert_or_assign(btnStr, item->second);
@@ -688,9 +701,6 @@ void SimulateTask::doWork(){
                                 finalValue = ((currentMax - static_cast<double>(currentBtn->dev_btn_value))
                                                 /(currentMax - currentMin) * (xboxMax - xboxMin))
                                              + xboxMin;
-
-                                //qDebug("当前值:%d {%d, %d}, xbox范围:{%d, %d}, 转换成xbox值:%d"
-                                //       , currentBtn->dev_btn_value, currentMin, currentMax, xboxMin, xboxMax, finalValue);
                             }
 
 
@@ -702,10 +712,6 @@ void SimulateTask::doWork(){
                 }
             }
         }
-
-
-
-        //qDebug(str->toStdString().data());
 
         // 释放res内存
         qDeleteAll(res);  // 删除所有指针指向的对象
@@ -804,5 +810,13 @@ void SimulateTask::simulateKeyPress(short scanCode, bool isKeyRelease) {
         // 发送鼠标事件
         SendInput(1, &input, sizeof(INPUT));
     }
+
+}
+
+void SimulateTask::changeEnableOnlyLongestMapping(){
+    // 如果启用最长组合键优先模式, 就使用 已排序的, 否则使用未排序的
+    AssistFuncWindow::getEnableOnlyLongestMapping()
+        ? handleMultiBtnVector = handleMultiBtnVectorSorted
+        : handleMultiBtnVector = handleMultiBtnVectorUnsort;
 
 }

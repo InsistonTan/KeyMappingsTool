@@ -24,6 +24,7 @@ public:
 
 signals:
     void stopWork();
+    void changeEnableOnlyLongestMappingSignal();
 
 private slots:
     void on_checkBox_stateChanged(int arg1);
