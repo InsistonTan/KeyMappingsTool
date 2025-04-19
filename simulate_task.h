@@ -24,6 +24,9 @@
 // 模拟释放按键的延迟时间ms
 #define RELEASE_DELAY_MS 100
 
+// 鼠标滚轮的步长
+#define MOUSE_WHEEL_DELTA 20
+
 class SimulateTask : public QObject {
     Q_OBJECT
 private:

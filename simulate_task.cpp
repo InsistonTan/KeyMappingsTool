@@ -540,8 +540,8 @@ void SimulateTask::doWork(){
 
                     // 映射键盘
                     if(!getIsXboxMode()){
-                        // 对映射鼠标移动(-1到-4)之外的按键操作进行按下记录
-                        if((item->second < -4 || item->second > 0)){
+                        // 对映射鼠标左键(-7), 鼠标右键(-8), 以及其它键盘按键进行按下记录
+                        if(item->second == -7 || item->second == -8 || item->second > 0){
                             // 记录按键按下
                             keyHoldingMap.insert_or_assign(btnStr, item->second);
                         }
@@ -549,7 +549,7 @@ void SimulateTask::doWork(){
                         // 根据触发模式, 进行对应处理
                         switch (keyTriggerTypeMap[currentBtn->dev_btn_name]) {
                         case TriggerTypeEnum::Delay1s:
-                            qDebug() << "延迟1s触发";
+                            //qDebug() << "延迟1s触发";
                             // 延迟1s触发
                             QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
                                 QTimer::singleShot(1000, [=](){
@@ -562,7 +562,7 @@ void SimulateTask::doWork(){
                             }, Qt::QueuedConnection);
                             break;
                         case TriggerTypeEnum::Delay3s:
-                            qDebug() << "延迟3s触发";
+                            //qDebug() << "延迟3s触发";
                             // 延迟3s触发
                             QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
                                 QTimer::singleShot(3000, [=](){
@@ -575,7 +575,7 @@ void SimulateTask::doWork(){
                             }, Qt::QueuedConnection);
                             break;
                         case TriggerTypeEnum::Delay5s:
-                            qDebug() << "延迟5s触发";
+                            //qDebug() << "延迟5s触发";
                             // 延迟5s触发
                             QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
                                 QTimer::singleShot(5000, [=](){
@@ -601,7 +601,7 @@ void SimulateTask::doWork(){
                             }, Qt::QueuedConnection);
                             break;
                         default:
-                            qDebug() << "默认的同步模式";
+                            //qDebug() << "默认的同步模式";
                             // 默认的同步模式
                             simulateKeyPress(item->second, false);
                             break;
@@ -623,7 +623,7 @@ void SimulateTask::doWork(){
                             // 根据触发模式, 进行对应处理
                             switch (keyTriggerTypeMap[currentBtn->dev_btn_name]) {
                             case TriggerTypeEnum::Delay1s:
-                                qDebug() << "延迟1s触发";
+                                //qDebug() << "延迟1s触发";
                                 // 延迟1s触发
                                 QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
                                     QTimer::singleShot(1000, [=](){
@@ -636,7 +636,7 @@ void SimulateTask::doWork(){
                                 }, Qt::QueuedConnection);
                                 break;
                             case TriggerTypeEnum::Delay3s:
-                                qDebug() << "延迟3s触发";
+                                //qDebug() << "延迟3s触发";
                                 // 延迟3s触发
                                 QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
                                     QTimer::singleShot(3000, [=](){
@@ -649,7 +649,7 @@ void SimulateTask::doWork(){
                                 }, Qt::QueuedConnection);
                                 break;
                             case TriggerTypeEnum::Delay5s:
-                                qDebug() << "延迟5s触发";
+                                //qDebug() << "延迟5s触发";
                                 // 延迟5s触发
                                 QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
                                     QTimer::singleShot(5000, [=](){
@@ -675,7 +675,7 @@ void SimulateTask::doWork(){
                                 }, Qt::QueuedConnection);
                                 break;
                             default:
-                                qDebug() << "默认的同步模式";
+                                //qDebug() << "默认的同步模式";
                                 // 默认的同步模式
                                 // 按下xbox对应按键
                                 simulateXboxKeyPress(NormalButton, item->second, 0, false);
@@ -785,14 +785,6 @@ void SimulateTask::simulateKeyPress(short scanCode, bool isKeyRelease) {
             input.mi.dx = 0;
             input.mi.dy = MOUSE_Y_SPEED;
         }
-        // 鼠标左键长按
-        // else if(scanCode == -5){
-        //     input.mi.dwFlags = isMouseLeftHolding ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
-        // }
-        // // 鼠标右键长按
-        // else if(scanCode == -6){
-        //     input.mi.dwFlags = isMouseRightHolding ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
-        // }
 
         // 鼠标左键点击
         else if(scanCode == -7){
@@ -801,7 +793,22 @@ void SimulateTask::simulateKeyPress(short scanCode, bool isKeyRelease) {
         // 鼠标右键点击
         else if(scanCode == -8){
             input.mi.dwFlags = !isKeyRelease ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
-        }else{
+        }
+        // 鼠标滚轮上滚
+        else if(scanCode == -9){
+            input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+            input.mi.mouseData = MOUSE_WHEEL_DELTA;  // 正数向上滚动，负数向下滚动
+            input.mi.time = 0;
+            input.mi.dwExtraInfo = 0;
+        }
+        // 鼠标滚轮下滚
+        else if(scanCode == -10){
+            input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+            input.mi.mouseData = -MOUSE_WHEEL_DELTA;  // 正数向上滚动，负数向下滚动
+            input.mi.time = 0;
+            input.mi.dwExtraInfo = 0;
+        }
+        else{
             // 其它无效操作不模拟
             return;
         }
