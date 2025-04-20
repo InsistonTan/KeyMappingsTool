@@ -8,6 +8,7 @@
 #include<windows.h>
 #include <ViGEm/Client.h>
 #include<key_map.h>
+#include"scs-telemetry-common.hpp"
 
 #define MAX_STR 255
 #define MAX_BUF 2048
@@ -93,7 +94,7 @@ protected:
     void simulateKeyPress(short vkey, bool isKeyRelease);
 
     // 释放指定位置的所有按键
-    void releaseAllKey(QList<MappingRelation*> pressBtnList);
+    void releaseAllKey(QList<MappingRelation*> pressBtnList, scsTelemetryMap_t* pScsTelemtry = nullptr);
 
     // 关闭HID设备
     void closeDevice();
