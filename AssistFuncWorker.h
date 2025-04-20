@@ -11,17 +11,16 @@ class AssistFuncWorker : public QObject
 
 private:
     volatile bool isWorkerRunning = true;
-    
-    
+
 signals:
     void workFinished();
-    
+ 
 public slots:
     void doWork();
-    
+
     // 取消运行
     void cancelWorkSlot();
-    
+
 public:
     AssistFuncWorker();
 
