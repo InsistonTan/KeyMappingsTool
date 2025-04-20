@@ -1,6 +1,8 @@
 #ifndef SCS_TELEMETRY_COMMON_HPP
 #define SCS_TELEMETRY_COMMON_HPP
 
+// 本文件来自开源项目：https://github.com/RenCloud/scs-sdk-plugin
+
 // This file contains "Common definitions" for this ETS2 telemetry plug-in.
 // This includes:
 // - Debug logging detail options
