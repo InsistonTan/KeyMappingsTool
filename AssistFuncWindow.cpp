@@ -173,12 +173,13 @@ bool copyETS2PluginDll(QString ets2Path, QString pluginDllPath, QString pluginDl
             // plugins目录不存在dll
             if(!ETS2Dir->exists(pluginDllFile)){
                 pushToQueue(parseWarningLog("欧卡2目录未检测到遥测数据插件[" + pluginDllFile + "], 将复制插件到欧卡2 plugins 目录[" + ETS2Dir->absolutePath() + "]..."));
-                QFile *dllPluginFile = new QFile("plugins/" + pluginDllFile);
+                QString pluginDllFilePath = pluginDllPath + "/" + pluginDllFile;
+                QFile *dllPluginFile = new QFile("plugins/" + pluginDllFilePath);
                 if(!dllPluginFile->exists()){
-                    pushToQueue(parseErrorLog("软件安装目录/plugins/" + pluginDllFile + " 不存在, 无法将该插件复制到欧卡2 plugins 目录!"));
+                    pushToQueue(parseErrorLog("软件安装目录/plugins/" + pluginDllFilePath + " 不存在, 无法将该插件复制到欧卡2 plugins 目录!"));
                     return false;
                 }else{
-                    if(!dllPluginFile->copy(ETS2Dir->absolutePath() + "/" + pluginDllPath + "/" + pluginDllFile)){
+                    if(!dllPluginFile->copy(ETS2Dir->absolutePath() + "/" + pluginDllFile)){
                         pushToQueue(parseErrorLog("复制插件失败!"));
                         return false;
                     }
