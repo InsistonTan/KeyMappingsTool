@@ -201,10 +201,10 @@ bool AssistFuncWindow::checkETS2Plugin(){
         return false;
     }
 
-    if(!copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x64"), "ETS2SharedMemoryMapPlugin64.dll")){
+    if(!copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x64"), "Win64/scs-telemetry.dll")){
         return false;
     }
-    copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x86"), "ETS2SharedMemoryMapPlugin32.dll");
+    copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x86"), "Win32/scs-telemetry.dll");
 
     return true;
 }

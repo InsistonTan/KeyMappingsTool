@@ -5,7 +5,12 @@
 #include <tchar.h>
 #include <cctype>
 #include<QTimer>
+#include<QFile>
 #include"global.h"
+#include"scs-telemetry-common.hpp"
+
+#define MAPPING_FILE_NAME SCS_PLUGIN_MMF_NAME
+#define SHARED_MEMORY_SIZE (3 * 1024)
 
 AssistFuncWorker::AssistFuncWorker() {}
 
@@ -21,14 +26,14 @@ byte* AssistFuncWorker::readETS2Data(){
     while(isWorkerRunning){
         // 打开共享内存
         hMapFile = OpenFileMapping(
-            FILE_MAP_READ,      // 只读访问
-            FALSE,              // 不继承句柄
-            _T("SCSTelemetryShared_eut2") // 共享内存名称
+            FILE_MAP_READ,        // 只读访问
+            FALSE,                // 不继承句柄
+            _T(MAPPING_FILE_NAME) // 共享内存名称
             );
 
         if (hMapFile == nullptr) {
             if(!isWarningLogShow){
-                pushToQueue(parseWarningLog("无法打开共享内存: SCSTelemetryShared_eut2, 欧卡2可能未运行, 将等待欧卡2运行..."));
+                pushToQueue(parseWarningLog("无法打开共享内存:" + QString(MAPPING_FILE_NAME) + "欧卡2可能未运行, 将等待欧卡2运行..."));
                 isWarningLogShow = true;
             }
             QThread::msleep(1000);
@@ -46,15 +51,14 @@ byte* AssistFuncWorker::readETS2Data(){
         return nullptr;
     }
 
-    pushToQueue(parseSuccessLog("打开共享内存: SCSTelemetryShared_eut2 成功!"));
-
+    pushToQueue(parseSuccessLog("打开共享内存:" + QString(MAPPING_FILE_NAME) + "成功!"));
 
     // 映射到进程地址空间
     byte* bytes = (byte*)MapViewOfFile(
         hMapFile,           // 共享内存句柄
         FILE_MAP_READ,      // 只读访问
         0, 0,               // 偏移量
-        sizeof(byte[1024]) // 映射大小
+        SHARED_MEMORY_SIZE // 映射大小
         );
 
 
@@ -71,24 +75,24 @@ byte* AssistFuncWorker::readETS2Data(){
 
 // 测试用, 用于寻找相关数据
 void viewSharedMemory() {
-    HANDLE hMapFile = OpenFileMapping(FILE_MAP_READ, FALSE, _T("SCSTelemetryShared_eut2"));
+    HANDLE hMapFile = OpenFileMapping(FILE_MAP_READ, FALSE, _T(MAPPING_FILE_NAME));
     if (!hMapFile) {
         std::cerr << "打开失败: " << GetLastError() << std::endl;
         return;
     }
 
-    LPVOID pBuf = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, 0);
+    LPVOID pBuf = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, SHARED_MEMORY_SIZE);
     if (!pBuf) {
         CloseHandle(hMapFile);
         return;
     }
 
-    DWORD dwSize = 1024;
+    DWORD dwSize = SHARED_MEMORY_SIZE;
     const int BYTES_PER_LINE = 16;
     BYTE* bytes = (BYTE*)pBuf;
 
-    int oldVal[1024];
-    int newVal[1024];
+    int oldVal[SHARED_MEMORY_SIZE];
+    int newVal[SHARED_MEMORY_SIZE];
 
     for(int j=0; ; j++){
         // for (DWORD i = 0; i < dwSize; i++) {
@@ -220,33 +224,24 @@ void simulateKeyPress(short scanCode, bool isKeyRelease) {
 }
 
 void AssistFuncWorker::doWork(){
-    //viewSharedMemory();
-
-
     // 从共享内存读取遥测数据
-    byte* bytes = readETS2Data();
+    scsTelemetryMap_t* bytes = (scsTelemetryMap_t*)readETS2Data();
 
     if(bytes == nullptr){
         //pushToQueue(parseErrorLog("欧卡2辅助功能线程即将结束!"));
         isWorkerRunning = false;
     }
 
-    // 手刹数据所在位置
-    int handbrakeIndex = 501;
-    // 油门数据所在位置的起点
-    int acceleratorIndex = 465;
-    // 油门值(0-1)
-    float acceleratorResult;
+    bool handbrakeResult = false; // 手刹值(0-1)
+    float acceleratorResult;      // 油门值(0-1)
 
     while(isWorkerRunning){
-        // 油门数据的字节数组
-        unsigned char bytesData[4] = {bytes[acceleratorIndex], bytes[acceleratorIndex+1], bytes[acceleratorIndex+2], bytes[acceleratorIndex+3]};
-        // 将字节数组转float
-        memcpy(&acceleratorResult, bytesData, sizeof(float));
 
+        handbrakeResult = bytes->truck_b.parkBrake; // 手刹值(0-1)
+        acceleratorResult = bytes->truck_f.gameThrottle; // 油门值(0-1)
         // 手刹为启用状态, 并且油门踩下大于50%, 模拟键盘的空格键解除手刹
-        //qDebug("手刹:%d, 油门:%.4f", static_cast<int>(bytes[handbrakeIndex]), acceleratorResult);
-        if(static_cast<int>(bytes[handbrakeIndex]) == 1 && acceleratorResult > 0.5){
+        qDebug("手刹:%d, 油门:%.4f", handbrakeResult, acceleratorResult);
+        if(handbrakeResult == 1 && acceleratorResult > 0.5f){
             pushToQueue("当前手刹为启用状态, 且油门大于50%, 正在模拟空格键解除手刹...");
 
             // 模拟空格键按下

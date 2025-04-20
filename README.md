@@ -46,6 +46,7 @@
 
 ## 感谢
 - [ViGEmClient](https://github.com/nefarius/ViGEmClient) , [ViGEmBus](https://github.com/nefarius/ViGEmBus) `感谢项目的开源, 才使得方向盘能映射xbox手柄`
+- [scs-sdk-plugin](https://github.com/RenCloud/scs-sdk-plugin/tree/V.1.12.1) `感谢项目开源, 使得获取欧卡2/美卡的遥测数据更方便`
 - [m-RNA](https://github.com/m-RNA) `感谢m-RNA修复bug和新增多个功能`
 
 ---
