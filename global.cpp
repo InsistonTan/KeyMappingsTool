@@ -5,6 +5,10 @@
 #include<QMutex>
 #include<QDateTime>
 #include "AssistFuncWindow.h"
+#include "mainwindow.h"
+#include<algorithm>
+
+QWidget* g_mainWindow = nullptr;
 
 bool isRuning = false;
 bool isXboxMode = false;
@@ -176,7 +180,7 @@ void getDipropRange(long axisCode, std::string axisName){
         axisValueRangeMap.insert_or_assign(axisName, dipr1);
     }else{
         qDebug("获取方向盘%s的值范围失败!!", axisName.data());
-        pushToQueue(parseWarningLog("获取方向盘" + QString(axisName.data()) + "的数值范围失败!"));
+        pushToQueue(parseWarningLog("获取" + QString(axisName.data()) + "的数值范围失败, 如果是非方向盘设备请忽略此警告"));
     }
 }
 
@@ -466,6 +470,32 @@ void cleanupDirectInput() {
         g_pDirectInput->Release();
         g_pDirectInput = nullptr;
     }
+}
+
+// 检测设备是否支持力反馈
+bool checkIsSupportForceFeedback(){
+    qDebug() << "当前选择的设备下标: " << MainWindow::getCurrentSelectedDeviceIndex();
+
+    if(initDirectInput() && openDiDevice(MainWindow::getCurrentSelectedDeviceIndex())){
+        DIDEVCAPS diDevCaps;
+        diDevCaps.dwSize = sizeof(DIDEVCAPS);
+        g_pDevice->GetCapabilities(&diDevCaps);
+
+        if (diDevCaps.dwFlags & DIDC_FORCEFEEDBACK) {
+            // 设备支持力反馈
+            qDebug() << "当前选择的设备支持力反馈";
+
+            return true;
+        }else{
+            qDebug() << "当前设备不支持力反馈!";
+            pushToQueue(parseErrorLog("当前设备不支持力反馈!"));
+        }
+    }else{
+        qDebug() << "检测设备是否支持力反馈失败: 初始化设备失败!";
+        pushToQueue(parseErrorLog("检测设备是否支持力反馈失败: 初始化设备失败!"));
+    }
+
+    return false;
 }
 
 

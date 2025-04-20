@@ -24,6 +24,7 @@
 #define MAPPING_FILE_SUFFIX_XBOX ".di_xbox_mappings_config"
 #define KEYBOARD "keyboard"
 #define XBOX "xbox"
+#define AXIS_CHANGE_VALUE 1000 //识别轴需要变化的最小值
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -39,6 +40,8 @@ public:
 
     MainWindow(QMainWindow *parent = nullptr);
     ~MainWindow();
+    // 获取当前选择的设备的下标
+    static int getCurrentSelectedDeviceIndex();
 
 private:
     Ui::MainWindow *ui;
@@ -48,20 +51,14 @@ private:
     AssistFuncWindow *assistWindow;// 辅助功能窗口
 
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
-    //std::vector<DeviceInfo*> deviceList;// 设备列表
-    //short vid=0,pid=0;// 当前设备的vid,pid
-    //hid_device *handle;// 当前设备的连接句柄
-    //bool isDeviceOpen = false;// 当前设备是否打开
+
     std::string deviceDesc; // 设备信息
     std::string deviceName; // 设备名称
     std::string currentMappingFileName;// 当前配置文件的文件名
 
     QString appDataDirPath; // 软件本地数据存放的路径
 
-    //unsigned char buf[MAX_BUF];
-    //wchar_t wstr[MAX_STR];
-    //int res;
-
+    static volatile int currentSelectedDeviceIndex; // 当前选择的设备的下标
 
     QLabel *label;
 
@@ -113,6 +110,7 @@ public slots:
     void simulateMsgboxSlot(bool isError, QString text);
     void simulateStartedSlot();
     void pauseClickSlot();
+    void saveLastDeviceToFileSlot();
 
 private slots:
     // 按键触发模式选择下拉框 槽函数

@@ -25,6 +25,7 @@
 #include<QJsonObject>
 #include<QJsonArray>
 
+volatile int MainWindow::currentSelectedDeviceIndex = -1; // 当前选择的设备的下标
 
 MainWindow::~MainWindow(){
     cleanupDirectInput();
@@ -129,10 +130,13 @@ MainWindow::MainWindow(QMainWindow *parent)
     this->settings = new DeadAreaSettings();
 
     this->assistWindow = new AssistFuncWindow();
+    connect(this->assistWindow, &AssistFuncWindow::saveLastDeviceToFileSignal, this, &MainWindow::saveLastDeviceToFileSlot);
 
     if(AssistFuncWindow::getEnableMappingAfterOpening()){
         on_pushButton_2_clicked();
     }
+
+    g_mainWindow = this;
 }
 
 void MainWindow::scanMappingFile(){
@@ -685,6 +689,8 @@ void MainWindow::loadLastDeviceFile(){
 
                 deviceName = line0.toStdString();
                 ui->comboBox->setCurrentText(deviceName.data());
+                // 记录当前选择的设备的下标
+                currentSelectedDeviceIndex = ui->comboBox->currentIndex();
 
                 if(!in.atEnd()) {
                     if(in.readLine().toStdString() == XBOX){
@@ -868,11 +874,12 @@ MappingRelation* MainWindow::getDevBtnData(){
 
     std::map<std::string, int> tempRecord;
 
+    bool enableLogs = getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog();
 
     // 监听设备按键状态
     for(int i=0; i<60; i++){
         // 获取设备状态数据
-        auto res = getInputState((getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog())? true : false);
+        auto res = getInputState(enableLogs);
         if(res.size() > 0){
             for(auto item : res){
                 // 方向盘的轴
@@ -883,7 +890,7 @@ MappingRelation* MainWindow::getDevBtnData(){
                         tempRecord.insert_or_assign(item->dev_btn_name, item->dev_btn_value);
                     }else{
                         // 不是第一次读到该轴的值, 与第一次的值比较, 大于一定量才能确定是该轴要新建映射
-                        if(std::abs(item->dev_btn_value - tmpAxis->second) > 500){
+                        if(std::abs(item->dev_btn_value - tmpAxis->second) > AXIS_CHANGE_VALUE){
                             // 映射xbox模式
                             if(getIsXboxMode()){
                                 return item;
@@ -1042,6 +1049,9 @@ void MainWindow::on_comboBox_activated(int index)
             // 重置当前配置文件名
             currentMappingFileName = "";
         }
+
+        // 记录当前选择的设备的下标
+        currentSelectedDeviceIndex = index;
     }
 }
 
@@ -1360,4 +1370,16 @@ void MainWindow::on_pushButton_10_clicked()
 {
     this->assistWindow->show();
 }
+
+// 获取当前选择的设备的下标
+int MainWindow::getCurrentSelectedDeviceIndex(){
+    return currentSelectedDeviceIndex;
+}
+
+void MainWindow::saveLastDeviceToFileSlot(){
+    saveLastDeviceToFile();
+}
+
+
+
 

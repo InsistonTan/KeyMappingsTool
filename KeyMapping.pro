@@ -12,6 +12,8 @@ SOURCES += \
     AssistFuncWindow.cpp \
     AssistFuncWorker.cpp \
     BtnTriggerTypeEnum.cpp \
+    ForceFeedbackSettingsWindow.cpp \
+    ForceFeedbackWorker.cpp \
     deadareasettings.cpp \
     global.cpp \
     logwindow.cpp \
@@ -23,6 +25,8 @@ HEADERS += \
     AssistFuncWindow.h \
     AssistFuncWorker.h \
     BtnTriggerTypeEnum.h \
+    ForceFeedbackSettingsWindow.h \
+    ForceFeedbackWorker.h \
     deadareasettings.h \
     device_info.h \
     global.h \
@@ -36,6 +40,7 @@ HEADERS += \
 
 FORMS += \
     AssistFuncWindow.ui \
+    ForceFeedbackSettingsWindow.ui \
     deadareasettings.ui \
     logwindow.ui \
     mainwindow.ui

@@ -1,5 +1,6 @@
 #ifndef ASSISTFUNCWINDOW_H
 #define ASSISTFUNCWINDOW_H
+#include "ForceFeedbackSettingsWindow.h"
 
 #include <QMainWindow>
 
@@ -25,6 +26,9 @@ public:
 signals:
     void stopWork();
     void changeEnableOnlyLongestMappingSignal();
+    void stopForceFeedbackSignal();
+    void forceFeedbackSettingsChangeSignal();
+    void saveLastDeviceToFileSignal();
 
 private slots:
     void on_checkBox_stateChanged(int arg1);
@@ -41,8 +45,18 @@ private slots:
 
     void on_checkBox_3_clicked();
 
+    void on_pushButton_3_clicked();
+
+    void onForceFeedbackSettingsChange();
+
+    void on_checkBox_4_stateChanged(int arg1);
+
+    void on_checkBox_4_clicked();
+
 private:
     Ui::AssistFuncWindow *ui;
+
+    ForceFeedbackSettingsWindow *forceFeedbackSettingsWindow;// 力反馈模拟设置窗口
 
     QString appDataDirPath;// 软件数据存放路径
 
@@ -51,18 +65,22 @@ private:
     static bool ETS2_enableAutoCancelHandbrake;// 欧卡2辅助功能_开启自动解除手刹
     static bool SYSTEM_enableMappingAfterOpening;// 映射软件的系统功能_开启软件后立即开启映射
     static bool SYSTEM_enableOnlyLongestMapping;// 组合键按下时只执行组合键映射，不执行对应子键映射
+    bool SYSTEM_enableForceFeedback = false;// 开启力反馈模拟
 
     void scanETS2InstallPath();// 扫描欧卡2安装路径
 
     bool checkETS2Plugin();// 检查欧卡2的遥测数据插件
 
     void startAssistFuncWork();// 开启辅助功能任务
+    void startForceFeedback();// 开启力反馈模拟任务
 
     void saveSettings();// 保存设置到文件
     void loadSettings();// 加载设置
 
     void unsave();// 改动未保存
     void save();// 改动已保存
+
+    bool validateForceFeedbackParams();
 };
 
 #endif // ASSISTFUNCWINDOW_H

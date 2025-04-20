@@ -6,9 +6,12 @@
 #include <mapping_relation.h>
 #include <map>
 #include<QQueue>
+#include<QWidget>
 
 #define WHEEL_BUTTON "wheel_button"
 #define WHEEL_AXIS "wheel_axis"
+
+extern QWidget* g_mainWindow;
 
 // 全局映射是否开启
 extern bool isRuning;
@@ -67,13 +70,20 @@ double getInnerDeadAreaTaban();
 
 
 BOOL CALLBACK EnumDevicesCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext);
+// 初始化DirectInput
 bool initDirectInput();
+// 打开设备
 bool openDiDevice(int deviceIndex);
+// 获取设备状态数据
 QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelation> multiBtnVector = {});
 void cleanupDirectInput();
+// 获取轴的数值范围
 void getDipropRange(long axisCode, std::string axisName);
 // 扫描设备
 void scanDevice();
+
+// 检测是否支持力反馈
+bool checkIsSupportForceFeedback();
 
 void setIsRuning(bool val);
 

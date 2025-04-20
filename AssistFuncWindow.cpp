@@ -2,6 +2,8 @@
 #include "ui_AssistFuncWindow.h"
 #include "AssistFuncWorker.h"
 #include "simulate_task.h"
+#include "mainwindow.h"
+#include "ForceFeedbackWorker.h"
 #include<QThread>
 #include"global.h"
 #include<QDir>
@@ -27,6 +29,12 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     // 获取软件本地数据目录
     appDataDirPath = QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
 
+    // 方向盘力反馈模拟设置
+    forceFeedbackSettingsWindow = new ForceFeedbackSettingsWindow();
+    // 力反馈模拟设置改动信号
+    connect(forceFeedbackSettingsWindow, &ForceFeedbackSettingsWindow::settingsChangeSignal, this, &AssistFuncWindow::onForceFeedbackSettingsChange);
+
+
     // 加载设置
     loadSettings();
 
@@ -43,7 +51,7 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
         ui->label_2->setText(ETS2InstallPath.size() > 40 ? ETS2InstallPath.left(40) + "..." : ETS2InstallPath);
     }
 
-    // 开启线程
+    // 开启欧卡2自动解除手刹
     if(ETS2_enableAutoCancelHandbrake){
         pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 欧卡2自动解除手刹");
         ui->checkBox->setChecked(true);
@@ -59,6 +67,19 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
         pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 最长组合键优先模式");
         ui->checkBox_3->setChecked(true);
     }
+
+    if(SYSTEM_enableForceFeedback && validateForceFeedbackParams()){
+        pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 方向盘力反馈模拟");
+        ui->checkBox_4->setChecked(true);
+
+        QTimer::singleShot(1500, [=](){
+            // 开启方向盘力反馈
+            startForceFeedback();
+        });
+
+    }
+
+
 }
 
 AssistFuncWindow::~AssistFuncWindow()
@@ -80,12 +101,26 @@ void AssistFuncWindow::saveSettings(){
     // 创建一个 QFile 对象，并打开文件进行写入
     QFile file2(appDataDirPath + ASSIST_FUNC_SETTINGS);  // 文件路径可以是绝对路径或相对路径
     QString text2;
-    text2.append("{");
+    text2.append("{\n\t");
 
-    text2.append("\n\t\"ETS2_enableAutoCancelHandbrake\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",").append("\n");
-    text2.append("\n\t\"SYSTEM_enableMappingAfterOpening\":").append(ui->checkBox_2->isChecked() ? "true" : "false").append(",").append("\n");
-    text2.append("\n\t\"SYSTEM_enableOnlyLongestMapping\":").append(ui->checkBox_3->isChecked() ? "true" : "false").append(",").append("\n");
-    text2.append("\n\t\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append("\n");
+    text2.append("\"ETS2_enableAutoCancelHandbrake\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",\n\t");
+    text2.append("\"SYSTEM_enableMappingAfterOpening\":").append(ui->checkBox_2->isChecked() ? "true" : "false").append(",\n\t");
+    text2.append("\"SYSTEM_enableOnlyLongestMapping\":").append(ui->checkBox_3->isChecked() ? "true" : "false").append(",\n\t");
+    text2.append("\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append(",\n\t");
+
+    text2.append("\"SYSTEM_enableForceFeedback\":").append(ui->checkBox_4->isChecked() ? "true" : "false").append(",\n\t");
+
+    text2.append("\"SYSTEM_forceFeedbackSettings\":{\n\t\t");
+    text2.append("\"throttleAxis\":").append("\"" + forceFeedbackSettingsWindow->throttleAxis + "\"").append(",\n\t\t");
+    text2.append("\"brakeAxis\":").append("\"" + forceFeedbackSettingsWindow->brakeAxis + "\"").append(",\n\t\t");
+    text2.append("\"steeringWheelAxis\":").append("\"" + forceFeedbackSettingsWindow->steeringWheelAxis + "\"").append(",\n\t\t");
+    text2.append("\"isThrottleReverse\":").append(forceFeedbackSettingsWindow->isThrottleReverse ? "true" : "false").append(",\n\t\t");
+    text2.append("\"isBrakeReverse\":").append(forceFeedbackSettingsWindow->isBrakeReverse ? "true" : "false").append(",\n\t\t");
+    text2.append("\"acceleration_100km_time_s\":").append(std::to_string(forceFeedbackSettingsWindow->acceleration_100km_time_s)).append(",\n\t\t");
+    text2.append("\"stop_100km_dis_m\":").append(std::to_string(forceFeedbackSettingsWindow->stop_100km_dis_m)).append(",\n\t\t");
+    text2.append("\"maxSpeed_km_h\":").append(std::to_string(forceFeedbackSettingsWindow->maxSpeed_km_h)).append("\n\t");
+    text2.append("}\n");
+
     text2.append("}");
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file2);  // 创建一个文本流对象
@@ -127,10 +162,34 @@ void AssistFuncWindow::loadSettings(){
     this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;
     this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;
     this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;
+    this->SYSTEM_enableForceFeedback = (jsonObj["SYSTEM_enableForceFeedback"] != QJsonValue::Undefined) ? jsonObj["SYSTEM_enableForceFeedback"].toBool() : false;
     // 欧卡2安装路径
     QString ets2Path = (jsonObj["ETS2_installPath"]!= QJsonValue::Undefined) ? jsonObj["ETS2_installPath"].toString() : "";
     if(!ets2Path.isEmpty()){
         this->ETS2InstallPath = ets2Path;
+    }
+
+    // 力反馈模拟设置
+    if(jsonObj["SYSTEM_forceFeedbackSettings"] != QJsonValue::Undefined && jsonObj["SYSTEM_forceFeedbackSettings"].isObject()){
+        QJsonObject settingsObj = jsonObj["SYSTEM_forceFeedbackSettings"].toObject();
+        this->forceFeedbackSettingsWindow->throttleAxis = (settingsObj["throttleAxis"] != QJsonValue::Undefined) ? settingsObj["throttleAxis"].toString() : "";
+        this->forceFeedbackSettingsWindow->brakeAxis = (settingsObj["brakeAxis"] != QJsonValue::Undefined) ? settingsObj["brakeAxis"].toString() : "";
+        this->forceFeedbackSettingsWindow->steeringWheelAxis = (settingsObj["steeringWheelAxis"] != QJsonValue::Undefined) ? settingsObj["steeringWheelAxis"].toString() : "";
+
+
+        this->forceFeedbackSettingsWindow->isThrottleReverse = (settingsObj["isThrottleReverse"] != QJsonValue::Undefined) ? settingsObj["isThrottleReverse"].toBool() : false;
+        this->forceFeedbackSettingsWindow->isBrakeReverse = (settingsObj["isBrakeReverse"] != QJsonValue::Undefined) ? settingsObj["isBrakeReverse"].toBool() : false;
+
+
+        if(settingsObj["acceleration_100km_time_s"] != QJsonValue::Undefined){
+            this->forceFeedbackSettingsWindow->acceleration_100km_time_s = settingsObj["acceleration_100km_time_s"].toDouble();
+        }
+        if(settingsObj["stop_100km_dis_m"] != QJsonValue::Undefined){
+            this->forceFeedbackSettingsWindow->stop_100km_dis_m = settingsObj["stop_100km_dis_m"].toInt();
+        }
+        if(settingsObj["maxSpeed_km_h"] != QJsonValue::Undefined){
+            this->forceFeedbackSettingsWindow->maxSpeed_km_h = settingsObj["maxSpeed_km_h"].toInt() > 0 ? settingsObj["maxSpeed_km_h"].toInt() : default_maxSpeed_km_h;
+        }
     }
 }
 
@@ -276,8 +335,33 @@ void AssistFuncWindow::on_pushButton_clicked()
     }
 
 
+    // 开启方向盘力反馈模拟
+    if(ui->checkBox_4->isChecked()){
+        // 力反馈选项由关闭到开启
+        if(!SYSTEM_enableForceFeedback){
+            // 校验力反馈设置项是否正确
+            // 校验不通过
+            if(!validateForceFeedbackParams()){
+                return;
+            }
+            pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 方向盘力反馈模拟");
+            SYSTEM_enableForceFeedback = true;
+            startForceFeedback();
+        }
+    }else{
+        if(SYSTEM_enableForceFeedback){
+            pushToQueue("<b style='color:red;'>关闭</b> 方向盘力反馈模拟");
+            emit stopForceFeedbackSignal();
 
+            SYSTEM_enableForceFeedback = false;
+        }
+    }
 
+    // 只有在开启力反馈状态下, 才提交设置更新的信号
+    if(SYSTEM_enableForceFeedback){
+        // 力反馈设置
+        emit forceFeedbackSettingsChangeSignal();
+    }
 
     this->hide();
 }
@@ -328,4 +412,111 @@ void AssistFuncWindow::on_checkBox_3_clicked()
 {
     unsave();
 }
+
+
+void AssistFuncWindow::on_pushButton_3_clicked()
+{
+    this->forceFeedbackSettingsWindow->updateUI();
+    this->forceFeedbackSettingsWindow->show();
+}
+
+void AssistFuncWindow::onForceFeedbackSettingsChange(){
+    unsave();
+}
+
+
+void AssistFuncWindow::on_checkBox_4_stateChanged(int arg1)
+{
+
+}
+
+void AssistFuncWindow::startForceFeedback(){
+    if(MainWindow::getCurrentSelectedDeviceIndex() < 0){
+        pushToQueue(parseErrorLog("启动力反馈模拟错误: 未选择设备!"));
+        QMessageBox::critical(this, "错误", "启动力反馈模拟错误: 未选择设备!\n请选择设备后重新手动开启");
+        this->ui->checkBox_4->setChecked(false);
+        this->SYSTEM_enableForceFeedback = false;
+        return;
+    }
+
+    // 记录本次使用设备到本地
+    emit saveLastDeviceToFileSignal();
+
+    // 初始化directInput
+    if(!initDirectInput()){
+        return;
+    }
+    // 连接设备
+    if(!openDiDevice(MainWindow::getCurrentSelectedDeviceIndex())){
+        return;
+    }
+
+    ForceFeedbackWorker *worker = new ForceFeedbackWorker(forceFeedbackSettingsWindow);
+    QThread *thread = new QThread;
+    worker->moveToThread(thread);
+
+    // 连接信号槽
+    connect(thread, &QThread::started, worker, &ForceFeedbackWorker::doWork);
+    // 力反馈模拟设置更新信号
+    connect(this, &AssistFuncWindow::forceFeedbackSettingsChangeSignal, worker, &ForceFeedbackWorker::settingsChangeSlot);
+    // 停止任务信号
+    connect(this, &AssistFuncWindow::stopForceFeedbackSignal, worker, &ForceFeedbackWorker::cancelWorkSlot);
+    // 任务结束信号
+    connect(worker, &ForceFeedbackWorker::workFinished, thread, &QThread::quit);
+    connect(worker, &ForceFeedbackWorker::workFinished, worker, &ForceFeedbackWorker::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+    thread->start();
+}
+
+
+void AssistFuncWindow::on_checkBox_4_clicked()
+{
+    unsave();
+}
+
+bool AssistFuncWindow::validateForceFeedbackParams(){
+    if(ui->checkBox_4->isChecked() && MainWindow::getCurrentSelectedDeviceIndex() < 0){
+        pushToQueue(parseErrorLog("开启模拟力反馈失败: 还未选择设备!"));
+        QMessageBox::critical(this, "错误", "开启失败: 还未选择设备!");
+        ui->checkBox_4->setChecked(false);
+        return false;
+    }
+
+    // 检查设备是否支持力反馈
+    if(ui->checkBox_4->isChecked() && !checkIsSupportForceFeedback()){
+        pushToQueue(parseErrorLog("开启模拟力反馈失败: 当前设备不支持力反馈!"));
+        QMessageBox::critical(this, "错误", "开启失败: 当前设备不支持力反馈");
+        ui->checkBox_4->setChecked(false);
+        return false;
+    }
+
+    if(ui->checkBox_4->isChecked() && (this->forceFeedbackSettingsWindow->throttleAxis.isEmpty()
+                                        || this->forceFeedbackSettingsWindow->brakeAxis.isEmpty()
+                                        || this->forceFeedbackSettingsWindow->steeringWheelAxis.isEmpty())){
+        pushToQueue(parseErrorLog("开启模拟力反馈失败: 未设置盘面/油门踏板/刹车踏板!"));
+        QMessageBox::critical(this, "错误", "开启失败: 未设置盘面/油门踏板/刹车踏板!");
+        ui->checkBox_4->setChecked(false);
+        return false;
+    }
+
+    // 获取不到油门踏板的数值范围
+    if(ui->checkBox_4->isChecked() && axisValueRangeMap.find(this->forceFeedbackSettingsWindow->throttleAxis.toStdString()) == axisValueRangeMap.end()){
+        pushToQueue(parseErrorLog("启动力反馈模拟失败: 获取油门踏板数值范围失败!"));
+        QMessageBox::critical(nullptr, "错误", "启动失败: 获取油门踏板数值范围失败!");
+        ui->checkBox_4->setChecked(false);
+        return false;
+    }
+
+    // 获取不到油门踏板的数值范围
+    if(ui->checkBox_4->isChecked() && axisValueRangeMap.find(this->forceFeedbackSettingsWindow->brakeAxis.toStdString()) == axisValueRangeMap.end()){
+        pushToQueue(parseErrorLog("启动力反馈模拟失败: 获取刹车踏板数值范围失败!"));
+        QMessageBox::critical(nullptr, "错误", "启动失败: 获取刹车踏板数值范围失败!");
+        ui->checkBox_4->setChecked(false);
+        return false;
+    }
+
+    return true;
+}
+
 
