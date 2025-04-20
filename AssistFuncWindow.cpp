@@ -162,7 +162,7 @@ void AssistFuncWindow::scanETS2InstallPath(){
     pushToQueue("读取欧卡2安装目录成功: " + ETS2Dir->absolutePath());
 }
 
-bool copyETS2PluginDll(QString ets2Path, QString pluginDllFile){
+bool copyETS2PluginDll(QString ets2Path, QString pluginDllPath, QString pluginDllFile){
     QDir *ETS2Dir = new QDir(ets2Path);
     if(ETS2Dir->exists()){
         if(!ETS2Dir->exists(ETS2_PLUGINS_DIR)){
@@ -178,7 +178,7 @@ bool copyETS2PluginDll(QString ets2Path, QString pluginDllFile){
                     pushToQueue(parseErrorLog("软件安装目录/plugins/" + pluginDllFile + " 不存在, 无法将该插件复制到欧卡2 plugins 目录!"));
                     return false;
                 }else{
-                    if(!dllPluginFile->copy(ETS2Dir->absolutePath() + "/" + pluginDllFile)){
+                    if(!dllPluginFile->copy(ETS2Dir->absolutePath() + "/" + pluginDllPath + "/" + pluginDllFile)){
                         pushToQueue(parseErrorLog("复制插件失败!"));
                         return false;
                     }
@@ -201,10 +201,10 @@ bool AssistFuncWindow::checkETS2Plugin(){
         return false;
     }
 
-    if(!copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x64"), "Win64/scs-telemetry.dll")){
+    if(!copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x64"), "Win64" , "scs-telemetry.dll")){
         return false;
     }
-    copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x86"), "Win32/scs-telemetry.dll");
+    copyETS2PluginDll(QString(ETS2InstallPath + "/bin/win_x86"), "Win32" , "scs-telemetry.dll");
 
     return true;
 }
