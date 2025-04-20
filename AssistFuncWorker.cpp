@@ -5,9 +5,7 @@
 #include <tchar.h>
 #include <cctype>
 #include<QTimer>
-#include<QFile>
 #include"global.h"
-#include"scs-telemetry-common.hpp"
 
 #define MAPPING_FILE_NAME SCS_PLUGIN_MMF_NAME
 #define SHARED_MEMORY_SIZE (3 * 1024)
@@ -18,7 +16,7 @@ void AssistFuncWorker::cancelWorkSlot(){
     this->isWorkerRunning = false;
 }
 
-byte* AssistFuncWorker::readETS2Data(){
+scsTelemetryMap_t* AssistFuncWorker::readETS2Data(){
     // 共享内存句柄
     HANDLE hMapFile = nullptr;
 
@@ -70,74 +68,7 @@ byte* AssistFuncWorker::readETS2Data(){
 
     pushToQueue(parseSuccessLog("从共享内存获取数据成功!"));
 
-    return bytes;
-}
-
-// 测试用, 用于寻找相关数据
-void viewSharedMemory() {
-    HANDLE hMapFile = OpenFileMapping(FILE_MAP_READ, FALSE, _T(MAPPING_FILE_NAME));
-    if (!hMapFile) {
-        std::cerr << "打开失败: " << GetLastError() << std::endl;
-        return;
-    }
-
-    LPVOID pBuf = MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, SHARED_MEMORY_SIZE);
-    if (!pBuf) {
-        CloseHandle(hMapFile);
-        return;
-    }
-
-    DWORD dwSize = SHARED_MEMORY_SIZE;
-    const int BYTES_PER_LINE = 16;
-    BYTE* bytes = (BYTE*)pBuf;
-
-    int oldVal[SHARED_MEMORY_SIZE];
-    int newVal[SHARED_MEMORY_SIZE];
-
-    for(int j=0; ; j++){
-        // for (DWORD i = 0; i < dwSize; i++) {
-        //     //printf("%d ", static_cast<int>(bytes[i]));
-        //     if(j==0){
-        //         oldVal[i] = static_cast<int>(bytes[i]);
-        //     }else{
-        //         if(static_cast<int>(bytes[i]) != oldVal[i]){
-        //             newVal[i] = static_cast<int>(bytes[i]);
-        //         }else{
-        //             newVal[i] = -1;
-        //         }
-        //     }
-        // }
-
-        //qDebug("%d", static_cast<int>(bytes[453]));
-        //qDebug("%d", static_cast<int>(bytes[483]));
-
-        int index = 467;
-
-        unsigned char bytesData1[4] = {bytes[index-3], bytes[index-2], bytes[index-1], bytes[index]};
-        unsigned char bytesData2[4] = {bytes[index-2], bytes[index-1], bytes[index], bytes[index+1]};
-        unsigned char bytesData3[4] = {bytes[index-1], bytes[index], bytes[index+1], bytes[index+2]};
-        unsigned char bytesData4[4] = {bytes[index], bytes[index+1], bytes[index+2], bytes[index+3]};
-        float result1, result2,result3,result4;
-        memcpy(&result1, bytesData1, sizeof(float));
-        memcpy(&result2, bytesData2, sizeof(float));
-        memcpy(&result3, bytesData3, sizeof(float));
-        memcpy(&result4, bytesData4, sizeof(float));
-
-        //qDebug("%.4f %.4f %.4f %.4f ", result1, result2,result3,result4);
-        qDebug("%.4f", result2);
-
-        QThread::msleep(100);
-    }
-
-    // for(int i=0; i<1024; i++){
-    //     if(newVal[i] != -1){
-    //         qDebug("第%d位值发生变化:%d -> %d", i+1, oldVal[i], newVal[i]);
-    //     }
-    // }
-
-
-    UnmapViewOfFile(pBuf);
-    CloseHandle(hMapFile);
+    return (scsTelemetryMap_t*)bytes;
 }
 
 // 模拟按键操作
@@ -225,7 +156,7 @@ void simulateKeyPress(short scanCode, bool isKeyRelease) {
 
 void AssistFuncWorker::doWork(){
     // 从共享内存读取遥测数据
-    scsTelemetryMap_t* bytes = (scsTelemetryMap_t*)readETS2Data();
+    scsTelemetryMap_t* bytes = readETS2Data();
 
     if(bytes == nullptr){
         //pushToQueue(parseErrorLog("欧卡2辅助功能线程即将结束!"));
@@ -240,7 +171,8 @@ void AssistFuncWorker::doWork(){
         handbrakeResult = bytes->truck_b.parkBrake; // 手刹值(0-1)
         acceleratorResult = bytes->truck_f.gameThrottle; // 油门值(0-1)
         // 手刹为启用状态, 并且油门踩下大于50%, 模拟键盘的空格键解除手刹
-        qDebug("手刹:%d, 油门:%.4f", handbrakeResult, acceleratorResult);
+        // qDebug("手刹:%d, 油门:%.4f", handbrakeResult, acceleratorResult);
+        // qDebug("lightsParking:%d, lightsBeamLow:%d, lightsBeamHigh:%d, lightsBeacon:%d, lightsBrake:%d, lightsReverse:%d, lightsHazard:%d", bytes->truck_b.lightsParking, bytes->truck_b.lightsBeamLow, bytes->truck_b.lightsBeamHigh, bytes->truck_b.lightsBeacon, bytes->truck_b.lightsBrake, bytes->truck_b.lightsReverse, bytes->truck_b.lightsHazard);
         if(handbrakeResult == 1 && acceleratorResult > 0.5f){
             pushToQueue("当前手刹为启用状态, 且油门大于50%, 正在模拟空格键解除手刹...");
 
