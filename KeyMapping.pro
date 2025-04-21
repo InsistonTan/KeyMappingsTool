@@ -23,7 +23,6 @@ HEADERS += \
     AssistFuncWindow.h \
     AssistFuncWorker.h \
     BtnTriggerTypeEnum.h \
-    SCS_Telemetry/scs-telemetry-common.hpp \
     deadareasettings.h \
     device_info.h \
     global.h \
@@ -32,6 +31,7 @@ HEADERS += \
     logworker.h \
     mainwindow.h \
     mapping_relation.h \
+    SCS_Telemetry/scs-telemetry-common.hpp \
     simulate_task.h \
     utils.h
 
