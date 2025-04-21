@@ -374,18 +374,8 @@ void ForceFeedbackWorker::doWork(){
                 // 油门加速度
                 double throttleAxisA = throttlePer * this->maxThrottleAxisA;
 
-                // 计算当前车速下空气阻力f
-                double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
-                // 得到空气阻力的加速度a
-                double airA = - airF / CAR_m;
-
-                //qDebug() << "throttleAxisA: " << throttleAxisA << ", groundA: " << groundA << ", airA: " << airA << ", totalA: " << (throttleAxisA + groundA + airA);
-
-                // 根据油门加速度 地面摩檫力加速度和空气阻力的加速度, 计算当前速度, 如果达到最大速度则不再增加
-                currentV += (throttleAxisA + groundA + airA) * cycleTimeOfEachRound;
-                if(currentV >= this->maxSpeed_m_s){
-                    currentV = this->maxSpeed_m_s;
-                }
+                // 根据油门加速度 计算当前速度
+                currentV += throttleAxisA * cycleTimeOfEachRound;
 
                 //qDebug()<< "throttlePer: " << throttlePer << "maxThrottleAxisA: " << maxThrottleAxisA << "throttleAxisA: " << throttleAxisA;
             }
@@ -398,21 +388,13 @@ void ForceFeedbackWorker::doWork(){
                 // 刹车加速度
                 double brakeAxisA = brakePer * this->maxBrakeA;
 
-                // 计算当前车速下空气阻力f
-                double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
-                // 得到空气阻力的加速度a
-                double airA = - airF / CAR_m;
-
                 //qDebug()<< "brakePer: " << brakePer << "maxBrakeA: " << maxBrakeA << "brakeAxisA: " << brakeAxisA;
 
-                // 根据刹车加速度, 地面摩檫力加速度和空气阻力的加速度 计算当前速度
-                currentV += (brakeAxisA + groundA + airA) * cycleTimeOfEachRound;
-
-                if(currentV <= 0){
-                    currentV = 0;
-                }
+                //计算当前速度
+                currentV += brakeAxisA * cycleTimeOfEachRound;
             }
-            // else if (devData->dev_btn_name == this->steeringWheelAxis.toStdString()){ // 获取方向盘数据
+
+            // if (devData->dev_btn_name == this->steeringWheelAxis.toStdString()){ // 获取方向盘数据
             //     auto axisValueRange = axisValueRangeMap.find(this->steeringWheelAxis.toStdString());
             //     if(axisValueRange == axisValueRangeMap.end()){
             //         continue;
@@ -424,7 +406,25 @@ void ForceFeedbackWorker::doWork(){
 
         }
 
+        // 计算当前车速下空气阻力f
+        double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
+        // 得到空气阻力的加速度a
+        double airA = - airF / CAR_m;
+
+        // 根据地面摩檫力加速度和空气阻力加速度 计算出当前速度
+        currentV += (groundA + airA) * cycleTimeOfEachRound;
+
+        // 车速达到上限
+        if(currentV >= this->maxSpeed_m_s){
+            currentV = this->maxSpeed_m_s;
+        }
+        // 车速最低值为0
+        if(currentV <= 0){
+            currentV = 0;
+        }
+
         qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
+
 
         // 根据车速模拟力反馈效果
         updateForceFeedback(currentV, this->maxSpeed_m_s);
