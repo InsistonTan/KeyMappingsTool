@@ -1368,7 +1368,13 @@ void MainWindow::on_pushButton_9_clicked()
 
 void MainWindow::on_pushButton_10_clicked()
 {
+    // 如果窗口是最小化状态, 清除最小化
+    if(this->assistWindow->windowState() == Qt::WindowMinimized){
+        this->assistWindow->setWindowState(this->assistWindow->windowState() & ~Qt::WindowMinimized);
+    }
     this->assistWindow->show();
+    this->assistWindow->activateWindow();
+
 }
 
 // 获取当前选择的设备的下标
