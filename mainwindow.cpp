@@ -765,18 +765,18 @@ void MainWindow::loadMappingsFile(std::string filename){
                 // 从json对象读取信息
                 MappingRelation *mapping = new MappingRelation();
               
-                mapping->dev_btn_name = (jsonObj["dev_btn_name"] != QJsonValue::Undefined) ? jsonObj["dev_btn_name"].toString().toStdString() : "";
-                mapping->dev_btn_type = (jsonObj["dev_btn_type"] != QJsonValue::Undefined) ? jsonObj["dev_btn_type"].toString().toStdString() : "";
-                mapping->keyboard_name = (jsonObj["keyboard_name"] != QJsonValue::Undefined) ? jsonObj["keyboard_name"].toString().toStdString() : "";
-                mapping->keyboard_value = (jsonObj["keyboard_value"] != QJsonValue::Undefined) ? jsonObj["keyboard_value"].toInt() : 0;
-                mapping->remark = (jsonObj["remark"] != QJsonValue::Undefined) ? jsonObj["remark"].toString().toStdString() : "";
-                mapping->rotateAxis = (jsonObj["rotateAxis"] != QJsonValue::Undefined && jsonObj["rotateAxis"].toInt() == 1) ? 1 : 0;
+                mapping->dev_btn_name = (jsonObj.contains("dev_btn_name")) ? jsonObj["dev_btn_name"].toString().toStdString() : "";
+                mapping->dev_btn_type = (jsonObj.contains("dev_btn_type")) ? jsonObj["dev_btn_type"].toString().toStdString() : "";
+                mapping->keyboard_name = (jsonObj.contains("keyboard_name")) ? jsonObj["keyboard_name"].toString().toStdString() : "";
+                mapping->keyboard_value = (jsonObj.contains("keyboard_value")) ? jsonObj["keyboard_value"].toInt() : 0;
+                mapping->remark = (jsonObj.contains("remark")) ? jsonObj["remark"].toString().toStdString() : "";
+                mapping->rotateAxis = (jsonObj.contains("rotateAxis") && jsonObj["rotateAxis"].toInt() == 1) ? 1 : 0;
                 mapping->btnTriggerType =
-                    (jsonObj["btnTriggerType"] != QJsonValue::Undefined && jsonObj["btnTriggerType"].toInt() > 0)
+                    (jsonObj.contains("btnTriggerType") && jsonObj["btnTriggerType"].toInt() > 0)
                                               ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
                                               : TriggerTypeEnum::Normal;
                 mapping->dev_btn_value = 
-                    (jsonObj["dev_btn_value"] != QJsonValue::Undefined && !jsonObj["dev_btn_value"].toString().isEmpty())
+                    (jsonObj.contains("dev_btn_value") && !jsonObj["dev_btn_value"].toString().isEmpty())
                                               ? (jsonObj["dev_btn_value"].toString().toInt())
                                               : 0;
                 mappingList.push_back(mapping);
