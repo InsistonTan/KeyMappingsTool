@@ -421,7 +421,12 @@ void AssistFuncWindow::on_checkBox_3_clicked()
 void AssistFuncWindow::on_pushButton_3_clicked()
 {
     this->forceFeedbackSettingsWindow->updateUI();
+    // 如果窗口是最小化状态, 清除最小化
+    if(this->forceFeedbackSettingsWindow->windowState() == Qt::WindowMinimized){
+        this->forceFeedbackSettingsWindow->setWindowState(this->forceFeedbackSettingsWindow->windowState() & ~Qt::WindowMinimized);
+    }
     this->forceFeedbackSettingsWindow->show();
+    this->forceFeedbackSettingsWindow->activateWindow();
 }
 
 void AssistFuncWindow::onForceFeedbackSettingsChange(){
