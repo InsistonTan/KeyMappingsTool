@@ -373,7 +373,7 @@
      </font>
     </property>
     <property name="text">
-     <string>力回馈设置</string>
+     <string>力反馈设置</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_16">
@@ -386,7 +386,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>力回馈强度: </string>
+     <string>力反馈强度: </string>
     </property>
    </widget>
    <widget class="QLabel" name="label_17">
