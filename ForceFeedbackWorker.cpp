@@ -9,6 +9,11 @@
 #define MIN_FORCE_POWER 300 // 最低力反馈强度的值, 影响弹簧效果(回正力)和转向阻尼的最低强度
 #define MAX_SPEED 350; // 最高车速km/h
 
+#define RHO 1.225  // 空气密度 kg/m³
+#define CAR_Cd 0.3 // 汽车风阻系数
+#define CAR_A 2.2  // 汽车正投影面积 m²
+#define CAR_m 1500 // 汽车质量 kg
+
 // 初始化 DirectInput
 bool ForceFeedbackWorker::initDirectInput2() {
     if(g_pDirectInput2 != nullptr){
@@ -369,8 +374,15 @@ void ForceFeedbackWorker::doWork(){
                 // 油门加速度
                 double throttleAxisA = throttlePer * this->maxThrottleAxisA;
 
-                // 计算当前速度, 如果达到最大速度则不再增加
-                currentV += throttleAxisA * cycleTimeOfEachRound;
+                // 计算当前车速下空气阻力f
+                double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
+                // 得到空气阻力的加速度a
+                double airA = - airF / CAR_m;
+
+                //qDebug() << "throttleAxisA: " << throttleAxisA << ", groundA: " << groundA << ", airA: " << airA << ", totalA: " << (throttleAxisA + groundA + airA);
+
+                // 根据油门加速度 地面摩檫力加速度和空气阻力的加速度, 计算当前速度, 如果达到最大速度则不再增加
+                currentV += (throttleAxisA + groundA + airA) * cycleTimeOfEachRound;
                 if(currentV >= this->maxSpeed_m_s){
                     currentV = this->maxSpeed_m_s;
                 }
@@ -386,28 +398,31 @@ void ForceFeedbackWorker::doWork(){
                 // 刹车加速度
                 double brakeAxisA = brakePer * this->maxBrakeA;
 
+                // 计算当前车速下空气阻力f
+                double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
+                // 得到空气阻力的加速度a
+                double airA = - airF / CAR_m;
+
                 //qDebug()<< "brakePer: " << brakePer << "maxBrakeA: " << maxBrakeA << "brakeAxisA: " << brakeAxisA;
 
-                // 计算当前速度
-                currentV += brakeAxisA * cycleTimeOfEachRound;
+                // 根据刹车加速度, 地面摩檫力加速度和空气阻力的加速度 计算当前速度
+                currentV += (brakeAxisA + groundA + airA) * cycleTimeOfEachRound;
 
                 if(currentV <= 0){
                     currentV = 0;
                 }
-            }else if (devData->dev_btn_name == this->steeringWheelAxis.toStdString()){ // 获取方向盘数据
-                auto axisValueRange = axisValueRangeMap.find(this->steeringWheelAxis.toStdString());
-                if(axisValueRange == axisValueRangeMap.end()){
-                    continue;
-                }
-                // 方向盘转动的程度(0-1)
-                double steerWheelPer = (static_cast<double>(devData->dev_btn_value) - axisValueRange->second.lMin)/(axisValueRange->second.lMax - axisValueRange->second.lMin);
-                qDebug()<< "steerWheelPer: " << steerWheelPer;
             }
+            // else if (devData->dev_btn_name == this->steeringWheelAxis.toStdString()){ // 获取方向盘数据
+            //     auto axisValueRange = axisValueRangeMap.find(this->steeringWheelAxis.toStdString());
+            //     if(axisValueRange == axisValueRangeMap.end()){
+            //         continue;
+            //     }
+            //     // 方向盘转动的程度(0-1)
+            //     double steerWheelPer = (static_cast<double>(devData->dev_btn_value) - axisValueRange->second.lMin)/(axisValueRange->second.lMax - axisValueRange->second.lMin);
+            //     qDebug()<< "steerWheelPer: " << steerWheelPer;
+            // }
 
         }
-
-        // 地面摩擦力导致的减速
-        currentV += groundA * cycleTimeOfEachRound;
 
         //qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
 
