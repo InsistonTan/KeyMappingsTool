@@ -56,13 +56,13 @@
      </rect>
     </property>
     <property name="text">
-     <string>油门所在的轴 : </string>
+     <string>油门轴 : </string>
     </property>
    </widget>
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>80</x>
       <y>80</y>
       <width>51</width>
       <height>19</height>
@@ -78,9 +78,9 @@
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>310</x>
       <y>70</y>
-      <width>121</width>
+      <width>141</width>
       <height>28</height>
      </rect>
     </property>
@@ -98,13 +98,13 @@
      </rect>
     </property>
     <property name="text">
-     <string>刹车所在的轴 : </string>
+     <string>刹车轴 : </string>
     </property>
    </widget>
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>80</x>
       <y>110</y>
       <width>51</width>
       <height>19</height>
@@ -120,9 +120,9 @@
    <widget class="QPushButton" name="pushButton_2">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>310</x>
       <y>100</y>
-      <width>121</width>
+      <width>141</width>
       <height>28</height>
      </rect>
     </property>
@@ -312,13 +312,13 @@
      </rect>
     </property>
     <property name="text">
-     <string>盘面所在的轴 : </string>
+     <string>转向轴 : </string>
     </property>
    </widget>
    <widget class="QLabel" name="label_14">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>80</x>
       <y>50</y>
       <width>51</width>
       <height>19</height>
@@ -334,14 +334,14 @@
    <widget class="QPushButton" name="pushButton_3">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>310</x>
       <y>40</y>
-      <width>121</width>
+      <width>141</width>
       <height>28</height>
      </rect>
     </property>
     <property name="text">
-     <string>点击后转动盘面</string>
+     <string>点击后转动方向盘</string>
     </property>
    </widget>
    <widget class="Line" name="line_3">

@@ -42,7 +42,7 @@ void ForceFeedbackSettingsWindow::on_pushButton_clicked()
                 return;
             }
             if(mapping->dev_btn_name == this->steeringWheelAxis.toStdString()){
-                QMessageBox::critical(this, "错误", "该轴已被设置为盘面!");
+                QMessageBox::critical(this, "错误", "该轴已被设置为转向轴!");
                 return;
             }
 
@@ -185,7 +185,7 @@ void ForceFeedbackSettingsWindow::on_pushButton_2_clicked()
                 return;
             }
             if(mapping->dev_btn_name == this->steeringWheelAxis.toStdString()){
-                QMessageBox::critical(this, "错误", "该轴已被设置为盘面!");
+                QMessageBox::critical(this, "错误", "该轴已被设置为转向轴!");
                 return;
             }
             this->brakeAxis = mapping->dev_btn_name.data();
@@ -273,12 +273,12 @@ void ForceFeedbackSettingsWindow::on_pushButton_3_clicked()
     }
 
     ui->pushButton_3->setEnabled(false);
-    ui->pushButton_3->setText("等待盘面转动...");
+    ui->pushButton_3->setText("等待方向盘转动...");
     this->repaint();
 
     auto mapping = getDevInputAxis();
 
-    ui->pushButton_3->setText("点击后转动盘面");
+    ui->pushButton_3->setText("点击后转动方向盘");
     ui->pushButton_3->setEnabled(true);
 
     if(mapping != nullptr){
@@ -299,7 +299,7 @@ void ForceFeedbackSettingsWindow::on_pushButton_3_clicked()
         // 更新界面变化
         this->updateUI();
     }else{
-        QMessageBox::critical(this, "错误", "未检测到盘面转动!");
+        QMessageBox::critical(this, "错误", "未检测到方向盘转动!");
     }
 }
 

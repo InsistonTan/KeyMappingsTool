@@ -424,7 +424,7 @@ void ForceFeedbackWorker::doWork(){
 
         }
 
-        //qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
+        qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
 
         // 根据车速模拟力反馈效果
         updateForceFeedback(currentV, this->maxSpeed_m_s);
