@@ -226,6 +226,9 @@
       <height>19</height>
      </rect>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;百公里加速设置的时间&lt;span style=&quot; font-weight:700;&quot;&gt;越短&lt;/span&gt;, 力反馈增强的速度&lt;span style=&quot; font-weight:700;&quot;&gt;越快&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>秒      (影响力反馈的效果)</string>
     </property>
@@ -238,6 +241,9 @@
       <width>181</width>
       <height>19</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;百公里刹停设置的距离&lt;span style=&quot; font-weight:700;&quot;&gt;越小&lt;/span&gt;, 力反馈衰退的速度&lt;span style=&quot; font-weight:700;&quot;&gt;越快&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
      <string>米      (影响力反馈的效果)</string>
@@ -297,6 +303,9 @@
       <width>181</width>
       <height>19</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;最高时速设置得&lt;span style=&quot; font-weight:700;&quot;&gt;越小&lt;/span&gt;, 力反馈增强的速度&lt;span style=&quot; font-weight:700;&quot;&gt;越快&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
      <string>km/h (影响力反馈的效果)</string>
