@@ -113,14 +113,7 @@ bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
 
     if(g_pSpringForce == NULL){
         // 设置弹簧效果的系数
-        diSpringCondition = {
-            0,
-            (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), // 设置弹簧效果的系数
-            (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), // 设置弹簧效果的系数
-            0,
-            0,
-            0
-        };
+        diSpringCondition = {0, (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), 0, 0, 0};
 
         diSpring = {sizeof(DIEFFECT)};
         diSpring.dwFlags = DIEFF_CARTESIAN | DIEFF_OBJECTOFFSETS;
@@ -181,22 +174,24 @@ bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
 // 根据车速更新力回馈
 void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double maxSpeed){
     double speedPer = speed_m_s / maxSpeed;
+    LONG effectValue = std::max((LONG)(DI_FFNOMINALMAX * speedPer * this->maxForceFeedbackGain), (LONG)MIN_FORCE_POWER);
 
-    diSpringCondition.lPositiveCoefficient = std::max((LONG)(DI_FFNOMINALMAX * speedPer * this->maxForceFeedbackGain), (LONG)MIN_FORCE_POWER);
-    diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
-
-    diDamperCondition.lPositiveCoefficient = std::max((LONG)(DI_FFNOMINALMAX * speedPer* this->maxForceFeedbackGain), (LONG)MIN_FORCE_POWER);
-    diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
+    // 弹簧效果强度系数
+    diSpringCondition.lPositiveCoefficient = effectValue;
+    diSpringCondition.lNegativeCoefficient = effectValue;
+    // 阻尼效果强度系数
+    diDamperCondition.lPositiveCoefficient = effectValue;
+    diDamperCondition.lNegativeCoefficient = effectValue;
 
     // 更新回正力
     if (g_pSpringForce) {
-        diSpring.lpvTypeSpecificParams = &diSpringCondition;
+        //diSpring.lpvTypeSpecificParams = &diSpringCondition;
         g_pSpringForce->SetParameters(&diSpring, DIEP_TYPESPECIFICPARAMS | DIEP_START);
     }
 
     // 更新阻尼
     if (g_pDamper) {
-        diDamper.lpvTypeSpecificParams = &diDamperCondition;
+        //diDamper.lpvTypeSpecificParams = &diDamperCondition;
         g_pDamper->SetParameters(&diDamper, DIEP_TYPESPECIFICPARAMS | DIEP_START);
     }
 }
@@ -359,6 +354,7 @@ void ForceFeedbackWorker::doWork(){
         pushToQueue(parseSuccessLog("<b>力反馈模拟线程</b> - 开启力反馈模拟成功!"));
     }
 
+
     while(isWorkerRunning){
         // 轮询设备状态
         auto res = getInputState2();
@@ -423,11 +419,11 @@ void ForceFeedbackWorker::doWork(){
             currentV = 0;
         }
 
-        qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
-
+        //qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
 
         // 根据车速模拟力反馈效果
         updateForceFeedback(currentV, this->maxSpeed_m_s);
+
 
         // 释放res内存
         qDeleteAll(res);  // 删除所有指针指向的对象
