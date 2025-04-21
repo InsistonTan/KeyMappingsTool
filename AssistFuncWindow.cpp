@@ -118,7 +118,8 @@ void AssistFuncWindow::saveSettings(){
     text2.append("\"isBrakeReverse\":").append(forceFeedbackSettingsWindow->isBrakeReverse ? "true" : "false").append(",\n\t\t");
     text2.append("\"acceleration_100km_time_s\":").append(std::to_string(forceFeedbackSettingsWindow->acceleration_100km_time_s)).append(",\n\t\t");
     text2.append("\"stop_100km_dis_m\":").append(std::to_string(forceFeedbackSettingsWindow->stop_100km_dis_m)).append(",\n\t\t");
-    text2.append("\"maxSpeed_km_h\":").append(std::to_string(forceFeedbackSettingsWindow->maxSpeed_km_h)).append("\n\t");
+    text2.append("\"maxSpeed_km_h\":").append(std::to_string(forceFeedbackSettingsWindow->maxSpeed_km_h)).append(",\n\t\t");
+    text2.append("\"maxForceFeedbackGain\":").append(std::to_string(forceFeedbackSettingsWindow->maxForceFeedbackGain)).append("\n\t");
     text2.append("}\n");
 
     text2.append("}");
@@ -156,39 +157,42 @@ void AssistFuncWindow::loadSettings(){
     QJsonObject jsonObj = doc.object();
 
     // 读取信息
-    bool enableETS2AutoCancelHandbrake = (jsonObj["ETS2_enableAutoCancelHandbrake"] != QJsonValue::Undefined) ? jsonObj["ETS2_enableAutoCancelHandbrake"].toBool() : false;
-    bool enableAutoStartMapping = (jsonObj["SYSTEM_enableMappingAfterOpening"] != QJsonValue::Undefined) ? jsonObj["SYSTEM_enableMappingAfterOpening"].toBool() : false;
-    bool enableOnlyLongestMapping = (jsonObj["SYSTEM_enableOnlyLongestMapping"] != QJsonValue::Undefined) ? jsonObj["SYSTEM_enableOnlyLongestMapping"].toBool() : false;
+    bool enableETS2AutoCancelHandbrake = (jsonObj.contains("ETS2_enableAutoCancelHandbrake")) ? jsonObj["ETS2_enableAutoCancelHandbrake"].toBool() : false;
+    bool enableAutoStartMapping = (jsonObj.contains("SYSTEM_enableMappingAfterOpening")) ? jsonObj["SYSTEM_enableMappingAfterOpening"].toBool() : false;
+    bool enableOnlyLongestMapping = (jsonObj.contains("SYSTEM_enableOnlyLongestMapping")) ? jsonObj["SYSTEM_enableOnlyLongestMapping"].toBool() : false;
     this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;
     this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;
     this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;
-    this->SYSTEM_enableForceFeedback = (jsonObj["SYSTEM_enableForceFeedback"] != QJsonValue::Undefined) ? jsonObj["SYSTEM_enableForceFeedback"].toBool() : false;
+    this->SYSTEM_enableForceFeedback = (jsonObj.contains("SYSTEM_enableForceFeedback")) ? jsonObj["SYSTEM_enableForceFeedback"].toBool() : false;
     // 欧卡2安装路径
-    QString ets2Path = (jsonObj["ETS2_installPath"]!= QJsonValue::Undefined) ? jsonObj["ETS2_installPath"].toString() : "";
+    QString ets2Path = (jsonObj.contains("ETS2_installPath")) ? jsonObj["ETS2_installPath"].toString() : "";
     if(!ets2Path.isEmpty()){
         this->ETS2InstallPath = ets2Path;
     }
 
     // 力反馈模拟设置
-    if(jsonObj["SYSTEM_forceFeedbackSettings"] != QJsonValue::Undefined && jsonObj["SYSTEM_forceFeedbackSettings"].isObject()){
+    if(jsonObj.contains("SYSTEM_forceFeedbackSettings") && jsonObj["SYSTEM_forceFeedbackSettings"].isObject()){
         QJsonObject settingsObj = jsonObj["SYSTEM_forceFeedbackSettings"].toObject();
-        this->forceFeedbackSettingsWindow->throttleAxis = (settingsObj["throttleAxis"] != QJsonValue::Undefined) ? settingsObj["throttleAxis"].toString() : "";
-        this->forceFeedbackSettingsWindow->brakeAxis = (settingsObj["brakeAxis"] != QJsonValue::Undefined) ? settingsObj["brakeAxis"].toString() : "";
-        this->forceFeedbackSettingsWindow->steeringWheelAxis = (settingsObj["steeringWheelAxis"] != QJsonValue::Undefined) ? settingsObj["steeringWheelAxis"].toString() : "";
+        this->forceFeedbackSettingsWindow->throttleAxis = (settingsObj.contains("throttleAxis")) ? settingsObj["throttleAxis"].toString() : "";
+        this->forceFeedbackSettingsWindow->brakeAxis = (settingsObj.contains("brakeAxis")) ? settingsObj["brakeAxis"].toString() : "";
+        this->forceFeedbackSettingsWindow->steeringWheelAxis = (settingsObj.contains("steeringWheelAxis")) ? settingsObj["steeringWheelAxis"].toString() : "";
 
 
-        this->forceFeedbackSettingsWindow->isThrottleReverse = (settingsObj["isThrottleReverse"] != QJsonValue::Undefined) ? settingsObj["isThrottleReverse"].toBool() : false;
-        this->forceFeedbackSettingsWindow->isBrakeReverse = (settingsObj["isBrakeReverse"] != QJsonValue::Undefined) ? settingsObj["isBrakeReverse"].toBool() : false;
+        this->forceFeedbackSettingsWindow->isThrottleReverse = (settingsObj.contains("isThrottleReverse")) ? settingsObj["isThrottleReverse"].toBool() : false;
+        this->forceFeedbackSettingsWindow->isBrakeReverse = (settingsObj.contains("isBrakeReverse")) ? settingsObj["isBrakeReverse"].toBool() : false;
 
 
-        if(settingsObj["acceleration_100km_time_s"] != QJsonValue::Undefined){
+        if(settingsObj.contains("acceleration_100km_time_s")){
             this->forceFeedbackSettingsWindow->acceleration_100km_time_s = settingsObj["acceleration_100km_time_s"].toDouble();
         }
-        if(settingsObj["stop_100km_dis_m"] != QJsonValue::Undefined){
+        if(settingsObj.contains("stop_100km_dis_m")){
             this->forceFeedbackSettingsWindow->stop_100km_dis_m = settingsObj["stop_100km_dis_m"].toInt();
         }
-        if(settingsObj["maxSpeed_km_h"] != QJsonValue::Undefined){
+        if(settingsObj.contains("maxSpeed_km_h")){
             this->forceFeedbackSettingsWindow->maxSpeed_km_h = settingsObj["maxSpeed_km_h"].toInt() > 0 ? settingsObj["maxSpeed_km_h"].toInt() : default_maxSpeed_km_h;
+        }
+        if(settingsObj.contains("maxForceFeedbackGain")){
+            this->forceFeedbackSettingsWindow->maxForceFeedbackGain = settingsObj["maxForceFeedbackGain"].toDouble();
         }
     }
 }
@@ -363,7 +367,7 @@ void AssistFuncWindow::on_pushButton_clicked()
         emit forceFeedbackSettingsChangeSignal();
     }
 
-    this->hide();
+    //this->hide();
 }
 
 

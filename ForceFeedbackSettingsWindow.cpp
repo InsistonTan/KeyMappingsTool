@@ -158,6 +158,8 @@ void ForceFeedbackSettingsWindow::updateUI(){
     ui->lineEdit_2->setText(std::to_string(this->stop_100km_dis_m).data());
     // 车辆最高时速
     ui->lineEdit_3->setText(std::to_string(this->maxSpeed_km_h).data());
+    // 最大力回馈强度
+    ui->lineEdit_4->setText(QString::number(this->maxForceFeedbackGain, 'f', 2));
 }
 
 void ForceFeedbackSettingsWindow::on_pushButton_2_clicked()
@@ -299,5 +301,28 @@ void ForceFeedbackSettingsWindow::on_pushButton_3_clicked()
     }else{
         QMessageBox::critical(this, "错误", "未检测到盘面转动!");
     }
+}
+
+
+void ForceFeedbackSettingsWindow::on_lineEdit_4_editingFinished()
+{
+    bool ok;
+    double value = ui->lineEdit_4->text().toDouble(&ok);
+
+    // 校验输入
+    if (!ok) {
+        ui->lineEdit_4->setText(QString::number(default_max_forcefeedback_gain, 'f', 2));
+        this->maxForceFeedbackGain = default_max_forcefeedback_gain;
+    }else if(value < 0.000005){
+        ui->lineEdit_4->setText("0");
+        this->maxForceFeedbackGain = 0.0;
+    }else if(value > 1.0){
+        ui->lineEdit_4->setText("1");
+        this->maxForceFeedbackGain = 1.0;
+    }else{
+        this->maxForceFeedbackGain = value;
+    }
+
+    emit settingsChangeSignal();
 }
 

@@ -7,6 +7,7 @@
 
 #define FORCE_GAIN 1 // 力反馈的整体强度系数(0-1), 影响整体的力反馈强度
 #define MIN_FORCE_POWER 300 // 最低力反馈强度的值, 影响弹簧效果(回正力)和转向阻尼的最低强度
+#define MAX_SPEED 350; // 最高车速km/h
 
 // 初始化 DirectInput
 bool ForceFeedbackWorker::initDirectInput2() {
@@ -176,10 +177,10 @@ bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
 void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double maxSpeed){
     double speedPer = speed_m_s / maxSpeed;
 
-    diSpringCondition.lPositiveCoefficient = std::max((LONG)(DI_FFNOMINALMAX * speedPer), (LONG)MIN_FORCE_POWER);
+    diSpringCondition.lPositiveCoefficient = std::max((LONG)(DI_FFNOMINALMAX * speedPer * this->maxForceFeedbackGain), (LONG)MIN_FORCE_POWER);
     diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
 
-    diDamperCondition.lPositiveCoefficient = std::max((LONG)(DI_FFNOMINALMAX * speedPer), (LONG)MIN_FORCE_POWER);
+    diDamperCondition.lPositiveCoefficient = std::max((LONG)(DI_FFNOMINALMAX * speedPer* this->maxForceFeedbackGain), (LONG)MIN_FORCE_POWER);
     diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
 
     // 更新回正力
@@ -301,6 +302,7 @@ void ForceFeedbackWorker::init(){
     this->acceleration_100km_time_s = this->forceFeedbackSettings->acceleration_100km_time_s;
     this->stop_100km_dis_m = this->forceFeedbackSettings->stop_100km_dis_m;
     this->maxSpeed_m_s = this->forceFeedbackSettings->maxSpeed_km_h * 1000.0 / 3600.0;
+    this->maxForceFeedbackGain = this->forceFeedbackSettings->maxForceFeedbackGain;
 
     // 油门踏板的数值范围
     this->throttleValueRange = axisValueRangeMap.find(this->throttleAxis.toStdString())->second;
@@ -392,6 +394,14 @@ void ForceFeedbackWorker::doWork(){
                 if(currentV <= 0){
                     currentV = 0;
                 }
+            }else if (devData->dev_btn_name == this->steeringWheelAxis.toStdString()){ // 获取方向盘数据
+                auto axisValueRange = axisValueRangeMap.find(this->steeringWheelAxis.toStdString());
+                if(axisValueRange == axisValueRangeMap.end()){
+                    continue;
+                }
+                // 方向盘转动的程度(0-1)
+                double steerWheelPer = (static_cast<double>(devData->dev_btn_value) - axisValueRange->second.lMin)/(axisValueRange->second.lMax - axisValueRange->second.lMin);
+                qDebug()<< "steerWheelPer: " << steerWheelPer;
             }
 
         }

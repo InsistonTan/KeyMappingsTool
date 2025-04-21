@@ -3,9 +3,10 @@
 #include "mapping_relation.h"
 #include <QMainWindow>
 
-#define default_acceleration_100km_time_s 2.78
-#define default_stop_100km_dis_m 30
-#define default_maxSpeed_km_h 265
+#define default_acceleration_100km_time_s 2.78 //默认百公里加速时间单位s
+#define default_stop_100km_dis_m 30 // 默认百公里刹停距离单位m
+#define default_maxSpeed_km_h 265 // 默认最高时速单位km/h
+#define default_max_forcefeedback_gain 0.7f // 默认最大力回馈强度
 
 namespace Ui {
 class ForceFeedbackSettingsWindow;
@@ -27,6 +28,7 @@ public:
     double acceleration_100km_time_s = default_acceleration_100km_time_s;// 百公里加速所需时间(秒)
     int stop_100km_dis_m = default_stop_100km_dis_m;// 百公里刹停所需距离(米)
     int maxSpeed_km_h = default_maxSpeed_km_h;// 车辆最高时速(m/s)
+    double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
 
     // 更新界面变化
     void updateUI();
@@ -50,6 +52,8 @@ private slots:
     void on_checkBox_2_checkStateChanged(const Qt::CheckState &arg1);
 
     void on_pushButton_3_clicked();
+
+    void on_lineEdit_4_editingFinished();
 
 private:
     Ui::ForceFeedbackSettingsWindow *ui;

@@ -24,6 +24,7 @@ private:
     double acceleration_100km_time_s = default_acceleration_100km_time_s;// 百公里加速所需时间(秒)
     int stop_100km_dis_m = default_stop_100km_dis_m;// 百公里刹停所需距离(米)
     double maxSpeed_m_s = default_maxSpeed_km_h * 1000.0 / 3600.0;// 车辆最高时速(m/s)
+    double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
 
     // 油门踏板的数值范围
     DIPROPRANGE throttleValueRange;
