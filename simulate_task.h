@@ -8,6 +8,7 @@
 #include<windows.h>
 #include <ViGEm/Client.h>
 #include<key_map.h>
+#include"scs-telemetry-common.hpp"
 
 #define MAX_STR 255
 #define MAX_BUF 2048
@@ -74,7 +75,6 @@ signals:
     void pauseClickSignal();
 
 protected:
-
     QList<MappingRelation*> handleResult(QList<MappingRelation*> res);
 
     bool isAxisRotate(std::string btnName);
@@ -91,6 +91,8 @@ protected:
 
     // 模拟按键操作
     void simulateKeyPress(short vkey, bool isKeyRelease);
+    void simulateKeyPressMs(short vkey, size_t pressMs);
+    void simulateKeyDelayPressMs(short vkey, size_t pressMs, size_t delayMs);
 
     // 释放指定位置的所有按键
     void releaseAllKey(QList<MappingRelation*> pressBtnList);
@@ -104,6 +106,8 @@ protected:
     void closeXboxController();
     // 模拟xbox按键操作
     void simulateXboxKeyPress(XboxInputType inputType, int inputValue1, int inputValue2, bool isRelease);
+    void simulateXboxKeyPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs);
+    void simulateXboxKeyDelayPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs, size_t delayMs);
 };
 
 #endif // SIMULATE_TASK_H

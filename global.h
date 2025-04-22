@@ -19,6 +19,8 @@ extern bool isRuning;
 // 当前运行模式, true为模拟xbox手柄, false为模拟键盘
 extern bool isXboxMode;
 
+extern BUTTONS_VALUE_TYPE g_btnBitValue;
+
 // 是否暂停全局映射
 extern bool isPause;
 void clickPauseBtn();

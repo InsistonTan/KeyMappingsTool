@@ -35,6 +35,7 @@ HEADERS += \
     logworker.h \
     mainwindow.h \
     mapping_relation.h \
+    SCS_Telemetry/scs-telemetry-common.hpp \
     simulate_task.h \
     utils.h
 
@@ -55,7 +56,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 #win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../release/ -lhidapi
 #else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../debug/ -lhidapi
 
-# INCLUDEPATH += $$PWD/.
+INCLUDEPATH += $$PWD/SCS_Telemetry
 # DEPENDPATH += $$PWD/.
 
 #LIBS += -L$$PWD/ -lhidapi
