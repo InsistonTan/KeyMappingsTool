@@ -99,7 +99,7 @@ protected:
     void simulateKeyDelayPressMs(short vkey, size_t pressMs, size_t delayMs);
 
     // 释放指定位置的所有按键
-    void releaseAllKey(QList<MappingRelation*> pressBtnList, scsTelemetryMap_t* pScsTelemtry = nullptr);
+    void releaseAllKey(QList<MappingRelation*> pressBtnList);
 
     // 关闭HID设备
     void closeDevice();

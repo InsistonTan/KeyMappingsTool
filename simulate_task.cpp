@@ -127,7 +127,7 @@ bool isCurrentBtnInList(QList<MappingRelation*> pressBtnList, std::string curren
     return false;
 }
 
-void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList, scsTelemetryMap_t* pScsTelemtry){
+void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
     // 使用迭代器遍历并删除符合条件的键
     for (auto item = keyHoldingMap.begin(); item != keyHoldingMap.end(); ) {
 
@@ -584,7 +584,7 @@ void SimulateTask::doWork(){
         res = handleResult(res);
 
         // 根据本次设备状态, 松开本次没有被按下的按键
-        releaseAllKey(res, pScsTelemtry);
+        releaseAllKey(res);
 
         // 对当前按下的按键列表循环操作
         for(int i=0; !res.empty() && i < res.size(); i++){
