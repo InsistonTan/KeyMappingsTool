@@ -56,6 +56,9 @@ public:
     BigKey operator=(const BigKey&);      // 赋值函数
     BigKey operator=(BigKey&&) noexcept;  // 移动赋值
 
+    // 类型转换
+    operator bool() const;  // 转换为bool类型
+
     // 转换为字符串
     string toString() const;              // decimalNum 用于控制小数位数，赋值为0时小数部分全部输出
     void setBit(size_t pos, bool value);  // 设置按键值
@@ -107,6 +110,16 @@ inline BigKey BigKey::operator=(BigKey&& num) noexcept {
         key[i] = num.key[i];  // 直接赋值
     }
     return *this;
+}
+
+inline BigKey::operator bool() const {
+    // 转换为bool类型
+    for (int i = 0; i < BIGKEY_NUMBER; i++) {
+        if (key[i]) {
+            return true;  // 有1
+        }
+    }
+    return false;  // 全为0
 }
 
 inline BigKey operator&=(BigKey& num1, const BigKey& num2) {
