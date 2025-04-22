@@ -251,7 +251,7 @@ bool copyETS2PluginDll(QString ets2Path, QString pluginDllPath, QString pluginDl
             }
         }
     }else{
-        pushToQueue(parseErrorLog("文件夹不存在: " + ets2Path));
+        pushToQueue(parseErrorLog("文件夹不存在: " + ets2Path + ", 请确保欧卡2的安装目录正确!"));
         return false;
     }
 
@@ -277,6 +277,10 @@ void AssistFuncWindow::startAssistFuncWork(){
     // 检查欧卡2的遥测数据共享内存dll是否存在
     if(!checkETS2Plugin()){
         pushToQueue(parseErrorLog("欧卡2自动解除手刹功能启动失败!"));
+        QMessageBox::critical(this, "错误", "欧卡2自动解除手刹功能启动失败! \n\n详情请看日志");
+        // 启动失败, 重置状态为 未启用
+        this->ui->checkBox->setChecked(false);
+        ETS2_enableAutoCancelHandbrake = false;
         return;
     }
 
@@ -306,17 +310,12 @@ void AssistFuncWindow::on_pushButton_clicked()
     if(ui->checkBox->isChecked()){
         if(ETS2_enableAutoCancelHandbrake == false){
             pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 欧卡2自动解除手刹");
-        }else{
-            emit stopWork();
-        }
 
-        QTimer::singleShot(500, [=](){
+            ETS2_enableAutoCancelHandbrake = true;
+
             // 开启辅助功能任务
             startAssistFuncWork();
-        });
-
-        ETS2_enableAutoCancelHandbrake = true;
-
+        }
     }else{
         // 关闭自动解除手刹
         if(ETS2_enableAutoCancelHandbrake){
