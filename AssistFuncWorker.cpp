@@ -1,7 +1,6 @@
 #include "AssistFuncWorker.h"
 #include<QThread>
 #include<QCoreApplication>
-#include <iostream>
 #include <tchar.h>
 #include <cctype>
 #include<QTimer>
@@ -31,7 +30,7 @@ scsTelemetryMap_t* AssistFuncWorker::readETS2Data(){
 
         if (hMapFile == nullptr) {
             if(!isWarningLogShow){
-                pushToQueue(parseWarningLog("无法打开共享内存:" + QString(MAPPING_FILE_NAME) + "欧卡2可能未运行, 将等待欧卡2运行..."));
+                pushToQueue(parseWarningLog("无法打开共享内存:" + QString(MAPPING_FILE_NAME) + ", 欧卡2可能未运行, 将等待欧卡2运行..."));
                 isWarningLogShow = true;
             }
             QThread::msleep(1000);
