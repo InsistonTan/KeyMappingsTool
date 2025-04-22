@@ -33,7 +33,6 @@ void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
             return;
         }
     }
-
 }
 
 bool SimulateTask::isAxisRotate(std::string btnName){
@@ -44,6 +43,21 @@ bool SimulateTask::isAxisRotate(std::string btnName){
     }
 
     return false;
+}
+
+// 排序函数, 按照子键的数量倒序排列
+bool compareBySubKeyCount(const MappingRelation& a, const MappingRelation& b) {
+    if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
+        return false;  // 将空的排在末尾
+    }
+    // 比较加号的数量
+    int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
+    int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
+    if (aPlusCount != bPlusCount) {
+        return aPlusCount > bPlusCount;  // 按加号数量降序排列
+    }
+    // 如果加号数量相同, 则字符串大小比较
+    return a.dev_btn_name > b.dev_btn_name;
 }
 
 SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
@@ -63,7 +77,7 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
                 }
                 if (mapping->btnTriggerType >= TRIGGER_TYPE_ENUM_ETS2_SYNC_START &&
                     mapping->btnTriggerType <= TRIGGER_TYPE_ENUM_ETS2_SYNC_END) {
-                        syncETS2Map.insert_or_assign(mapping->btnTriggerType, *mapping);
+                        syncETS2Map.push_back(*mapping);
                 }
 
                 // 将映射添加进多按键映射列表
@@ -77,19 +91,8 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
     handleMultiBtnVectorUnsort = handleMultiBtnVector;
 
     // 对组合键映射列表排序, 按子键的数量倒序
-    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
-        if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
-            return false;  // 将空的排在末尾
-        }
-        // 比较加号的数量
-        int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
-        int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
-        if (aPlusCount != bPlusCount) {
-            return aPlusCount > bPlusCount;  // 按加号数量降序排列
-        }
-        // 如果加号数量相同, 则字符串大小比较
-        return a.dev_btn_name > b.dev_btn_name;
-    });
+    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), compareBySubKeyCount);
+    std::sort(syncETS2Map.begin(), syncETS2Map.end(), compareBySubKeyCount);
 
     // 已排序的组合键映射列表
     handleMultiBtnVectorSorted = handleMultiBtnVector;
@@ -411,8 +414,6 @@ QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
     }
 }
 
-bool leftBtnFlag = false;
-bool rightBtnFlag = false;
 void SimulateTask::handleETS2SyncMap(BUTTONS_VALUE_TYPE btnBitValue, scsTelemetryMap_t* pScsTelemtry){
     // 处理ETS2同步映射
     if(pScsTelemtry == nullptr){
@@ -421,64 +422,76 @@ void SimulateTask::handleETS2SyncMap(BUTTONS_VALUE_TYPE btnBitValue, scsTelemetr
     if(syncETS2Map.empty()){
         return;
     }
+
+    bool lightsBeamLowFlag = false;
     for(auto item : syncETS2Map){
-        bool btnFlag = btnBitValue & item.second.dev_btn_bit_value;
-        if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerLeft) {
-            leftBtnFlag = btnFlag;
+        bool btnFlag = item.dev_btn_bit_value == (btnBitValue & item.dev_btn_bit_value);
+        if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerLeft) {
             if (btnFlag) { // 拨杆处于左转向灯状态
+                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
                 qDebug("左转向灯状态 blinkerLeftActive: %d, blinkerRightActive: %d", pScsTelemtry->truck_b.blinkerLeftActive, pScsTelemtry->truck_b.blinkerRightActive);
                 if (pScsTelemtry->truck_b.blinkerLeftActive == 0){
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
                 }
             } else {
-                if (pScsTelemtry->truck_b.blinkerLeftActive == 1 && rightBtnFlag == false){
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                if (pScsTelemtry->truck_b.blinkerLeftActive == 1){
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
                 }
             }
-        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerRight) {
-            rightBtnFlag = btnFlag;
+        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerRight) {
             if (btnFlag) { // 拨杆处于右转向灯状态
+                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
                 qDebug("右转向灯状态 blinkerLeftActive: %d, blinkerRightActive: %d", pScsTelemtry->truck_b.blinkerLeftActive, pScsTelemtry->truck_b.blinkerRightActive);
                 if (pScsTelemtry->truck_b.blinkerRightActive == 0){
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
                 }
             } else {
-                if (pScsTelemtry->truck_b.blinkerRightActive == 1 && leftBtnFlag == false){
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                if (pScsTelemtry->truck_b.blinkerRightActive == 1){
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
                 }
             }
-        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamHigh) {
+        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamHigh) {
             if (btnFlag) { // 拨杆处于远光灯状态
+                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
                 qDebug("远光灯状态");
                 if (pScsTelemtry->truck_b.lightsBeamHigh == 0){
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
                 }
             } else {
                 if (pScsTelemtry->truck_b.lightsBeamHigh == 1){
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
                 }
             }
         // 0 -> lightsParking -> lightsBeamLow -> lightsParking -> 0
-        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamLow) {
+        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamLow) {
+            lightsBeamLowFlag = btnFlag;
             if (btnFlag) { // 拨杆处于近光灯状态
-                qDebug("近光灯状态");
+                qDebug("近光灯状态 lightsParking: %d, lightsBeamLow: %d", pScsTelemtry->truck_b.lightsParking, pScsTelemtry->truck_b.lightsBeamLow);
                 if (pScsTelemtry->truck_b.lightsBeamLow == 0){
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
+                    qDebug("1");
                 }
-            } 
-        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsParking) {
+            }
+        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsParking) {
+            if (lightsBeamLowFlag) {
+                continue;// 近光灯状态下, 不处理示廓灯
+            }
             if (btnFlag) { // 拨杆处于示廓灯状态
-                qDebug("示廓灯状态");
-                if (pScsTelemtry->truck_b.lightsParking == 0 ||
-                    pScsTelemtry->truck_b.lightsBeamLow == 1) {
-                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
+                qDebug("示廓灯状态 lightsParking: %d, lightsBeamLow: %d", pScsTelemtry->truck_b.lightsParking, pScsTelemtry->truck_b.lightsBeamLow);
+                if (pScsTelemtry->truck_b.lightsParking == 0) {
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
+                } else if (pScsTelemtry->truck_b.lightsBeamLow == 1) {
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
+                }
+            } else { // 拨杆处于关灯位置
+                if (pScsTelemtry->truck_b.lightsParking == 1) {
+                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
                 }
             }
         }
     }
-    // Sleep(100); // 延时50ms
-    leftBtnFlag = false;
-    rightBtnFlag = false;
+    Sleep(50); // 延时50ms
 }
 
 QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){

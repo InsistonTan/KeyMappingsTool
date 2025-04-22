@@ -38,7 +38,7 @@ private:
     static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorSorted;// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
 
-    std::map<TriggerTypeEnum, MappingRelation> syncETS2Map;// 设备按键对应键盘扫描码map(用于同步ETS2/ATS游戏的按键映射)
+    std::vector<MappingRelation> syncETS2Map;// 设备按键对应键盘扫描码map(用于同步ETS2/ATS游戏的按键映射)
 
     std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map
 
