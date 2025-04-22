@@ -56,14 +56,15 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
             // 根据按键名称设置按键值，不从文件中获取
             std::string btn_name = mapping->dev_btn_name;
             if (btn_name.find("按键") != std::string::npos) {
-                //QString debugStr =  QString(btn_name.data()) + ", 索引: ";
                 QStringList btnStrList = QString::fromStdString(btn_name).split("+");
                 for (const QString& btn : btnStrList) {
                     int index = btn.mid(2).toInt(); // 获取按键索引
                     mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                    //debugStr += QString::number(index) + " ";
                 }
-                // qDebug().noquote().nospace() << debugStr << ", 设置为:" << mapping->dev_btn_bit_value;
+                if (mapping->btnTriggerType >= TRIGGER_TYPE_ENUM_ETS2_SYNC_START &&
+                    mapping->btnTriggerType <= TRIGGER_TYPE_ENUM_ETS2_SYNC_END) {
+                        syncETS2Map.insert_or_assign(mapping->btnTriggerType, *mapping);
+                }
 
                 // 将映射添加进多按键映射列表
                 MappingRelation newMapping = *mapping;
@@ -150,122 +151,11 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList, scsTeleme
                 case TriggerTypeEnum::PressAndRelease:
                     // 松开按键触发
                     // 模拟按下
-                    simulateKeyPress(item->second, false);
-                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                        //释放按键
-                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                            simulateKeyPress(item->second, true);
-                        });
-                    }, Qt::QueuedConnection);
+                    simulateKeyPressMs(item->second, RELEASE_DELAY_MS);
                     break;
-                case TriggerTypeEnum::ETS2_SyncBlinkerLeft:
-                    if(pScsTelemtry != nullptr){
-                        qDebug("转向灯拨杆恢复到中间位置, 释放左转向灯!");
-                        qDebug("当前左转向灯状态: %d", pScsTelemtry->truck_b.blinkerLeftActive);
-                        if(pScsTelemtry->truck_b.blinkerLeftActive == 1){
-                            // 模拟按下
-                            simulateKeyPress(item->second, false);
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                //释放按键
-                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                    simulateKeyPress(item->second, true);
-                                });
-                            }, Qt::QueuedConnection);
-                        }
-                    }
-                    break;
-                case TriggerTypeEnum::ETS2_SyncBlinkerRight:
-                    if(pScsTelemtry != nullptr){
-                        qDebug("转向灯拨杆恢复到中间位置, 释放右转向灯!");
-                        qDebug("当前右转向灯状态: %d", pScsTelemtry->truck_b.blinkerRightActive);
-                        if(pScsTelemtry->truck_b.blinkerRightActive == 1){
-                            // 模拟按下
-                            simulateKeyPress(item->second, false);
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                //释放按键
-                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                    simulateKeyPress(item->second, true);
-                                });
-                            }, Qt::QueuedConnection);
-                        }
-                    }
-                    break;
-                case TriggerTypeEnum::ETS2_SyncLightsParking:
-                    if(pScsTelemtry != nullptr){
-                        if(pScsTelemtry->truck_b.lightsBeamLow == 1){
-                        qDebug("转向灯由近光灯拧到关闭位置, 释放示廓灯!");
-                            // 模拟按下
-                            qDebug("模拟按下1次示廓灯!");
-                            simulateKeyPress(item->second, false);
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                //释放按键
-                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                    simulateKeyPress(item->second, true);
-                                });
-                            }, Qt::QueuedConnection);
-                        } else if(pScsTelemtry->truck_b.lightsParking == 1){
-                            qDebug("转向灯由示廓灯拧到关闭位置, 释放示廓灯!");
-                            // 模拟按下
-                            qDebug("模拟按下2次示廓灯!");
-                            simulateKeyPress(item->second, false);
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                //释放按键
-                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                    simulateKeyPress(item->second, true);
-                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                        simulateKeyPress(item->second, false);
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                        });
-                                    });
-                                });
-                            }, Qt::QueuedConnection);
-
-                        }
-                    }
-                    break;
-                case TriggerTypeEnum::ETS2_SyncLightsBeamLow:
-                    if(pScsTelemtry != nullptr){
-                        if(pScsTelemtry->truck_b.lightsBeamLow == 1){
-                            qDebug("转向灯由近光灯拧到示廓灯位置");
-                            qDebug("模拟按下2次");
-                            // 模拟按下
-                            simulateKeyPress(item->second, false);
-                            //释放按键
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                    simulateKeyPress(item->second, true);
-                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                        simulateKeyPress(item->second, false);
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                        });
-                                    });
-                                });
-                            }, Qt::QueuedConnection);
-                        } 
-                    }
-                    break;
-                case TriggerTypeEnum::ETS2_SyncLightsBeamHigh:
-                    if(pScsTelemtry != nullptr){
-                        qDebug("转向灯拧到关闭位置, 释放远光灯!");
-                        qDebug("当前远光灯状态: %d", pScsTelemtry->truck_b.lightsBeamHigh);
-                        if(pScsTelemtry->truck_b.lightsBeamHigh == 1){
-                            // 模拟按下
-                            simulateKeyPress(item->second, false);
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                //释放按键
-                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                    simulateKeyPress(item->second, true);
-                                });
-                            }, Qt::QueuedConnection);
-                        } 
-                    }
-                    break;
-                default:{
+                case TriggerTypeEnum::Normal:
                     // 释放该位置的按键
                     simulateKeyPress(item->second, true);
-                    }
                 }
 
             }else{
@@ -276,18 +166,11 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList, scsTeleme
                 case TriggerTypeEnum::PressAndRelease:
                     // 松开按键触发
                     // 模拟按下
-                    simulateXboxKeyPress(NormalButton, item->second, 0, false);
-                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                        //释放按键
-                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                            simulateXboxKeyPress(NormalButton, item->second, 0, true);
-                        });
-                    }, Qt::QueuedConnection);
+                    simulateXboxKeyPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS);
                     break;
-                default:{
+                case TriggerTypeEnum::Normal:
                     // 释放该位置的按键
                     simulateXboxKeyPress(NormalButton, item->second, 0, true);
-                }
                 }
             }
 
@@ -471,6 +354,30 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
     vigem_target_x360_update(vigemClient, vigemTarget, report);
 }
 
+void SimulateTask::simulateXboxKeyPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs){
+    // 按下按键
+    simulateXboxKeyPress(inputType, inputValue1, inputValue2, false);
+    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+        // 延时后松开按键
+        QTimer::singleShot(pressMs, [=](){
+            simulateXboxKeyPress(inputType, inputValue1, inputValue2, true);
+        });
+    }, Qt::QueuedConnection);
+}
+
+void SimulateTask::simulateXboxKeyDelayPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs, size_t delayMs) {
+    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+        // 延时后按下按键
+        QTimer::singleShot(delayMs, [=](){
+            simulateXboxKeyPress(inputType, inputValue1, inputValue2, false);
+            // 延时后松开按键
+            QTimer::singleShot(pressMs, [=](){
+                simulateXboxKeyPress(inputType, inputValue1, inputValue2, true);
+            });
+        });
+    }, Qt::QueuedConnection);
+}
+
 void SimulateTask::closeXboxController(){
     // 清理
     if (vigemTarget) {
@@ -502,6 +409,76 @@ QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
             list.append(btnStr + "#" + std::to_string(i));
         }
     }
+}
+
+bool leftBtnFlag = false;
+bool rightBtnFlag = false;
+void SimulateTask::handleETS2SyncMap(BUTTONS_VALUE_TYPE btnBitValue, scsTelemetryMap_t* pScsTelemtry){
+    // 处理ETS2同步映射
+    if(pScsTelemtry == nullptr){
+        return;
+    }
+    if(syncETS2Map.empty()){
+        return;
+    }
+    for(auto item : syncETS2Map){
+        bool btnFlag = btnBitValue & item.second.dev_btn_bit_value;
+        if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerLeft) {
+            leftBtnFlag = btnFlag;
+            if (btnFlag) { // 拨杆处于左转向灯状态
+                qDebug("左转向灯状态 blinkerLeftActive: %d, blinkerRightActive: %d", pScsTelemtry->truck_b.blinkerLeftActive, pScsTelemtry->truck_b.blinkerRightActive);
+                if (pScsTelemtry->truck_b.blinkerLeftActive == 0){
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            } else {
+                if (pScsTelemtry->truck_b.blinkerLeftActive == 1 && rightBtnFlag == false){
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            }
+        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerRight) {
+            rightBtnFlag = btnFlag;
+            if (btnFlag) { // 拨杆处于右转向灯状态
+                qDebug("右转向灯状态 blinkerLeftActive: %d, blinkerRightActive: %d", pScsTelemtry->truck_b.blinkerLeftActive, pScsTelemtry->truck_b.blinkerRightActive);
+                if (pScsTelemtry->truck_b.blinkerRightActive == 0){
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            } else {
+                if (pScsTelemtry->truck_b.blinkerRightActive == 1 && leftBtnFlag == false){
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            }
+        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamHigh) {
+            if (btnFlag) { // 拨杆处于远光灯状态
+                qDebug("远光灯状态");
+                if (pScsTelemtry->truck_b.lightsBeamHigh == 0){
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            } else {
+                if (pScsTelemtry->truck_b.lightsBeamHigh == 1){
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            }
+        // 0 -> lightsParking -> lightsBeamLow -> lightsParking -> 0
+        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamLow) {
+            if (btnFlag) { // 拨杆处于近光灯状态
+                qDebug("近光灯状态");
+                if (pScsTelemtry->truck_b.lightsBeamLow == 0){
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            } 
+        } else if (item.second.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsParking) {
+            if (btnFlag) { // 拨杆处于示廓灯状态
+                qDebug("示廓灯状态");
+                if (pScsTelemtry->truck_b.lightsParking == 0 ||
+                    pScsTelemtry->truck_b.lightsBeamLow == 1) {
+                    simulateKeyPressMs(item.second.keyboard_value, RELEASE_DELAY_MS);
+                }
+            }
+        }
+    }
+    // Sleep(100); // 延时50ms
+    leftBtnFlag = false;
+    rightBtnFlag = false;
 }
 
 QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
@@ -600,6 +577,9 @@ void SimulateTask::doWork(){
         // 轮询设备状态
         auto res = getInputState(false, handleMultiBtnVector);
 
+        // 处理ETS2同步映射
+        handleETS2SyncMap(g_btnBitValue, pScsTelemtry);
+
         // 对res进行处理
         res = handleResult(res);
 
@@ -659,167 +639,26 @@ void SimulateTask::doWork(){
                         case TriggerTypeEnum::Delay1s:
                             //qDebug() << "延迟1s触发";
                             // 延迟1s触发
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                QTimer::singleShot(1000, [=](){
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                        simulateKeyPress(item->second, true);
-                                    });
-                                });
-                            }, Qt::QueuedConnection);
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 1000);
                             break;
                         case TriggerTypeEnum::Delay3s:
                             //qDebug() << "延迟3s触发";
                             // 延迟3s触发
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                QTimer::singleShot(3000, [=](){
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                        simulateKeyPress(item->second, true);
-                                    });
-                                });
-                            }, Qt::QueuedConnection);
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 3000);
                             break;
                         case TriggerTypeEnum::Delay5s:
                             //qDebug() << "延迟5s触发";
                             // 延迟5s触发
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                QTimer::singleShot(5000, [=](){
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                        simulateKeyPress(item->second, true);
-                                    });
-                                });
-                            }, Qt::QueuedConnection);
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 5000);
                             break;
                         case TriggerTypeEnum::Release:
                             // 松开按键才触发
                             break;
                         case TriggerTypeEnum::PressAndRelease:
                             // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
-                            simulateKeyPress(item->second, false);
-                            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                               //释放按键
-                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                    simulateKeyPress(item->second, true);
-                                });
-                            }, Qt::QueuedConnection);
+                            simulateKeyPressMs(item->second, RELEASE_DELAY_MS);
                             break;
-                        case TriggerTypeEnum::ETS2_SyncBlinkerLeft:
-                            if(pScsTelemtry != nullptr){
-                                qDebug("转向灯拨杆波到左转向灯位置");
-                                qDebug("当前左转向灯状态: %d", pScsTelemtry->truck_b.blinkerLeftActive);
-                                if(pScsTelemtry->truck_b.blinkerLeftActive == 0){
-                                    // 模拟按下
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                        });
-                                    }, Qt::QueuedConnection);
-                                }
-                            }
-                            break;
-                        case TriggerTypeEnum::ETS2_SyncBlinkerRight:
-                            if(pScsTelemtry != nullptr){
-                                qDebug("转向灯拨杆波到右转向灯位置");
-                                qDebug("当前右转向灯状态: %d", pScsTelemtry->truck_b.blinkerRightActive);
-                                if(pScsTelemtry->truck_b.blinkerRightActive == 0){
-                                    // 模拟按下
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                        });
-                                    }, Qt::QueuedConnection);
-                                }
-                            }
-                            break;
-                        case TriggerTypeEnum::ETS2_SyncLightsParking:
-                            qDebug("拨杆拧到示廓灯位置");
-                            if(pScsTelemtry != nullptr){
-                                if (pScsTelemtry->truck_b.lightsBeamLow == 1){
-                                    qDebug("模拟按下2次示廓灯!");
-                                    // 模拟按下
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                            QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                                simulateKeyPress(item->second, false);
-                                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                                    simulateKeyPress(item->second, true);
-                                                });
-                                            });
-                                        });
-                                    }, Qt::QueuedConnection);
-                                } else if(pScsTelemtry->truck_b.lightsParking == 0){
-                                    // 模拟按下
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                        });
-                                    }, Qt::QueuedConnection);
-                                }
-                                
-                            }
-                            break;
-                        case TriggerTypeEnum::ETS2_SyncLightsBeamLow:
-                            if(pScsTelemtry != nullptr){
-                                qDebug("拨杆拧到近光灯位置");
-                                if (pScsTelemtry->truck_b.lightsParking == 0){
-                                    qDebug("模拟按下2次示廓灯!");
-                                    // 模拟按下
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                            QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                                simulateKeyPress(item->second, false);
-                                                QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                                    simulateKeyPress(item->second, true);
-                                                });
-                                            });
-                                        });
-                                    }, Qt::QueuedConnection);
-                                } else if(pScsTelemtry->truck_b.lightsBeamLow == 0){
-                                    // 模拟按下
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                        });
-                                    }, Qt::QueuedConnection);
-                                }
-                            }
-                            break;
-                        case TriggerTypeEnum::ETS2_SyncLightsBeamHigh:
-                            if(pScsTelemtry != nullptr){
-                                qDebug("拨杆拧到远光灯位置, 按下远光灯!");
-                                qDebug("当前远光灯状态: %d", pScsTelemtry->truck_b.lightsBeamHigh);
-                                if(pScsTelemtry->truck_b.lightsBeamHigh == 0){
-                                    // 模拟按下
-                                    simulateKeyPress(item->second, false);
-                                    //释放按键
-                                    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateKeyPress(item->second, true);
-                                        });
-                                    }, Qt::QueuedConnection);
-                                }
-                            }
-                            break;
-                        default:
+                        case TriggerTypeEnum::Normal:
                             //qDebug() << "默认的同步模式";
                             // 默认的同步模式
                             simulateKeyPress(item->second, false);
@@ -844,56 +683,26 @@ void SimulateTask::doWork(){
                             case TriggerTypeEnum::Delay1s:
                                 //qDebug() << "延迟1s触发";
                                 // 延迟1s触发
-                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                    QTimer::singleShot(1000, [=](){
-                                        simulateXboxKeyPress(NormalButton, item->second, 0, false);
-                                        //释放按键
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateXboxKeyPress(NormalButton, item->second, 0, true);
-                                        });
-                                    });
-                                }, Qt::QueuedConnection);
+                                simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 1000);
                                 break;
                             case TriggerTypeEnum::Delay3s:
                                 //qDebug() << "延迟3s触发";
                                 // 延迟3s触发
-                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                    QTimer::singleShot(3000, [=](){
-                                        simulateXboxKeyPress(NormalButton, item->second, 0, false);
-                                        //释放按键
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateXboxKeyPress(NormalButton, item->second, 0, true);
-                                        });
-                                    });
-                                }, Qt::QueuedConnection);
+                                simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 3000);
                                 break;
                             case TriggerTypeEnum::Delay5s:
                                 //qDebug() << "延迟5s触发";
                                 // 延迟5s触发
-                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                    QTimer::singleShot(5000, [=](){
-                                        simulateXboxKeyPress(NormalButton, item->second, 0, false);
-                                        //释放按键
-                                        QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                            simulateXboxKeyPress(NormalButton, item->second, 0, true);
-                                        });
-                                    });
-                                }, Qt::QueuedConnection);
+                                simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 5000);
                                 break;
                             case TriggerTypeEnum::Release:
                                 // 松开按键才触发
                                 break;
                             case TriggerTypeEnum::PressAndRelease:
                                 // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
-                                simulateXboxKeyPress(NormalButton, item->second, 0, false);
-                                QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
-                                    //释放按键
-                                    QTimer::singleShot(RELEASE_DELAY_MS, [=](){
-                                        simulateXboxKeyPress(NormalButton, item->second, 0, true);
-                                    });
-                                }, Qt::QueuedConnection);
+                                simulateXboxKeyPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS);
                                 break;
-                            default:
+                            case TriggerTypeEnum::Normal:
                                 //qDebug() << "默认的同步模式";
                                 // 默认的同步模式
                                 // 按下xbox对应按键
@@ -1037,6 +846,29 @@ void SimulateTask::simulateKeyPress(short scanCode, bool isKeyRelease) {
         SendInput(1, &input, sizeof(INPUT));
     }
 
+}
+
+void SimulateTask::simulateKeyPressMs(short vkey, size_t pressMs) {
+    simulateKeyPress(vkey, false);
+    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+        //释放按键
+        QTimer::singleShot(pressMs, [=](){
+            simulateKeyPress(vkey, true);
+        });
+    }, Qt::QueuedConnection);
+}
+
+void SimulateTask::simulateKeyDelayPressMs(short vkey, size_t pressMs, size_t delayMs) {
+    QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+        // 延时后按下按键
+        QTimer::singleShot(delayMs, [=](){
+            simulateKeyPress(vkey, false);
+            //释放按键
+            QTimer::singleShot(pressMs, [=](){
+                simulateKeyPress(vkey, true);
+            });
+        });
+    }, Qt::QueuedConnection);
 }
 
 void SimulateTask::changeEnableOnlyLongestMapping(){

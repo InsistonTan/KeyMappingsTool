@@ -38,6 +38,8 @@ private:
     static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorSorted;// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
 
+    std::map<TriggerTypeEnum, MappingRelation> syncETS2Map;// 设备按键对应键盘扫描码map(用于同步ETS2/ATS游戏的按键映射)
+
     std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map
 
     std::map<std::string, TriggerTypeEnum> keyTriggerTypeMap;// 记录按键触发模式的map
@@ -75,6 +77,7 @@ signals:
     void pauseClickSignal();
 
 protected:
+    void handleETS2SyncMap(BUTTONS_VALUE_TYPE btnBitValue, scsTelemetryMap_t* pScsTelemtry);
 
     QList<MappingRelation*> handleResult(QList<MappingRelation*> res);
 
@@ -92,6 +95,8 @@ protected:
 
     // 模拟按键操作
     void simulateKeyPress(short vkey, bool isKeyRelease);
+    void simulateKeyPressMs(short vkey, size_t pressMs);
+    void simulateKeyDelayPressMs(short vkey, size_t pressMs, size_t delayMs);
 
     // 释放指定位置的所有按键
     void releaseAllKey(QList<MappingRelation*> pressBtnList, scsTelemetryMap_t* pScsTelemtry = nullptr);
@@ -105,6 +110,8 @@ protected:
     void closeXboxController();
     // 模拟xbox按键操作
     void simulateXboxKeyPress(XboxInputType inputType, int inputValue1, int inputValue2, bool isRelease);
+    void simulateXboxKeyPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs);
+    void simulateXboxKeyDelayPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs, size_t delayMs);
 };
 
 #endif // SIMULATE_TASK_H

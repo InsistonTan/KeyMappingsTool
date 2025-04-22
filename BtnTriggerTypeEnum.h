@@ -23,6 +23,9 @@ enum TriggerTypeEnum {
     End //结束标识, 用于遍历枚举
 };
 
+#define TRIGGER_TYPE_ENUM_ETS2_SYNC_START TriggerTypeEnum::ETS2_SyncBlinkerLeft    // ETS2同步开始标识
+#define TRIGGER_TYPE_ENUM_ETS2_SYNC_END   TriggerTypeEnum::ETS2_SyncLightsBeamHigh // ETS2同步结束标识
+
 // 枚举对应信息map
 extern std::map<TriggerTypeEnum, std::string> TRIGGER_TYPE_ENUM_MAP;
 
