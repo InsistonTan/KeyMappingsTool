@@ -75,10 +75,6 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
                     int index = btn.mid(2).toInt(); // 获取按键索引
                     mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
                 }
-                if (mapping->btnTriggerType >= TRIGGER_TYPE_ENUM_ETS2_SYNC_START &&
-                    mapping->btnTriggerType <= TRIGGER_TYPE_ENUM_ETS2_SYNC_END) {
-                        syncETS2Map.push_back(*mapping);
-                }
 
                 // 将映射添加进多按键映射列表
                 MappingRelation newMapping = *mapping;
@@ -92,7 +88,6 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
 
     // 对组合键映射列表排序, 按子键的数量倒序
     std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), compareBySubKeyCount);
-    std::sort(syncETS2Map.begin(), syncETS2Map.end(), compareBySubKeyCount);
 
     // 已排序的组合键映射列表
     handleMultiBtnVectorSorted = handleMultiBtnVector;
@@ -414,86 +409,6 @@ QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
     }
 }
 
-void SimulateTask::handleETS2SyncMap(BUTTONS_VALUE_TYPE btnBitValue, scsTelemetryMap_t* pScsTelemtry){
-    // 处理ETS2同步映射
-    if(pScsTelemtry == nullptr){
-        return;
-    }
-    if(syncETS2Map.empty()){
-        return;
-    }
-
-    bool lightsBeamLowFlag = false;
-    for(auto item : syncETS2Map){
-        bool btnFlag = item.dev_btn_bit_value == (btnBitValue & item.dev_btn_bit_value);
-        if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerLeft) {
-            if (btnFlag) { // 拨杆处于左转向灯状态
-                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
-                qDebug("左转向灯状态 blinkerLeftActive: %d, blinkerRightActive: %d", pScsTelemtry->truck_b.blinkerLeftActive, pScsTelemtry->truck_b.blinkerRightActive);
-                if (pScsTelemtry->truck_b.blinkerLeftActive == 0){
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            } else {
-                if (pScsTelemtry->truck_b.blinkerLeftActive == 1){
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            }
-        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncBlinkerRight) {
-            if (btnFlag) { // 拨杆处于右转向灯状态
-                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
-                qDebug("右转向灯状态 blinkerLeftActive: %d, blinkerRightActive: %d", pScsTelemtry->truck_b.blinkerLeftActive, pScsTelemtry->truck_b.blinkerRightActive);
-                if (pScsTelemtry->truck_b.blinkerRightActive == 0){
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            } else {
-                if (pScsTelemtry->truck_b.blinkerRightActive == 1){
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            }
-        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamHigh) {
-            if (btnFlag) { // 拨杆处于远光灯状态
-                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
-                qDebug("远光灯状态");
-                if (pScsTelemtry->truck_b.lightsBeamHigh == 0){
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            } else {
-                if (pScsTelemtry->truck_b.lightsBeamHigh == 1){
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            }
-        // 0 -> lightsParking -> lightsBeamLow -> lightsParking -> 0
-        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsBeamLow) {
-            lightsBeamLowFlag = btnFlag;
-            if (btnFlag) { // 拨杆处于近光灯状态
-                qDebug("近光灯状态 lightsParking: %d, lightsBeamLow: %d", pScsTelemtry->truck_b.lightsParking, pScsTelemtry->truck_b.lightsBeamLow);
-                if (pScsTelemtry->truck_b.lightsBeamLow == 0){
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                    qDebug("1");
-                }
-            }
-        } else if (item.btnTriggerType == TriggerTypeEnum::ETS2_SyncLightsParking) {
-            if (lightsBeamLowFlag) {
-                continue;// 近光灯状态下, 不处理示廓灯
-            }
-            if (btnFlag) { // 拨杆处于示廓灯状态
-                btnBitValue &= ~item.dev_btn_bit_value; // 清除当前按键的值
-                qDebug("示廓灯状态 lightsParking: %d, lightsBeamLow: %d", pScsTelemtry->truck_b.lightsParking, pScsTelemtry->truck_b.lightsBeamLow);
-                if (pScsTelemtry->truck_b.lightsParking == 0) {
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                } else if (pScsTelemtry->truck_b.lightsBeamLow == 1) {
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            } else { // 拨杆处于关灯位置
-                if (pScsTelemtry->truck_b.lightsParking == 1) {
-                    simulateKeyPressMs(item.keyboard_value, RELEASE_DELAY_MS);
-                }
-            }
-        }
-    }
-    Sleep(50); // 延时50ms
-}
-
 QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
     if(!res.isEmpty()){
         for(auto &currentBtn : res){
@@ -589,9 +504,6 @@ void SimulateTask::doWork(){
     while(getIsRunning()){
         // 轮询设备状态
         auto res = getInputState(false, handleMultiBtnVector);
-
-        // 处理ETS2同步映射
-        handleETS2SyncMap(g_btnBitValue, pScsTelemtry);
 
         // 对res进行处理
         res = handleResult(res);
