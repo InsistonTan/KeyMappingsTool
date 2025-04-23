@@ -547,8 +547,8 @@ void SimulateTask::doWork(){
 
                     // 映射键盘
                     if(!getIsXboxMode()){
-                        // 对映射鼠标左键(-7), 鼠标右键(-8), 以及其它键盘按键进行按下记录
-                        if(item->second == -7 || item->second == -8 || item->second > 0){
+                        // 对映射鼠标左键(-7), 鼠标右键(-8), 鼠标中键(-11), 以及其它键盘按键进行按下记录
+                        if(item->second == -7 || item->second == -8 || item->second == -11 ||  item->second > 0){
                             // 记录按键按下
                             keyHoldingMap.insert_or_assign(btnStr, item->second);
                         }
@@ -754,6 +754,11 @@ void SimulateTask::simulateKeyPress(short scanCode, bool isKeyRelease) {
             input.mi.mouseData = -MOUSE_WHEEL_DELTA;  // 正数向上滚动，负数向下滚动
             input.mi.time = 0;
             input.mi.dwExtraInfo = 0;
+        }
+        // 鼠标中键
+        else if(scanCode == -11){
+            input.type = INPUT_MOUSE;
+            input.mi.dwFlags = !isKeyRelease ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
         }
         else{
             // 其它无效操作不模拟

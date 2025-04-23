@@ -772,7 +772,7 @@ void MainWindow::loadMappingsFile(std::string filename){
                 mapping->remark = (jsonObj.contains("remark")) ? jsonObj["remark"].toString().toStdString() : "";
                 mapping->rotateAxis = (jsonObj.contains("rotateAxis") && jsonObj["rotateAxis"].toInt() == 1) ? 1 : 0;
                 mapping->btnTriggerType =
-                    (jsonObj.contains("btnTriggerType") && jsonObj["btnTriggerType"].toInt() > 0)
+                    (jsonObj.contains("btnTriggerType") && jsonObj["btnTriggerType"].toInt() > 0 && jsonObj["btnTriggerType"].toInt() < TriggerTypeEnum::End)
                                               ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
                                               : TriggerTypeEnum::Normal;
                 mapping->dev_btn_value = 
