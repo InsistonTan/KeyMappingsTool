@@ -57,7 +57,7 @@ private:
     // 创建力回馈效果
     bool createDynamicEffects(QString steerWheelAxis);
     // 根据车速更新力回馈
-    void updateForceFeedback(double speed_m_s, double maxSpeed, double totalA);
+    void updateForceFeedback(double speed_m_s, double totalA);
     // 关闭资源
     void cleanup();
     // 获取设备状态信息

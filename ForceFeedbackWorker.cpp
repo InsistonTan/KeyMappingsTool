@@ -176,7 +176,7 @@ bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
 }
 
 // 根据车速更新力回馈
-void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double maxSpeed, double totalA){
+void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double totalA){
     double speedKmh = speed_m_s * 3.6; // 车速, 单位 km/h
     //double speedPer = speed_m_s / maxSpeed;// 当前车速百分比
 
@@ -434,7 +434,7 @@ void ForceFeedbackWorker::doWork(){
         qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
 
         // 根据车速模拟力反馈效果
-        updateForceFeedback(currentV, this->maxSpeed_m_s, totalA);
+        updateForceFeedback(currentV, totalA);
 
 
         // 释放res内存
