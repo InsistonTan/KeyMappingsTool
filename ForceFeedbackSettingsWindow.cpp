@@ -47,7 +47,7 @@ void ForceFeedbackSettingsWindow::on_pushButton_clicked()
             }
 
             this->throttleAxis = mapping->dev_btn_name.data();
-            emit settingsChangeSignal();
+            unsave();
         }
 
         // 设置是否反转该轴
@@ -189,7 +189,7 @@ void ForceFeedbackSettingsWindow::on_pushButton_2_clicked()
                 return;
             }
             this->brakeAxis = mapping->dev_btn_name.data();
-            emit settingsChangeSignal();
+            unsave();
         }
 
         // 设置是否反转该轴
@@ -214,8 +214,6 @@ void ForceFeedbackSettingsWindow::on_lineEdit_editingFinished()
     }else{
         this->acceleration_100km_time_s = value;
     }
-
-    emit settingsChangeSignal();
 }
 
 
@@ -231,7 +229,6 @@ void ForceFeedbackSettingsWindow::on_lineEdit_2_editingFinished()
         this->stop_100km_dis_m = value;
     }
 
-    emit settingsChangeSignal();
 }
 
 
@@ -247,21 +244,20 @@ void ForceFeedbackSettingsWindow::on_lineEdit_3_editingFinished()
         this->maxSpeed_km_h = value;
     }
 
-    emit settingsChangeSignal();
 }
 
 
 void ForceFeedbackSettingsWindow::on_checkBox_stateChanged(int arg1)
 {
     this->isThrottleReverse = ui->checkBox->isChecked();
-    emit settingsChangeSignal();
+    unsave();
 }
 
 
 void ForceFeedbackSettingsWindow::on_checkBox_2_checkStateChanged(const Qt::CheckState &arg1)
 {
     this->isBrakeReverse = ui->checkBox_2->isChecked();
-    emit settingsChangeSignal();
+    unsave();
 }
 
 
@@ -293,7 +289,7 @@ void ForceFeedbackSettingsWindow::on_pushButton_3_clicked()
             }
 
             this->steeringWheelAxis = mapping->dev_btn_name.data();
-            emit settingsChangeSignal();
+            unsave();
         }
 
         // 更新界面变化
@@ -322,7 +318,42 @@ void ForceFeedbackSettingsWindow::on_lineEdit_4_editingFinished()
     }else{
         this->maxForceFeedbackGain = value;
     }
+}
 
+
+void ForceFeedbackSettingsWindow::on_pushButton_4_clicked()
+{
+    save();
     emit settingsChangeSignal();
+}
+
+void ForceFeedbackSettingsWindow::unsave(){
+    setWindowTitle("力反馈模拟设置 *设置未保存");
+}
+void ForceFeedbackSettingsWindow::save(){
+    setWindowTitle("力反馈模拟设置");
+}
+
+void ForceFeedbackSettingsWindow::on_lineEdit_textChanged(const QString &arg1)
+{
+    unsave();
+}
+
+
+void ForceFeedbackSettingsWindow::on_lineEdit_2_textChanged(const QString &arg1)
+{
+    unsave();
+}
+
+
+void ForceFeedbackSettingsWindow::on_lineEdit_3_textChanged(const QString &arg1)
+{
+    unsave();
+}
+
+
+void ForceFeedbackSettingsWindow::on_lineEdit_4_textChanged(const QString &arg1)
+{
+    unsave();
 }
 

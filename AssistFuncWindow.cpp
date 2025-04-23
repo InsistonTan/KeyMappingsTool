@@ -361,12 +361,6 @@ void AssistFuncWindow::on_pushButton_clicked()
         }
     }
 
-    // 只有在开启力反馈状态下, 才提交设置更新的信号
-    if(SYSTEM_enableForceFeedback){
-        // 力反馈设置
-        emit forceFeedbackSettingsChangeSignal();
-    }
-
     //this->hide();
 }
 
@@ -430,7 +424,14 @@ void AssistFuncWindow::on_pushButton_3_clicked()
 }
 
 void AssistFuncWindow::onForceFeedbackSettingsChange(){
-    unsave();
+    // 保存设置
+    saveSettings();
+
+    // 只有在开启力反馈状态下, 才提交设置更新的信号
+    if(SYSTEM_enableForceFeedback){
+        // 力反馈设置
+        emit forceFeedbackSettingsChangeSignal();
+    }
 }
 
 

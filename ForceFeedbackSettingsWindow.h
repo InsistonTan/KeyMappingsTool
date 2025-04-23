@@ -55,6 +55,19 @@ private slots:
 
     void on_lineEdit_4_editingFinished();
 
+    void on_pushButton_4_clicked();
+
+    void unsave();
+    void save();
+
+    void on_lineEdit_textChanged(const QString &arg1);
+
+    void on_lineEdit_2_textChanged(const QString &arg1);
+
+    void on_lineEdit_3_textChanged(const QString &arg1);
+
+    void on_lineEdit_4_textChanged(const QString &arg1);
+
 private:
     Ui::ForceFeedbackSettingsWindow *ui;
 
