@@ -495,9 +495,6 @@ void SimulateTask::doWork(){
 
     pushToQueue(parseSuccessLog("启动全局映射成功!"));
 
-    AssistFuncWorker worker;
-    scsTelemetryMap_t* pScsTelemtry = worker.readETS2Data();
-
     while(getIsRunning()){
         // 轮询设备状态
         auto res = getInputState(false, handleMultiBtnVector);
