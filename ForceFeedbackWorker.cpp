@@ -357,6 +357,7 @@ void ForceFeedbackWorker::doWork(){
     double currentV = 0.0;// 当前车速
     double groundA = GROUND_FRICTION_COEFFICIENT * G;// 地面滚动摩檫力加速度
     double cycleTimeOfEachRound = (WORKER_SLEEP_TIME_MS + 10.0) / 1000.0;// 每轮循环所花费的时间(单位s)
+    double linerThrottleASpeedPer = 0.5;// 油门产生的加速度与踩下的深度呈线性增加关系时的最大车速百分比
 
     isWorkerRunning = true;
 
@@ -376,12 +377,16 @@ void ForceFeedbackWorker::doWork(){
         pushToQueue(parseSuccessLog("<b>力反馈模拟线程</b> - 开启力反馈模拟成功!"));
     }
 
-
     while(isWorkerRunning){
         // 轮询设备状态
         auto res = getInputState2();
 
         double totalA = 0.0;// 总的加速度
+
+        // 计算当前车速下空气阻力f
+        double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
+        // 得到空气阻力的加速度a
+        double airA = - airF / CAR_m;
 
         for(auto devData : res){
             // 获取油门数据
@@ -391,11 +396,21 @@ void ForceFeedbackWorker::doWork(){
                                          ? (static_cast<double>(devData->dev_btn_value) - this->throttleValueRange.lMin)/(this->throttleValueRange.lMax - this->throttleValueRange.lMin)
                                         : (this->throttleValueRange.lMax - static_cast<double>(devData->dev_btn_value))/(this->throttleValueRange.lMax - this->throttleValueRange.lMin);
 
-                // 油门加速度
-                double throttleAxisA = throttlePer * this->maxThrottleAxisA;
+                double throttleAxisA = 0.0;// 油门加速度
+
+                // 油门产生的加速度与踩下的深度呈线性
+                if(currentV < maxSpeed_m_s * linerThrottleASpeedPer){
+                    // 油门加速度
+                    throttleAxisA = throttlePer * this->maxThrottleAxisA;
+                }else{
+                    // 油门产生的加速度将缓慢下降
+                    // 油门加速度
+                    throttleAxisA = throttlePer * (this->maxThrottleAxisA - (currentV / maxSpeed_m_s) * this->maxThrottleAxisA - airA - groundA);
+                }
 
                 // 添加到总的加速度
                 totalA += throttleAxisA;
+
             }
             // 获取刹车数据
             if(devData->dev_btn_name == this->brakeAxis.toStdString()){
@@ -411,10 +426,6 @@ void ForceFeedbackWorker::doWork(){
             }
         }
 
-        // 计算当前车速下空气阻力f
-        double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
-        // 得到空气阻力的加速度a
-        double airA = - airF / CAR_m;
 
         // 添加到总的加速度
         totalA += groundA + airA;
