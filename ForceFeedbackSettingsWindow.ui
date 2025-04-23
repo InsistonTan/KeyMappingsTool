@@ -305,10 +305,10 @@
      </rect>
     </property>
     <property name="toolTip">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;最高时速设置得&lt;span style=&quot; font-weight:700;&quot;&gt;越小&lt;/span&gt;, 力反馈增强的速度&lt;span style=&quot; font-weight:700;&quot;&gt;越快&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <string/>
     </property>
     <property name="text">
-     <string>km/h (影响力反馈的效果)</string>
+     <string>km/h </string>
     </property>
    </widget>
    <widget class="QLabel" name="label_13">
@@ -390,7 +390,7 @@
      <rect>
       <x>10</x>
       <y>370</y>
-      <width>91</width>
+      <width>111</width>
       <height>19</height>
      </rect>
     </property>
@@ -403,12 +403,12 @@
      <rect>
       <x>170</x>
       <y>370</y>
-      <width>211</width>
+      <width>121</width>
       <height>19</height>
      </rect>
     </property>
     <property name="text">
-     <string>(数值范围0到1, 1为最大强度)</string>
+     <string>(数值范围0到1)</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="lineEdit_4">

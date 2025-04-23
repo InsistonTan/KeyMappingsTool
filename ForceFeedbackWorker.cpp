@@ -14,6 +14,10 @@
 #define CAR_A 2.2  // 汽车正投影面积 m²
 #define CAR_m 1500 // 汽车质量 kg
 
+#define STATIC_DAMPER_PER 1 // 车辆静止状态下, 方向盘的阻尼系数(0-1)
+#define STATIC_SPRING_PER 0.05 // 车辆静止状态下, 方向盘的弹簧(回正力)系数(0-1)
+#define LOW_SPEED_SPRING_PER 0.1 // 车辆低速状态下, 方向盘的弹簧(回正力)系数(0-1)
+
 // 初始化 DirectInput
 bool ForceFeedbackWorker::initDirectInput2() {
     if(g_pDirectInput2 != nullptr){
@@ -172,16 +176,34 @@ bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
 }
 
 // 根据车速更新力回馈
-void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double maxSpeed){
-    double speedPer = speed_m_s / maxSpeed;
-    LONG effectValue = std::max((LONG)(DI_FFNOMINALMAX * speedPer * this->maxForceFeedbackGain), (LONG)MIN_FORCE_POWER);
+void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double maxSpeed, double totalA){
+    double speedKmh = speed_m_s * 3.6; // 车速, 单位 km/h
+    //double speedPer = speed_m_s / maxSpeed;// 当前车速百分比
 
-    // 弹簧效果强度系数
-    diSpringCondition.lPositiveCoefficient = effectValue;
-    diSpringCondition.lNegativeCoefficient = effectValue;
+    // 当前车辆处于非静止状态
+    if(speedKmh > 3){
+        // 对弹簧效果根据车速进行分段式处理
+        // 回正力缓慢增加
+        if(speedKmh < 30){
+            springEffectValue += (LONG)(totalA * DI_FFNOMINALMAX * 0.0001);
+        }else{
+            // 回正力较快速增加
+            springEffectValue += (LONG)(totalA * DI_FFNOMINALMAX * 0.0003);
+        }
+
+        // 阻尼效果
+        damperEffectValue -= (LONG)(totalA * DI_FFNOMINALMAX * 0.001);
+    }else{
+        springEffectValue = (LONG)(DI_FFNOMINALMAX * STATIC_SPRING_PER);
+        damperEffectValue = (LONG)(DI_FFNOMINALMAX * STATIC_DAMPER_PER);
+    }
+
+    // 弹簧效果强度系数  // 与静止状态的强度系数相比, 取较大值; 再与最大强度系数比, 取较小值
+    diSpringCondition.lPositiveCoefficient = std::min((LONG)(DI_FFNOMINALMAX), std::max((LONG)(springEffectValue * this->maxForceFeedbackGain), (LONG)(DI_FFNOMINALMAX * STATIC_SPRING_PER)));;
+    diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
     // 阻尼效果强度系数
-    diDamperCondition.lPositiveCoefficient = effectValue;
-    diDamperCondition.lNegativeCoefficient = effectValue;
+    diDamperCondition.lPositiveCoefficient = std::min((LONG)(DI_FFNOMINALMAX), std::max(damperEffectValue, (LONG)0));
+    diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
 
     // 更新回正力
     if (g_pSpringForce) {
@@ -359,6 +381,8 @@ void ForceFeedbackWorker::doWork(){
         // 轮询设备状态
         auto res = getInputState2();
 
+        double totalA = 0.0;// 总的加速度
+
         for(auto devData : res){
             // 获取油门数据
             if(devData->dev_btn_name == this->throttleAxis.toStdString()){
@@ -370,10 +394,8 @@ void ForceFeedbackWorker::doWork(){
                 // 油门加速度
                 double throttleAxisA = throttlePer * this->maxThrottleAxisA;
 
-                // 根据油门加速度 计算当前速度
-                currentV += throttleAxisA * cycleTimeOfEachRound;
-
-                //qDebug()<< "throttlePer: " << throttlePer << "maxThrottleAxisA: " << maxThrottleAxisA << "throttleAxisA: " << throttleAxisA;
+                // 添加到总的加速度
+                totalA += throttleAxisA;
             }
             // 获取刹车数据
             if(devData->dev_btn_name == this->brakeAxis.toStdString()){
@@ -384,22 +406,9 @@ void ForceFeedbackWorker::doWork(){
                 // 刹车加速度
                 double brakeAxisA = brakePer * this->maxBrakeA;
 
-                //qDebug()<< "brakePer: " << brakePer << "maxBrakeA: " << maxBrakeA << "brakeAxisA: " << brakeAxisA;
-
-                //计算当前速度
-                currentV += brakeAxisA * cycleTimeOfEachRound;
+                // 添加到总的加速度
+                totalA += brakeAxisA;
             }
-
-            // if (devData->dev_btn_name == this->steeringWheelAxis.toStdString()){ // 获取方向盘数据
-            //     auto axisValueRange = axisValueRangeMap.find(this->steeringWheelAxis.toStdString());
-            //     if(axisValueRange == axisValueRangeMap.end()){
-            //         continue;
-            //     }
-            //     // 方向盘转动的程度(0-1)
-            //     double steerWheelPer = (static_cast<double>(devData->dev_btn_value) - axisValueRange->second.lMin)/(axisValueRange->second.lMax - axisValueRange->second.lMin);
-            //     qDebug()<< "steerWheelPer: " << steerWheelPer;
-            // }
-
         }
 
         // 计算当前车速下空气阻力f
@@ -407,8 +416,11 @@ void ForceFeedbackWorker::doWork(){
         // 得到空气阻力的加速度a
         double airA = - airF / CAR_m;
 
-        // 根据地面摩檫力加速度和空气阻力加速度 计算出当前速度
-        currentV += (groundA + airA) * cycleTimeOfEachRound;
+        // 添加到总的加速度
+        totalA += groundA + airA;
+
+        // 根据总的加速度 计算出当前速度
+        currentV += totalA * cycleTimeOfEachRound;
 
         // 车速达到上限
         if(currentV >= this->maxSpeed_m_s){
@@ -419,10 +431,10 @@ void ForceFeedbackWorker::doWork(){
             currentV = 0;
         }
 
-        //qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
+        qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
 
         // 根据车速模拟力反馈效果
-        updateForceFeedback(currentV, this->maxSpeed_m_s);
+        updateForceFeedback(currentV, this->maxSpeed_m_s, totalA);
 
 
         // 释放res内存
