@@ -31,7 +31,7 @@ public:
     double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
 
     // 更新界面变化
-    void updateUI();
+    void updateUI(bool isFirstUpdate = false);
 
 signals:
     void settingsChangeSignal();

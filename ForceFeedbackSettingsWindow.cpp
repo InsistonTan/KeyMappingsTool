@@ -11,7 +11,6 @@ ForceFeedbackSettingsWindow::ForceFeedbackSettingsWindow(QWidget *parent)
     ui->setupUi(this);
 
     setWindowTitle("力反馈模拟设置");
-
 }
 
 ForceFeedbackSettingsWindow::~ForceFeedbackSettingsWindow()
@@ -113,7 +112,7 @@ MappingRelation* ForceFeedbackSettingsWindow::getDevInputAxis(){
 
 
 // 更新界面变化
-void ForceFeedbackSettingsWindow::updateUI(){
+void ForceFeedbackSettingsWindow::updateUI(bool isFirstUpdate){
     // 更新油门轴的label
     if(this->throttleAxis.isEmpty()){
         ui->label_3->setText("未设置");
@@ -160,6 +159,11 @@ void ForceFeedbackSettingsWindow::updateUI(){
     ui->lineEdit_3->setText(std::to_string(this->maxSpeed_km_h).data());
     // 最大力回馈强度
     ui->lineEdit_4->setText(QString::number(this->maxForceFeedbackGain, 'f', 2));
+
+    // 初次更新为非手动更新, 需要将窗口标题恢复
+    if(isFirstUpdate){
+        save();
+    }
 }
 
 void ForceFeedbackSettingsWindow::on_pushButton_2_clicked()
