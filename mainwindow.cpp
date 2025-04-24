@@ -2,28 +2,37 @@
 #include "ui_mainwindow.h"
 #include "key_map.h"
 #include "BtnTriggerTypeEnum.h"
-#include <QApplication>
-#include <QMainWindow>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QKeyEvent>
-#include <QDebug>
-#include <QMessageBox>
-#include <QLineEdit>
+#include "simulate_task.h"
+
+#include<QApplication>
+#include<QMainWindow>
+#include<QLabel>
+#include<QVBoxLayout>
+#include<QKeyEvent>
+#include<QDebug>
+#include<QMessageBox>
+#include<QLineEdit>
 #include<global.h>
-#include<simulate_task.h>
 #include<QFile>
 #include<QInputDialog>
 #include<QDir>
-#include <QSettings>
+#include<QSettings>
 #include<QProcess>
 #include<cmath>
-#include <QCheckBox>
+#include<QCheckBox>
 #include<QTimer>
 #include<QScrollBar>
 #include<QJsonDocument>
 #include<QJsonObject>
 #include<QJsonArray>
+#include<QNetworkAccessManager>
+#include<QNetworkRequest>
+#include<QNetworkReply>
+#include<QRegularExpression>
+#include<QHostInfo>
+#include<QDate>
+#include <QDesktopServices>
+#include <QUrl>
 
 volatile int MainWindow::currentSelectedDeviceIndex = -1; // 当前选择的设备的下标
 
@@ -38,7 +47,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(910, 584);
-    this->setWindowTitle("KeyMappingsTool v1.1.1");
+    this->setWindowTitle(QString("KeyMappingsTool ").append(CURRENT_VERSION));
     //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 遍历所有设备
@@ -139,6 +148,10 @@ MainWindow::MainWindow(QMainWindow *parent)
     this->xboxDeadareaSettings = new XboxDeadAreaSettings();
 
     g_mainWindow = this;
+
+    // 发送使用记录和检查更新
+    sendUsageCount();
+    checkUpdate();
 }
 
 void MainWindow::scanMappingFile(){
@@ -1399,6 +1412,178 @@ void MainWindow::saveLastDeviceToFileSlot(){
     saveLastDeviceToFile();
 }
 
+// 获取免费api LeanCloud 的访问域名
+void MainWindow::getApiHost(bool isSendUsage){
+    QNetworkAccessManager *manager = new QNetworkAccessManager();
 
+    // 设置请求 URL
+    QUrl url("https://wenku.baidu.com/wpeditor/getdocument?axios_original=1");
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    // 构造 JSON 数据
+    QJsonObject json;
+    json["fsid"] = 1101408526343678;
+    json["scene"] = "fcbshare";
+    json["uk"] = 556868662;
+    json["shareid"] = "5xkPedtvDL88S2vwJnIoPvQItKbzJWDVtUyeJN4Kl7g";
+
+    QByteArray data = QJsonDocument(json).toJson();
+
+    // 发送 POST 请求
+    QNetworkReply *reply = manager->post(request, data);
+
+    // 连接信号槽处理响应
+    QObject::connect(reply, &QNetworkReply::finished, [=]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray response = reply->readAll();
+            QString responseStr = QString(response);
+            // 使用正则匹配出域名
+            QRegularExpression hostReg(R"((?<=(LeanCloud_host=))[^\"]+)");
+            QRegularExpressionMatch matchRes = hostReg.match(response);
+            if(matchRes.hasMatch()){
+                QString host = matchRes.captured(0);
+                if(!host.isEmpty()){
+                    qDebug() << "从百度笔记中读取到api host: " << host;
+                    if(isSendUsage){
+                        this->sendUsageCount(host);
+                    }else{
+                        this->checkUpdate(host);
+                    }
+                }
+            }
+        } else {
+            qDebug() << "Http Request Error:" << reply->errorString();
+        }
+        reply->deleteLater();
+        manager->deleteLater();
+    });
+
+}
+
+
+QString lastInvalidApiHost = ""; //上一次使用的无效api域名
+
+// 发送软件使用统计
+void MainWindow::sendUsageCount(QString apiHost){
+    // 设置默认的api域名
+    if(apiHost.isEmpty()){
+        apiHost = DEFAULT_API_HOST;
+    }
+    // 当前域名无效
+    if(apiHost == lastInvalidApiHost){
+        return;
+    }
+
+    // 发送软件使用情况
+    QNetworkAccessManager *manager = new QNetworkAccessManager();
+    // 设置请求 URL
+    QUrl url(apiHost + "/1.1/classes/usage_count");
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setRawHeader("X-LC-Id", X_LC_Id);
+    request.setRawHeader("X-LC-Key", X_LC_Key);
+
+    // 获取主机名
+    QString username = QHostInfo::localHostName();
+
+    // 构造 JSON 数据
+    QJsonObject json;
+    json["username"] = username.isEmpty() ? "unknown" : username;
+    json["date"] = QDate::currentDate().toString("yyyyMMdd");
+
+    QByteArray data = QJsonDocument(json).toJson();
+    // 发送 POST 请求
+    QNetworkReply *reply = manager->post(request, data);
+
+    // 连接信号槽处理响应
+    QObject::connect(reply, &QNetworkReply::finished, [=]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray response = reply->readAll();
+            QString responseStr = QString(response);
+            if(responseStr.contains("objectId")){
+                qDebug() << "发送使用统计成功";
+            }
+        } else {
+            qDebug() << "Http Request Error:" << reply->errorString();
+            lastInvalidApiHost = apiHost;
+            getApiHost();
+        }
+        reply->deleteLater();
+        manager->deleteLater();
+    });
+}
+
+// 发送软件使用统计
+void MainWindow::checkUpdate(QString apiHost){
+    // 设置默认的api域名
+    if(apiHost.isEmpty()){
+        apiHost = DEFAULT_API_HOST;
+    }
+    // 当前域名无效
+    if(apiHost == lastInvalidApiHost){
+        return;
+    }
+
+    // 检查软件更新
+    QNetworkAccessManager *manager2 = new QNetworkAccessManager();
+    // 设置请求 URL
+    QUrl url2(apiHost + "/1.1/classes/key_mappings_tool_update/680a3dc5287e5660ffb108a0");
+    QNetworkRequest request2(url2);
+    request2.setRawHeader("X-LC-Id", X_LC_Id);
+    request2.setRawHeader("X-LC-Key", X_LC_Key);
+
+    // 发送 GET 请求
+    QNetworkReply *reply2 = manager2->get(request2);
+
+    // 连接信号槽处理响应
+    QObject::connect(reply2, &QNetworkReply::finished, [=]() {
+        if (reply2->error() == QNetworkReply::NoError) {
+            QByteArray response = reply2->readAll();
+            QString responseStr = QString(response);
+            if(responseStr.contains("objectId")){
+                QJsonDocument doc = QJsonDocument::fromJson(response);
+                if(!doc.isNull() && doc.isObject()){
+                    auto obj = doc.object();
+                    // 获取最新版本号, 跟目前版本号比较
+                    if(obj.contains("latest_version") && obj["latest_version"].toString() > CURRENT_VERSION){
+                        qDebug() << "检查到有新版本";
+                        QString text = "新版本: " + obj["latest_version"].toString()
+                                        + "\n更新内容:\n" + (obj.contains("desc") && !obj["desc"].toString().isEmpty() ? obj["desc"].toString() : "暂无更新日志")
+                                        + "";
+                        // 创建一个 QMessageBox
+                        QMessageBox msgBox;
+                        msgBox.setWindowTitle("版本更新提醒");
+                        msgBox.setText(text);
+                        // 设置图标
+                        msgBox.setIcon(QMessageBox::Information);
+                        // 创建并添加自定义按钮
+                        QPushButton* github = msgBox.addButton("github下载", QMessageBox::ActionRole);
+                        QPushButton* lanzou = msgBox.addButton("蓝奏云下载", QMessageBox::ActionRole);
+                        QPushButton* cancel = msgBox.addButton("取消", QMessageBox::RejectRole);
+                        // 设置默认按钮
+                        msgBox.setDefaultButton(cancel);
+                        // 显示消息框
+                        msgBox.exec();
+                        // 判断用户点击'github下载'按钮
+                        if (msgBox.clickedButton() == github){
+                            // 打开网页链接
+                            QDesktopServices::openUrl(QUrl(obj.contains("download_github") && !obj["download_github"].toString().isEmpty() ? obj["download_github"].toString() : ""));
+                        }else if(msgBox.clickedButton() == lanzou){
+                            // 打开网页链接
+                            QDesktopServices::openUrl(QUrl(obj.contains("download_lanzou") && !obj["download_lanzou"].toString().isEmpty() ? obj["download_lanzou"].toString() : ""));
+                        }
+                    }
+                }
+            }
+        } else {
+            qDebug() << "Http Request Error:" << reply2->errorString();
+            lastInvalidApiHost = apiHost;
+            getApiHost(false);
+        }
+        reply2->deleteLater();
+        manager2->deleteLater();
+    });
+}
 
 

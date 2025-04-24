@@ -14,6 +14,8 @@
 #include "AssistFuncWindow.h"
 #include "XboxDeadAreaSettings.h"
 
+#define CURRENT_VERSION "1.1.1" // 当前版本号
+
 #define MAX_STR 255
 #define MAX_BUF 2048
 #define SPE "#$#"
@@ -25,6 +27,10 @@
 #define KEYBOARD "keyboard"
 #define XBOX "xbox"
 #define AXIS_CHANGE_VALUE 1000 //识别轴需要变化的最小值
+
+#define DEFAULT_API_HOST "https://xh36dstw.lc-cn-n1-shared.com" //默认的api域名
+#define X_LC_Id "xH36dsTwk1T5XoXmO4EHA1qg-gzGzoHsz"
+#define X_LC_Key "z5mrlT4AtWBnPLRFysmGKyNZ"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -105,6 +111,14 @@ protected:
 
     // 检查驱动
     bool checkDriverInstalled();
+
+    // 获取免费api LeanCloud 的访问域名
+    void getApiHost(bool isSendUsage = true);
+    // 发送软件使用统计
+    void sendUsageCount(QString apiHost = "");
+    // 检查软件是否有更新
+    void checkUpdate(QString apiHost = "");
+
 
 public slots:
     // 模拟服务报错的slot
