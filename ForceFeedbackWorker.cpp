@@ -442,7 +442,7 @@ void ForceFeedbackWorker::doWork(){
             currentV = 0;
         }
 
-        qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
+        //qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
 
         // 根据车速模拟力反馈效果
         updateForceFeedback(currentV, totalA);
