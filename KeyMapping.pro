@@ -14,6 +14,7 @@ SOURCES += \
     BtnTriggerTypeEnum.cpp \
     ForceFeedbackSettingsWindow.cpp \
     ForceFeedbackWorker.cpp \
+    XboxDeadAreaSettings.cpp \
     deadareasettings.cpp \
     global.cpp \
     logwindow.cpp \
@@ -27,6 +28,7 @@ HEADERS += \
     BtnTriggerTypeEnum.h \
     ForceFeedbackSettingsWindow.h \
     ForceFeedbackWorker.h \
+    XboxDeadAreaSettings.h \
     deadareasettings.h \
     device_info.h \
     global.h \
@@ -42,6 +44,7 @@ HEADERS += \
 FORMS += \
     AssistFuncWindow.ui \
     ForceFeedbackSettingsWindow.ui \
+    XboxDeadAreaSettings.ui \
     deadareasettings.ui \
     logwindow.ui \
     mainwindow.ui

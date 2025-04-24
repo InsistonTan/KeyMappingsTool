@@ -95,4 +95,13 @@ void setIsXboxMode(bool val);
 
 bool getIsXboxMode();
 
+extern double xboxJoystickInnerDeadAreaValue;
+extern double xboxTriggerInnerDeadAreaValue;
+double getXboxJoystickInnerDeadAreaValue();
+void setXboxJoystickInnerDeadAreaValue(double value);
+double getXboxTriggerInnerDeadAreaValue();
+void setXboxTriggerInnerDeadAreaValue(double value);
+
+QString getAppDataDirStr();
+
 #endif // GLOBAL_H

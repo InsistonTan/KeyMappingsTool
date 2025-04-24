@@ -6,7 +6,7 @@
 #include<QDateTime>
 #include "AssistFuncWindow.h"
 #include "mainwindow.h"
-#include<algorithm>
+#include<QDir>
 
 QWidget* g_mainWindow = nullptr;
 
@@ -499,6 +499,34 @@ bool checkIsSupportForceFeedback(){
     }
 
     return false;
+}
+
+
+// 手柄摇杆内部死区值
+double xboxJoystickInnerDeadAreaValue = 0.0;
+// 手柄扳机内部死区值
+double xboxTriggerInnerDeadAreaValue = 0.0;
+// 获取手柄摇杆内部死区值
+double getXboxJoystickInnerDeadAreaValue(){
+    return xboxJoystickInnerDeadAreaValue;
+}
+// 设置手柄摇杆内部死区值
+void setXboxJoystickInnerDeadAreaValue(double value){
+    xboxJoystickInnerDeadAreaValue = value;
+}
+// 获取手柄扳机内部死区值
+double getXboxTriggerInnerDeadAreaValue(){
+    return xboxTriggerInnerDeadAreaValue;
+}
+// 设置手柄扳机内部死区值
+void setXboxTriggerInnerDeadAreaValue(double value){
+    xboxTriggerInnerDeadAreaValue = value;
+}
+
+
+// 获取软件数据文件存储的路径
+QString getAppDataDirStr(){
+    return QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
 }
 
 

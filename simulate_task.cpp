@@ -639,20 +639,71 @@ void SimulateTask::doWork(){
                             auto currentRange = axisValueRangeMap.find(currentBtn->dev_btn_name)->second;
                             int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
 
-                            int finalValue = ((static_cast<double>(currentBtn->dev_btn_value) - currentMin)
-                                                /(currentMax - currentMin) * (xboxMax - xboxMin))
-                                             + xboxMin;
+                            // 按键类型
+                            XboxInputType inputType = static_cast<XboxInputType>(item->second);
 
-                            // 反转轴的值
-                            if(isAxisRotate(btnStr)){
-                                finalValue = ((currentMax - static_cast<double>(currentBtn->dev_btn_value))
-                                                /(currentMax - currentMin) * (xboxMax - xboxMin))
-                                             + xboxMin;
+                            double devAxisDataPer = 0.0;// 设备的值占设备值的范围的百分比
+                            if(!isAxisRotate(btnStr)){
+                                devAxisDataPer = (static_cast<double>(currentBtn->dev_btn_value) - currentMin) / (currentMax - currentMin);
+                            }else{
+                                devAxisDataPer = (currentMax - static_cast<double>(currentBtn->dev_btn_value)) /(currentMax - currentMin);
                             }
 
+                            int finalValue = 0;// 最终映射成手柄的值
+
+                            // 设置的摇杆内部死区值
+                            if(inputType == XboxInputType::LeftJoystick || inputType == XboxInputType::RightJoystick){
+                                // 摇杆内部死区值
+                                int innerDeadAreaValue = (xboxMax - xboxMin) / 2 * getXboxJoystickInnerDeadAreaValue();
+
+                                int leftMin = xboxMin, leftMax = innerDeadAreaValue; // 手柄左半区的最小值最大值
+                                int rightMin = -innerDeadAreaValue, rightMax = xboxMax;// 手柄右半区的最小值最大值
+
+                                // 对应手柄的左半区
+                                if(devAxisDataPer <= 0.5){
+                                    // 计算出对应手柄的值, 并设置有效值范围为 <= 0
+                                    finalValue = std::min((int)(leftMin + (leftMax - leftMin) * devAxisDataPer * 2), 0);
+                                }else{
+                                    // 手柄右半区, 计算出对应手柄的值, 并设置有效值范围为 >= 0
+                                    finalValue = std::max((int)(rightMin + (rightMax - rightMin) * (devAxisDataPer - 0.5) * 2), 0);
+                                }
+                            }
+
+                            // 设置的扳机内部死区值
+                            if(inputType == XboxInputType::LeftTrigger || inputType == XboxInputType::RightTrigger){
+                                // 扳机内部死区值
+                                int innerDeadAreaValue = (xboxMax - xboxMin) * getXboxTriggerInnerDeadAreaValue();
+
+                                // 施加死区影响之后的值的区间范围
+                                int tempMin = xboxMin - innerDeadAreaValue;
+                                int tempMax = xboxMax - innerDeadAreaValue;
+
+                                if(innerDeadAreaValue >= 0){
+                                    // 当前值处于区间的内的值
+                                    int tempValue = (int)(tempMin + (tempMax - tempMin) * devAxisDataPer);
+
+                                    tempMin = xboxMin;
+                                    tempMax = xboxMax - innerDeadAreaValue;
+
+                                    // 新区间百分比
+                                    double newAreaPer = (double)tempValue / (tempMax - tempMin);
+                                    newAreaPer = std::max(newAreaPer, 0.0);
+
+                                    // 根据新区间百分比 计算出 原xbox区间的值
+                                    finalValue = std::max(xboxMin, std::min((int)(newAreaPer * (xboxMax - xboxMin)), xboxMax));
+                                }else{
+
+                                    tempMin = xboxMin - innerDeadAreaValue;
+                                    tempMax = xboxMax;
+
+                                    // 根据新区间百分比 计算出 原xbox区间的值
+                                    finalValue = std::max(xboxMin, std::min((int)(tempMin + (tempMax - tempMin) * devAxisDataPer), xboxMax));
+                                }
+
+                            }
 
                             // 模拟xbox轴
-                            simulateXboxKeyPress(static_cast<XboxInputType>(item->second), finalValue, 0, false);
+                            simulateXboxKeyPress(inputType, finalValue, 0, false);
                         }
                     }
 
