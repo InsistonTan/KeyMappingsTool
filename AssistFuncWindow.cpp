@@ -27,7 +27,7 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     this->setWindowTitle("辅助功能");
 
     // 获取软件本地数据目录
-    appDataDirPath = QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
+    appDataDirPath = getAppDataDirStr();
 
     // 方向盘力反馈模拟设置
     forceFeedbackSettingsWindow = new ForceFeedbackSettingsWindow();

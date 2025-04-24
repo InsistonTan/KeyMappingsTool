@@ -12,7 +12,7 @@
 #include "logwindow.h"
 #include "deadareasettings.h"
 #include "AssistFuncWindow.h"
-
+#include "XboxDeadAreaSettings.h"
 
 #define MAX_STR 255
 #define MAX_BUF 2048
@@ -49,6 +49,7 @@ private:
     LogWindow *logWindow;// 日志窗口
     DeadAreaSettings *settings;// 死区设置窗口
     AssistFuncWindow *assistWindow;// 辅助功能窗口
+    XboxDeadAreaSettings *xboxDeadareaSettings;// xbox死区设置窗口
 
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
 

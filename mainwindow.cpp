@@ -45,7 +45,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     // listAllDevice();
 
     // 获取软件本地数据目录
-    appDataDirPath = QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
+    appDataDirPath = getAppDataDirStr();
     QDir dir = QDir(QDir::homePath() + "/AppData/Local/");
     // 使用 QDir 创建不存在的目录
     if (!dir.exists("KeyMappingToolData")) {
@@ -135,6 +135,8 @@ MainWindow::MainWindow(QMainWindow *parent)
     if(AssistFuncWindow::getEnableMappingAfterOpening()){
         on_pushButton_2_clicked();
     }
+
+    this->xboxDeadareaSettings = new XboxDeadAreaSettings();
 
     g_mainWindow = this;
 }
@@ -697,9 +699,6 @@ void MainWindow::loadLastDeviceFile(){
                         ui->radioButton_2->setChecked(true);
                         //ui->label_7->setText("Xbox按键");
                         setIsXboxMode(true);
-
-                        // 隐藏死区设置
-                        this->ui->pushButton_8->hide();
                     }
                 }
             }
@@ -1276,9 +1275,6 @@ void MainWindow::on_radioButton_2_clicked()
 
     // 重新寻找保存的配置文件(xbox)
     scanMappingFile();
-
-    // 隐藏死区设置
-    this->ui->pushButton_8->hide();
 }
 
 
@@ -1335,7 +1331,24 @@ void MainWindow::simulateStartedSlot(){
 
 void MainWindow::on_pushButton_8_clicked()
 {
-    this->settings->show();
+    // 如果是映射xbox模式, 打开xbox死区设置窗口
+    if(getIsXboxMode()){
+        // 如果窗口是最小化状态, 清除最小化
+        if(this->xboxDeadareaSettings->windowState() == Qt::WindowMinimized){
+            this->xboxDeadareaSettings->setWindowState(this->xboxDeadareaSettings->windowState() & ~Qt::WindowMinimized);
+        }
+        this->xboxDeadareaSettings->show();
+        this->xboxDeadareaSettings->activateWindow();
+    }else{
+        // 如果是映射键盘模式, 打开设置
+        // 如果窗口是最小化状态, 清除最小化
+        if(this->settings->windowState() == Qt::WindowMinimized){
+            this->settings->setWindowState(this->settings->windowState() & ~Qt::WindowMinimized);
+        }
+        this->settings->show();
+        this->settings->activateWindow();
+    }
+
 }
 
 

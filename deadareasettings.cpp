@@ -26,12 +26,19 @@ DeadAreaSettings::DeadAreaSettings(QWidget *parent)
     ui->lineEdit->setText(std::to_string(innerDeadAreaPanti).data());
     ui->lineEdit_2->setText(std::to_string(innerDeadAreaTaban).data());
 
-
+    save();
 }
 
 DeadAreaSettings::~DeadAreaSettings()
 {
     delete ui;
+}
+
+void DeadAreaSettings::unsave(){
+    setWindowTitle("死区设置 *设置未保存");
+}
+void DeadAreaSettings::save(){
+    setWindowTitle("死区设置");
 }
 
 void DeadAreaSettings::on_pushButton_clicked()
@@ -72,7 +79,18 @@ void DeadAreaSettings::on_pushButton_clicked()
     setInnerDeadAreaPanti(var1);
     setInnerDeadAreaTaban(var2);
 
-    QMessageBox::information(this, "提醒", "保存成功!");
-    this->hide();
+    save();
+}
+
+
+void DeadAreaSettings::on_lineEdit_textChanged(const QString &arg1)
+{
+    unsave();
+}
+
+
+void DeadAreaSettings::on_lineEdit_2_textChanged(const QString &arg1)
+{
+    unsave();
 }
 
