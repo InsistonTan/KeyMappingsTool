@@ -1314,7 +1314,12 @@ void MainWindow::on_pushButton_6_clicked()
 
 void MainWindow::on_pushButton_7_clicked()
 {
+    // 如果窗口是最小化状态, 清除最小化
+    if(this->logWindow->windowState() == Qt::WindowMinimized){
+        this->logWindow->setWindowState(this->logWindow->windowState() & ~Qt::WindowMinimized);
+    }
     this->logWindow->show();
+    this->logWindow->activateWindow();
 }
 
 // 模拟服务报错的slot
