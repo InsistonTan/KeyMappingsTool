@@ -16,7 +16,6 @@ LPDIRECTINPUT8 g_pDirectInput = nullptr;
 LPDIRECTINPUTDEVICE8 g_pDevice = nullptr;
 QList<DiDeviceInfo> diDeviceList;
 std::map<std::string, DIPROPRANGE> axisValueRangeMap;
-BUTTONS_VALUE_TYPE g_btnBitValue;
 
 // 是否暂停全局映射
 bool isPause = false;
@@ -310,7 +309,6 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
             }
         }
-        g_btnBitValue = btnBitValue;  // 更新全局按键值
 
         if (!btnStr.empty()) {
             // 去掉最后的 "+"
