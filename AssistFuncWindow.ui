@@ -181,10 +181,10 @@
        </rect>
       </property>
       <property name="toolTip">
-       <string>组合键按下时只执行组合键映射，不执行对应子键映射</string>
+       <string>方向盘需支持力反馈功能</string>
       </property>
       <property name="text">
-       <string>启用方向盘力反馈模拟(设备需支持力反馈功能)</string>
+       <string>启用方向盘力反馈模拟(实验性)</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_3">
