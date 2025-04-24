@@ -1578,6 +1578,8 @@ void MainWindow::checkUpdate(QString apiHost){
             }
         } else {
             qDebug() << "Http Request Error:" << reply2->errorString();
+            pushToQueue(parseWarningLog(QString("<b>检查版本更新</b>: api域名").append("[").append(apiHost).append("]访问失败, 将获取最新域名访问")));
+
             lastInvalidApiHost = apiHost;
             getApiHost(false);
         }
