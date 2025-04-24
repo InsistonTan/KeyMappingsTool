@@ -16,6 +16,9 @@ XboxDeadAreaSettings::XboxDeadAreaSettings(QWidget *parent)
 
     loadSettingsFile();
 
+    this->ui->lineEdit->setText(std::to_string(getXboxJoystickInnerDeadAreaValue()).data());
+    this->ui->lineEdit_2->setText(std::to_string(getXboxTriggerInnerDeadAreaValue()).data());
+
     save();
 }
 
