@@ -3,10 +3,10 @@
 #include "mapping_relation.h"
 #include <QMainWindow>
 
-#define default_acceleration_100km_time_s 2.78 //默认百公里加速时间单位s
+#define default_acceleration_100km_time_s 8 //默认百公里加速时间单位s
 #define default_stop_100km_dis_m 30 // 默认百公里刹停距离单位m
-#define default_maxSpeed_km_h 265 // 默认最高时速单位km/h
-#define default_max_forcefeedback_gain 1 // 默认最大力回馈强度
+#define default_maxSpeed_km_h 200 // 默认最高时速单位km/h
+#define default_max_forcefeedback_gain 0.5 // 默认最大力回馈强度
 
 namespace Ui {
 class ForceFeedbackSettingsWindow;
