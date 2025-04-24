@@ -1486,6 +1486,7 @@ void MainWindow::sendUsageCount(QString apiHost){
     QJsonObject json;
     json["username"] = username.isEmpty() ? "unknown" : username;
     json["date"] = QDate::currentDate().toString("yyyyMMdd");
+    json["version"] = CURRENT_VERSION;
 
     QByteArray data = QJsonDocument(json).toJson();
     // 发送 POST 请求
@@ -1573,7 +1574,7 @@ void MainWindow::checkUpdate(QString apiHost){
             }
         } else {
             qDebug() << "Http Request Error:" << reply2->errorString();
-            pushToQueue(parseWarningLog(QString("<b>检查版本更新</b>: api域名").append("[").append(apiHost).append("]访问失败, 将获取最新域名访问")));
+            pushToQueue(parseWarningLog(QString("<b>检查版本更新</b>: api域名").append("[").append(apiHost).append("]访问失败, 错误信息: ").append(reply2->errorString())));
 
             lastInvalidApiHost = apiHost;
             getApiHost(false);
