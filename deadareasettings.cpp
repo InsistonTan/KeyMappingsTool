@@ -12,7 +12,7 @@ DeadAreaSettings::DeadAreaSettings(QWidget *parent)
 {
     ui->setupUi(this);
 
-    this->setWindowTitle("死区设置");
+    this->setWindowTitle("映射键盘模式死区设置");
 
     // 获取软件本地数据目录
     appDataDirPath = QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
@@ -35,10 +35,10 @@ DeadAreaSettings::~DeadAreaSettings()
 }
 
 void DeadAreaSettings::unsave(){
-    setWindowTitle("死区设置 *设置未保存");
+    setWindowTitle("映射键盘模式死区设置 *设置未保存");
 }
 void DeadAreaSettings::save(){
-    setWindowTitle("死区设置");
+    setWindowTitle("映射键盘模式死区设置");
 }
 
 void DeadAreaSettings::on_pushButton_clicked()
