@@ -558,11 +558,21 @@ void MainWindow::on_pushButton_clicked()
     });
 }
 
-void MainWindow::saveLastDeviceToFile(){
+void MainWindow::saveLastDeviceToFile(bool isOnlySaveLastDevice){
+    // 映射模式
+    QString mappingMode;
+    if(isOnlySaveLastDevice){
+        mappingMode = getMappingModeFromFile();
+    }else{
+        mappingMode = ui->radioButton->isChecked() ? KEYBOARD : XBOX;
+    }
+
     // 创建一个 QFile 对象，并打开文件进行写入
-    QFile file2(appDataDirPath + LAST_DEVICE_FILENAME);  // 文件路径可以是绝对路径或相对路径
+    QFile file2(appDataDirPath + LAST_DEVICE_FILENAME);
     QString text2;
-    text2.append(ui->comboBox->currentText().toStdString() + "\n" + (ui->radioButton->isChecked() ? KEYBOARD : XBOX));
+    text2.append(ui->comboBox->currentText().toStdString() + "\n");
+    text2.append(mappingMode);
+
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file2);  // 创建一个文本流对象
         out << text2;             // 写入文本
@@ -672,6 +682,42 @@ void MainWindow::loadSettings(){
     } else {
         qDebug() << "Error opening file!";
     }
+}
+
+// 从文件中获取上一次运行选择的映射模式
+QString MainWindow::getMappingModeFromFile(){
+    // 要读取的文件路径
+    QFile file(appDataDirPath + LAST_DEVICE_FILENAME);
+
+    // 文件不存在, 操作结束
+    if(!file.exists()){
+        qDebug() << "文件不存在: " << LAST_DEVICE_FILENAME;
+        pushToQueue(parseWarningLog("记录上一次使用的设备的缓存文件不存在!"));
+        return KEYBOARD;
+    }
+
+    // 打开文件进行读取
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+
+        // 逐行读取文件
+        if(!in.atEnd()) {
+            QString line0 = in.readLine(); // 读取一行
+                if(!in.atEnd()) {
+                    if(in.readLine().toStdString() == XBOX){
+                        return XBOX;
+                    }
+                }
+            }
+
+        // 关闭文件
+        file.close();
+    } else {
+        qDebug() << "Error opening file!";
+        pushToQueue(parseErrorLog("打开记录上一次使用的设备的缓存文件失败!"));
+    }
+
+    return KEYBOARD;
 }
 
 void MainWindow::loadLastDeviceFile(){
@@ -1409,7 +1455,7 @@ int MainWindow::getCurrentSelectedDeviceIndex(){
 }
 
 void MainWindow::saveLastDeviceToFileSlot(){
-    saveLastDeviceToFile();
+    saveLastDeviceToFile(true);
 }
 
 // 获取免费api LeanCloud 的访问域名

@@ -92,12 +92,14 @@ protected:
     bool hasAddToMappingList(std::string btn_name);
 
     void saveMappingsToFile(std::string filename);
-    void saveLastDeviceToFile();
+    void saveLastDeviceToFile(bool isOnlySaveLastDevice = false);
 
     void loadMappingsFile(std::string filename);
 
     void loadLastDeviceFile();
     void loadSettings();
+
+    QString getMappingModeFromFile();
 
     void repaintMappings();
 
