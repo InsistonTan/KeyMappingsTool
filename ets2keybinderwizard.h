@@ -5,6 +5,8 @@
 #include <dinput.h>
 #include <string.h>
 #include <windows.h>
+#include "BigKey.hpp"
+
 
 namespace Ui {
 class ETS2KeyBinderWizard;
@@ -46,12 +48,16 @@ private:
     int lastDeviceIndex = -99;
     DIDEVCAPS capabilities;
 
+    BigKey getKeyState();
+
     bool hasLastDevInCurrentDeviceList(std::string lastDeviceName);
     bool openDiDevice(int deviceIndex, HWND hWnd);
     bool initDirectInput();
 
     void updateUserProfile();
     bool backupProfile();
+
+    bool generateMappingFile(int keyIndex1, int keyIndex2);
 };
 
 #endif // ETS2KEYBINDERWIZARD_H

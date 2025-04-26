@@ -1,5 +1,4 @@
 #include "ets2keybinderwizard.h"
-#include "BigKey.hpp"
 #include "global.h"
 #include "ui_ets2keybinderwizard.h"
 #include <QDateTime>
@@ -11,12 +10,17 @@
 #include <regex>
 #include <string>
 
-QString LOG_HEADER = "<b>特殊按键绑定</b> - ";
-QString MEG_BOX_LINE = "------------------------";
-
 // 参考开源项目：https://github.com/Sab1e-GitHub/ETS2-KeyBinder
 
+const QString LOG_HEADER = "<b>特殊按键绑定</b> - ";
+const QString MEG_BOX_LINE = "------------------------";
+const QString MAPPING_FILE_NAME = "LightBinder";
+
 using namespace std;
+
+// 欧卡2 设置     “摇杆 Button0” 0基索引
+// 欧卡2 配置文件 “joy.b1”      1基索引
+// pygame Button_Index         0基索引
 
 // 枚举类型定义
 enum class BindingType
@@ -147,7 +151,7 @@ void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
 }
 
 // 修改 controls.sii 文件
-void modify_controls_sii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2Str) {
+void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr) {
     QFile controlsFile(controlsFilePath);
 
     // 检查文件是否存在
@@ -171,6 +175,12 @@ void modify_controls_sii(const QString& controlsFilePath, BindingType bindingTyp
         {BindingType::rblinkerh, R"(mix rblinkerh `.*?semantical\.rblinkerh\?0`)"},
     };
 
+    map<BindingType, QString> bindingTypeString = {
+        {BindingType::lightoff, "lightoff"},   {BindingType::lighthorn, "lighthorn"}, {BindingType::wipers0, "wipers0"},
+        {BindingType::wipers1, "wipers1"},     {BindingType::wipers2, "wipers2"},     {BindingType::wipers3, "wipers3"},
+        {BindingType::lightpark, "lightpark"}, {BindingType::lighton, "lighton"},     {BindingType::hblight, "hblight"},
+        {BindingType::lblinkerh, "lblinkerh"}, {BindingType::rblinkerh, "rblinkerh"}};
+
     if (replaceRules.find(bindingType) == replaceRules.end()) {
         qWarning() << "无效的绑定类型";
         return;
@@ -178,7 +188,7 @@ void modify_controls_sii(const QString& controlsFilePath, BindingType bindingTyp
 
     // 获取替换规则
     QString pattern = replaceRules[bindingType];
-    QString replacement = QString("mix %1 `%2 | semantical.%1?0`").arg(replaceRules[bindingType]).arg(ets2Str);
+    QString replacement = QString("mix %1 `%2 | semantical.%1?0`").arg(bindingTypeString[bindingType], ets2BtnStr);
 
     // 打开文件并读取内容
     if (!controlsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -334,21 +344,71 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
     return true;
 }
 
+// 生成映射文件
+bool ETS2KeyBinderWizard::generateMappingFile(int keyIndex1, int keyIndex2) {
+    // LightBinder.di_mappings_config 文件格式
+    // [
+    //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"K", "keyboard_value":37, "remark":"远光灯",
+    //     "rotateAxis":0, "btnTriggerType":5},
+    //     {"dev_btn_name":"按键4+按键7", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"J", "keyboard_value":36,
+    //     "remark":"灯光喇叭", "rotateAxis":0, "btnTriggerType":0}
+    // ]
+    QFile lightBindingFile(QDir::homePath() + "/AppData/Local/KeyMappingToolData/userMappings/" + MAPPING_FILE_NAME + ".di_mappings_config");
+    if (!lightBindingFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qDebug() << "无法打开文件:" << lightBindingFile.fileName();
+        return false;
+    }
+    QTextStream in(&lightBindingFile);
+    in << "[\n{\"dev_btn_name\":\"按键" << QString::number(keyIndex1)
+       << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"K\", \"keyboard_value\":37, "
+          "\"remark\":\"远光灯\", \"rotateAxis\":0, \"btnTriggerType\":5},\n";
+    in << "{\"dev_btn_name\":\"按键" << QString::number(keyIndex1) + "+按键" << QString::number(keyIndex2)
+       << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"J\", \"keyboard_value\":36, "
+          "\"remark\":\"灯光喇叭\", \"rotateAxis\":0, \"btnTriggerType\":0}\n]\n";
+    return true;
+}
+
 // 1、示廓灯&近光灯
 void ETS2KeyBinderWizard::on_pushButton_clicked() {
-    int stepSum = 3; // 步骤总数
+    int stepSum = 3;             // 步骤总数
+    BigKey keyState[3];          // 记录按键状态
+    keyState[0] = getKeyState(); // 获取按键状态，第一次获取为0，应该是BUG
+
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "示廓灯&近光灯：1/" + QString::number(stepSum), "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n关闭灯光");
     box.exec();
+    keyState[0] = getKeyState(); // 获取按键状态
+
     // 2、将拨杆拨到示廓灯位置
     box.setWindowTitle("示廓灯&近光灯：2/" + QString::number(stepSum));
     box.setText("请将拨杆拧到：\n" + MEG_BOX_LINE + "\n示廓灯");
     box.exec();
+    keyState[1] = getKeyState(); // 获取按键状态
 
     // 3、将拨杆拨到近光灯位置
     box.setWindowTitle("示廓灯&近光灯：3/" + QString::number(stepSum));
     box.setText("请将拨杆拧到：\n" + MEG_BOX_LINE + "\n近光灯");
     box.exec();
+    keyState[2] = getKeyState(); // 获取按键状态
+
+    // 找出变化按键，实际上不止一个变化
+    BigKey diffKey1 = keyState[0] ^ keyState[1]; // 关闭灯光和示廓灯的异或
+    BigKey diffKey2 = keyState[0] ^ keyState[2]; // 关闭灯光和近光灯的异或
+
+    std::vector<int> diffKey1Index, diffKey2Index;
+    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+        if (diffKey1.getBit(i)) {
+            diffKey1Index.push_back(i);
+        }
+        if (diffKey2.getBit(i)) {
+            diffKey2Index.push_back(i);
+        }
+    }
+    if (diffKey1Index.size() < 1 || diffKey2Index.size() < 1) {
+        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        return;
+    }
+
     // 4、确定是否绑定
     box.setWindowTitle("示廓灯&近光灯");
     box.setText("是否绑定？");
@@ -357,48 +417,130 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
 
     int ret = box.exec();
     if (ret == QMessageBox::Yes) {
-        // 绑定操作
-        qDebug() << "绑定操作";
-    } else {
-        // 取消绑定操作
-        qDebug() << "取消绑定操作";
+        // config_lines[395]: "mix lightoff `!joy3.b10?0 | semantical.lightoff?0`"
+        // config_lines[396]: "mix lightpark `joy3.b10?0 & !joy3.b11?0 | semantical.lightpark?0`"
+        // config_lines[397]: "mix lighton `joy3.b10?0 & joy3.b11?0 | semantical.lighton?0`"
+        int gameJoyPosIndex = ui->comboBox_2->currentIndex();
+        QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lightoff, ets2BtnStr);
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
+        if (diffKey2Index.size() > 1) {
+            ets2BtnStr += " & !" + gameJoyPosNameList[gameJoyPosIndex] + ".b"
+                          + QString::number((diffKey2Index[0] == diffKey1Index[0] ? diffKey2Index[1] : diffKey2Index[0]) + 1) + "?0";
+        }
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lightpark, ets2BtnStr);
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
+        if (diffKey2Index.size() > 1) {
+            ets2BtnStr += " & " + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index[1] + 1) + "?0";
+        }
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lighton, ets2BtnStr);
     }
 }
 
 // 2、远光灯&灯光喇叭
 void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
-    int stepSum = 3; // 步骤总数
+    int stepSum = 3;             // 步骤总数
+    BigKey keyState[3];          // 记录按键状态
+    keyState[0] = getKeyState(); // 获取按键状态，第一次获取为0，应该是BUG
+
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "远光灯&灯光喇叭：1/" + QString::number(stepSum), "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置");
     box.exec();
+    keyState[0] = getKeyState(); // 获取按键状态
+
     // 2、将拨杆拨到远光灯位置
     box.setWindowTitle("远光灯&灯光喇叭：2/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n远光灯");
     box.exec();
+    keyState[1] = getKeyState(); // 获取按键状态
+
     // 3、将拨杆拨到灯光喇叭位置
     box.setWindowTitle("远光灯&灯光喇叭：3/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n灯光喇叭");
     box.exec();
+    keyState[2] = getKeyState(); // 获取按键状态
+
+    // 找出变化按键，实际上不止一个变化
+    BigKey diffKey1 = keyState[0] ^ keyState[1]; // 关闭灯光和远光灯的异或
+    BigKey diffKey2 = keyState[0] ^ keyState[2]; // 关闭灯光和灯光喇叭的异或
+    BigKey diffKey3 = keyState[1] ^ keyState[2]; // 远光灯和灯光喇叭的异或
+
+    vector<int> diffKey1Index, diffKey2Index, diffKey3Index;
+    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+        if (diffKey1.getBit(i)) {
+            diffKey1Index.push_back(i);
+        }
+        if (diffKey2.getBit(i)) {
+            diffKey2Index.push_back(i);
+        }
+        if (diffKey3.getBit(i)) {
+            diffKey3Index.push_back(i);
+        }
+    }
+    if (diffKey1Index.size() < 1 || diffKey2Index.size() < 1 || diffKey3Index.size() < 1) {
+        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        return;
+    }
+
+    // 默认     01
+    // 远光灯   10
+    // 灯光喇叭 11
+
+    if (diffKey1Index.size() > 1) {
+        if (keyState[1].getBit(diffKey1Index[0])) {
+            // 远光灯在前，灯光喇叭在后
+            generateMappingFile(diffKey1Index[0], diffKey1Index[1]);
+        } else {
+            generateMappingFile(diffKey1Index[1], diffKey1Index[0]);
+        }
+    }
     // 4、生成配置文件
     box.setWindowTitle("远光灯&灯光喇叭");
-    box.setText("欧卡不支持远光灯的同步绑定，已生成配置文件，请回到主界面后用此配置文件开启全局映射。");
+    box.setText("欧卡不支持远光灯的同步绑定，已生成配置文件 <<" + MAPPING_FILE_NAME + ">>，请回到主界面后用此配置文件开启全局映射。");
     box.exec();
 }
 
 // 3、左转向灯&右转向灯
 void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
-    int stepSum = 3; // 步骤总数
+    int stepSum = 3;             // 步骤总数
+    BigKey keyState[3];          // 记录按键状态
+    keyState[0] = getKeyState(); // 获取按键状态，第一次获取为0，应该是BUG
+
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "左转向灯&右转向灯：1/" + QString::number(stepSum), "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置");
     box.exec();
+    keyState[0] = getKeyState();
+
     // 2、将拨杆拨到左转向灯位置
     box.setWindowTitle("左转向灯&右转向灯：2/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n左转向灯");
     box.exec();
+    keyState[1] = getKeyState(); // 获取按键状态
+
     // 3、将拨杆拨到右转向灯位置
     box.setWindowTitle("左转向灯&右转向灯：3/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n右转向灯");
     box.exec();
+    keyState[2] = getKeyState(); // 获取按键状态
+
+    // 找出变化按键
+    BigKey diffKey1 = keyState[0] ^ keyState[1]; // 关闭灯光和左转向灯的异或
+    BigKey diffKey2 = keyState[0] ^ keyState[2]; // 关闭灯光和右转向灯的异或
+
+    int diffKey1Index = -1, diffKey2Index = -1;
+    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+        if (diffKey1.getBit(i)) {
+            diffKey1Index = i;
+        }
+        if (diffKey2.getBit(i)) {
+            diffKey2Index = i;
+        }
+    }
+    if (diffKey1Index < 0 || diffKey2Index < 0) {
+        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        return;
+    }
+
     // 4、确定是否绑定
     box.setWindowTitle("左转向灯&右转向灯");
     box.setText("是否绑定？");
@@ -406,32 +548,74 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
     box.setDefaultButton(QMessageBox::Yes);
     int ret = box.exec();
     if (ret == QMessageBox::Yes) {
-        // 绑定操作
-        qDebug() << "绑定操作";
-    } else {
-        // 取消绑定操作
-        qDebug() << "取消绑定操作";
+        // config_lines[400]: "mix lblinkerh `joy3.b6?0 | semantical.lblinkerh?0`"
+        // config_lines[402]: "mix rblinkerh `joy3.b7?0 | semantical.rblinkerh?0`"
+        int gameJoyPosIndex = ui->comboBox_2->currentIndex();
+        QString ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0";
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lblinkerh, ets2BtnStr);
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0";
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::rblinkerh, ets2BtnStr);
     }
 }
 
 // 4、雨刮器
 void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
-    int stepSum = 4; // 步骤总数
+    int stepSum = 4;             // 步骤总数
+    BigKey keyState[4];          // 记录按键状态
+    keyState[0] = getKeyState(); // 获取按键状态，第一次获取为0，应该是BUG
+
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "雨刮器：1/" + QString::number(stepSum), "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置");
     box.exec();
+    keyState[0] = getKeyState();
+
     // 2、将拨杆拨到雨刮器1档位置
     box.setWindowTitle("雨刮器：2/" + QString::number(stepSum));
     box.setText("请将拨杆拨到\n" + MEG_BOX_LINE + "\n雨刮器1档");
     box.exec();
+    keyState[1] = getKeyState(); // 获取按键状态
+
     // 3、将拨杆拨到雨刮器2档位置
     box.setWindowTitle("雨刮器：3/" + QString::number(stepSum));
     box.setText("请将拨杆拨到\n" + MEG_BOX_LINE + "\n雨刮器2档");
     box.exec();
+    keyState[2] = getKeyState(); // 获取按键状态
+
     // 4、将拨杆拨到雨刮器3档位置
     box.setWindowTitle("雨刮器：4/" + QString::number(stepSum));
     box.setText("请将拨杆拨到\n" + MEG_BOX_LINE + "\n雨刮器3档");
     box.exec();
+    keyState[3] = getKeyState(); // 获取按键状态
+
+    // 找出变化按键
+    BigKey diffKey1 = keyState[0] ^ keyState[1]; // 关闭灯光和雨刮器1档的异或
+    BigKey diffKey2 = keyState[0] ^ keyState[2]; // 关闭灯光和雨刮器2档的异或
+    BigKey diffKey3 = keyState[0] ^ keyState[3]; // 关闭灯光和雨刮器3档的异或
+    qDebug() << "关闭灯光和雨刮器1档的异或:" << diffKey1;
+    qDebug() << "关闭灯光和雨刮器2档的异或:" << diffKey2;
+    qDebug() << "关闭灯光和雨刮器3档的异或:" << diffKey3;
+
+    int diffKey1Index = -1, diffKey2Index = -1, diffKey3Index = -1;
+    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+        if (diffKey1.getBit(i)) {
+            diffKey1Index = i;
+            qDebug() << "关闭灯光和雨刮器1档的异或:" << i;
+        }
+        if (diffKey2.getBit(i)) {
+            diffKey2Index = i;
+            qDebug() << "关闭灯光和雨刮器2档的异或:" << i;
+        }
+        if (diffKey3.getBit(i)) {
+            diffKey3Index = i;
+            qDebug() << "关闭灯光和雨刮器3档的异或:" << i;
+        }
+    }
+    if (diffKey1Index < 0 || diffKey2Index < 0 || diffKey3Index < 0) {
+        qDebug() << "没有找到变化的按键！";
+        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        return;
+    }
+
     // 5、确定是否绑定
     box.setWindowTitle("雨刮器 绑定");
     box.setText("是否绑定？");
@@ -439,10 +623,51 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
     box.setDefaultButton(QMessageBox::Yes);
     int ret = box.exec();
     if (ret == QMessageBox::Yes) {
-        // 绑定操作
-        qDebug() << "绑定操作";
-    } else {
-        // 取消绑定操作
-        qDebug() << "取消绑定操作";
+        // config_lines[383]: "mix wipers0 `!joy3.b1?0 & !joy3.b2?0 & !joy3.b3?0 | semantical.wipers0?0`"
+        // config_lines[384]: "mix wipers1 `joy3.b1?0 | semantical.wipers1?0`"
+        // config_lines[385]: "mix wipers2 `joy3.b2?0 | semantical.wipers2?0`"
+        // config_lines[386]: "mix wipers3 `joy3.b3?0 | semantical.wipers3?0`"
+        int gameJoyPosIndex = ui->comboBox_2->currentIndex();
+        QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0 & !"
+                             + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0 & !"
+                             + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey3Index + 1) + "?0";
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers0, ets2BtnStr);
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0";
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers1, ets2BtnStr);
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0";
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers2, ets2BtnStr);
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey3Index + 1) + "?0";
+        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers3, ets2BtnStr);
     }
+}
+
+BigKey ETS2KeyBinderWizard::getKeyState() {
+    BigKey keyState;
+    DIJOYSTATE2 js;
+    pDevice->Acquire();
+    HRESULT hr = pDevice->Poll();
+
+    // 检查连接状态
+    if (FAILED(hr)) {
+        hr = pDevice->Acquire();
+    }
+
+    // 检查是否成功获取
+    if (FAILED(hr)) {
+        qDebug() << "设备poll()失败，错误代码：" << HRESULT_CODE(hr);
+        pushToQueue(parseErrorLog("设备poll()失败，错误代码：" + QString(std::to_string(HRESULT_CODE(hr)).data())));
+        return keyState;
+    }
+
+    if (SUCCEEDED(pDevice->GetDeviceState(sizeof(DIJOYSTATE2), &js))) {
+        // 获取按键状态
+        for (int i = 0; i < capabilities.dwButtons; i++) {
+            keyState.setBit(i, (js.rgbButtons[i] & 0x80));
+        }
+    } else {
+        qDebug() << "获取设备状态信息失败!";
+        qDebug() << "GetDeviceState failed with error:" << HRESULT_CODE(hr);
+    }
+
+    return keyState;
 }
