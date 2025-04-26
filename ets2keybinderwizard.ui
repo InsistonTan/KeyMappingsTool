@@ -319,7 +319,7 @@
           <bool>true</bool>
          </property>
          <property name="toolTip">
-          <string>后续支持</string>
+          <string>欧卡2不支持原生绑定</string>
          </property>
          <property name="text">
           <string>    GO!    </string>

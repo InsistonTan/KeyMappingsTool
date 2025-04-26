@@ -503,7 +503,7 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
 
     // 4、生成配置文件
     box.setWindowTitle("远光灯&灯光喇叭");
-    box.setText("欧卡不支持远光灯的同步绑定，已生成配置文件 <<" + MAPPING_FILE_NAME + ">>，请回到主界面后用此配置文件开启全局映射。");
+    box.setText("欧卡不支持远光灯的同步绑定，已生成配置文件 <" + MAPPING_FILE_NAME + ">，请回到主界面后用此配置文件开启全局映射。");
     box.exec();
 }
 
