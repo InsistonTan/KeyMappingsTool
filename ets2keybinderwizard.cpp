@@ -3,7 +3,6 @@
 #include "ui_ets2keybinderwizard.h"
 #include <QDateTime>
 #include <QDebug>
-#include <QDir>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <map>
@@ -38,13 +37,6 @@ enum class BindingType
     rblinkerh  // 右转向灯
 };
 
-QString steamProfiles(QDir::homePath() + "/Documents/Euro Truck Simulator 2/steam_profiles");
-QString profiles(QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles");
-
-QStringList gameJoyPosNameList = {
-    "joy ", "joy2", "joy3", "joy4", "joy5",
-};
-
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
     diDeviceList.clear();
@@ -59,16 +51,17 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
         }
     }
     deviceName = ui->comboBox->currentText().toStdString();
-    updateUserProfile();                                      // 更新用户配置文件
-    QStringList gameJoyPosNameList = getDeviceNameGameList(); // 获取游戏配置文件中的设备名称列表
-    // 更新到下拉框
-    ui->comboBox_2->clear();
-    for (auto item : gameJoyPosNameList) {
-        ui->comboBox_2->addItem(item);
-    }
 
     connect(this, &QWizard::currentIdChanged, this, [=](int id) {
         if (id == 2) {
+            updateUserProfile();                                      // 更新用户配置文件
+            QStringList gameJoyPosNameList = getDeviceNameGameList(); // 获取游戏配置文件中的设备名称列表
+            // 更新到下拉框
+            ui->comboBox_2->clear();
+            for (auto item : gameJoyPosNameList) {
+                ui->comboBox_2->addItem(item);
+            }
+
             diDeviceList.clear();
             ui->comboBox->clear();
             scanDevice(); // 重新扫描
@@ -117,7 +110,13 @@ ETS2KeyBinderWizard::~ETS2KeyBinderWizard() {
 }
 
 QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
-    QFile file(QDir::homePath() + "/Documents/Euro Truck Simulator 2/global_controls.sii");
+    QString globalControlsFilePath;
+    if (ui->comboBox_4->currentIndex() == 0) {
+        globalControlsFilePath = QDir::homePath() + "/Documents/Euro Truck Simulator 2/global_controls.sii";
+    } else {
+        globalControlsFilePath = QDir::homePath() + "/Documents/American Truck Simulator/global_controls.sii";
+    }
+    QFile file(globalControlsFilePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件:" << file.fileName();
         return QStringList();
@@ -179,16 +178,6 @@ bool ETS2KeyBinderWizard::hasLastDevInCurrentDeviceList(std::string lastDeviceNa
 
 // 备份配置文件
 bool ETS2KeyBinderWizard::backupProfile() {
-    int index = ui->comboBox_3->currentIndex();
-    if (index >= 0 && index < steamProfileFolders.size()) {
-        selectedProfilePath = steamProfiles + "/" + steamProfileFolders[index].first + "/controls.sii";
-    } else if (index >= steamProfileFolders.size() && index < steamProfileFolders.size() + profileFolders.size()) {
-        selectedProfilePath = profiles + "/" + profileFolders[index - steamProfileFolders.size()].first + "/controls.sii";
-    } else {
-        qDebug() << "无效的配置文件索引:" << index;
-        return false;
-    }
-
     QFile selectedProfileFile(selectedProfilePath);
     if (!selectedProfileFile.exists()) {
         qDebug() << "配置文件不存在:" << selectedProfilePath;
@@ -303,12 +292,11 @@ QList<QPair<QString, QDateTime>> listFoldersWithModificationDates(const QDir& di
 
 // 选择用户配置文件
 void ETS2KeyBinderWizard::updateUserProfile() {
-
     // 列出 steam_profiles 路径下的配置文件
-    steamProfileFolders = listFoldersWithModificationDates(steamProfiles);
+    steamProfileFolders = listFoldersWithModificationDates(steamProfiles[ui->comboBox_4->currentIndex()]);
 
     // 列出 profiles 路径下的配置文件
-    profileFolders = listFoldersWithModificationDates(profiles);
+    profileFolders = listFoldersWithModificationDates(profiles[ui->comboBox_4->currentIndex()]);
 
     // 合并两个配置文件列表
     QList<QPair<QString, QDateTime>> allProfileFolders = steamProfileFolders + profileFolders;
@@ -727,9 +715,10 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
 
 void ETS2KeyBinderWizard::on_comboBox_3_activated(int index) {
     if (index >= 0 && index < steamProfileFolders.size()) {
-        selectedProfilePath = steamProfiles + "/" + steamProfileFolders[index].first + "/controls.sii";
+        selectedProfilePath = steamProfiles[ui->comboBox_4->currentIndex()] + "/" + steamProfileFolders[index].first + "/controls.sii";
     } else if (index >= steamProfileFolders.size() && index < steamProfileFolders.size() + profileFolders.size()) {
-        selectedProfilePath = profiles + "/" + profileFolders[index - steamProfileFolders.size()].first + "/controls.sii";
+        selectedProfilePath =
+            profiles[ui->comboBox_4->currentIndex()] + "/" + profileFolders[index - steamProfileFolders.size()].first + "/controls.sii";
     } else {
         qDebug() << "无效的配置文件索引:" << index;
     }

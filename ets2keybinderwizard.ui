@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>欧卡2特殊按键绑定向导</string>
+   <string>欧卡2/美卡特殊按键绑定向导</string>
   </property>
   <property name="wizardStyle">
    <enum>QWizard::WizardStyle::ModernStyle</enum>
@@ -93,22 +93,9 @@
     <string>第2步 确定游戏设置</string>
    </property>
    <property name="subTitle">
-    <string>将游戏设备连接到电脑，并确定欧卡2已选中设备，并退出欧卡</string>
+    <string>将硬件输入设备连接到电脑，并确定游戏已选中设备，并退出游戏</string>
    </property>
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="1" column="2">
-     <spacer name="horizontalSpacer_2">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>40</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
     <item row="1" column="1">
      <widget class="QLabel" name="label_2">
       <property name="text">
@@ -119,8 +106,41 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <spacer name="horizontalSpacer">
+    <item row="0" column="0" colspan="3">
+     <widget class="QWidget" name="widget_3" native="true">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>选择游戏: </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBox_4">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <item>
+          <property name="text">
+           <string>Euro Truck Simulator 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>American Truck Simulator</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <spacer name="horizontalSpacer_2">
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
@@ -145,15 +165,15 @@
       </property>
      </spacer>
     </item>
-    <item row="0" column="0" colspan="3">
-     <spacer name="verticalSpacer">
+    <item row="1" column="0">
+     <spacer name="horizontalSpacer">
       <property name="orientation">
-       <enum>Qt::Orientation::Vertical</enum>
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
-        <width>20</width>
-        <height>40</height>
+        <width>40</width>
+        <height>20</height>
        </size>
       </property>
      </spacer>
@@ -174,7 +194,7 @@
        <item row="0" column="0">
         <widget class="QLabel" name="label_3">
          <property name="text">
-          <string>游戏控制设备</string>
+          <string>硬件控制设备</string>
          </property>
         </widget>
        </item>
@@ -225,14 +245,14 @@
        <item row="3" column="0">
         <widget class="QLabel" name="label_9">
          <property name="text">
-          <string>欧卡配置文件</string>
+          <string>游戏配置文件</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>欧卡输入设备</string>
+          <string>游戏输入设备</string>
          </property>
         </widget>
        </item>
@@ -319,7 +339,7 @@
           <bool>true</bool>
          </property>
          <property name="toolTip">
-          <string>欧卡2不支持原生绑定</string>
+          <string>游戏不支持原生绑定</string>
          </property>
          <property name="text">
           <string>    GO!    </string>
