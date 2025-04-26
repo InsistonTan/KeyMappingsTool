@@ -42,7 +42,7 @@ QString steamProfiles(QDir::homePath() + "/Documents/Euro Truck Simulator 2/stea
 QString profiles(QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles");
 
 QStringList gameJoyPosNameList = {
-    "joy", "joy2", "joy3", "joy4", "joy5",
+    "joy ", "joy2", "joy3", "joy4", "joy5",
 };
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
@@ -59,7 +59,13 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
         }
     }
     deviceName = ui->comboBox->currentText().toStdString();
-    updateUserProfile(); // 更新用户配置文件
+    updateUserProfile();                                      // 更新用户配置文件
+    QStringList gameJoyPosNameList = getDeviceNameGameList(); // 获取游戏配置文件中的设备名称列表
+    // 更新到下拉框
+    ui->comboBox_2->clear();
+    for (auto item : gameJoyPosNameList) {
+        ui->comboBox_2->addItem(item);
+    }
 
     connect(this, &QWizard::currentIdChanged, this, [=](int id) {
         if (id == 2) {
@@ -111,8 +117,55 @@ ETS2KeyBinderWizard::~ETS2KeyBinderWizard() {
 }
 
 QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
+    QFile file(QDir::homePath() + "/Documents/Euro Truck Simulator 2/global_controls.sii");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "无法打开文件:" << file.fileName();
+        return QStringList();
+    }
+    QTextStream inGlobal(&file);
+    map<QString, QString> deviceNameList;
 
-    return QStringList();
+    QRegularExpression regex1(R"(`di8\.'{(.*?)}\|{(.*?)}'`.*?\|(.+?)\s*")");
+    while (!inGlobal.atEnd()) {
+        QString line = inGlobal.readLine();
+        if (line.contains("di8") && line.count("|") == 2) {
+            // 截取 GUID 和设备名称
+            QRegularExpressionMatch match = regex1.match(line);
+            if (match.hasMatch()) {
+                QString guid = "{" + match.captured(1) + "}|{" + match.captured(2) + "}";
+                QString name = match.captured(3).trimmed();
+                deviceNameList.insert_or_assign(guid, name);
+                qDebug() << "GUID:" << guid << "名称:" << name;
+            }
+        }
+    }
+    file.close();
+
+    // 读取配置文件列表
+    QFile profileFile(selectedProfilePath);
+    if (!profileFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "无法打开文件:" << profileFile.fileName();
+        return QStringList();
+    }
+
+    QTextStream inProfile(&profileFile);
+    QStringList profileList = gameJoyPosNameList;
+    QRegularExpression regex2(R"(`di8\.'{(.*?)}\|{(.*?)}'`)");
+    while (!inProfile.atEnd()) {
+        QString line = inProfile.readLine();
+        for (int i = 0; i < gameJoyPosNameList.size(); i++) {
+            if (line.contains(gameJoyPosNameList[i])) {
+                QRegularExpressionMatch match = regex2.match(line);
+                if (match.hasMatch()) {
+                    QString guid = "{" + match.captured(1) + "}|{" + match.captured(2) + "}";
+                    QString name = deviceNameList[guid];
+                    profileList[i] = name;
+                }
+            }
+        }
+    }
+    profileFile.close();
+    return profileList;
 }
 
 bool ETS2KeyBinderWizard::hasLastDevInCurrentDeviceList(std::string lastDeviceName) {
@@ -128,22 +181,21 @@ bool ETS2KeyBinderWizard::hasLastDevInCurrentDeviceList(std::string lastDeviceNa
 bool ETS2KeyBinderWizard::backupProfile() {
     int index = ui->comboBox_3->currentIndex();
     if (index >= 0 && index < steamProfileFolders.size()) {
-        selectedProfilePath = steamProfiles + "/" + steamProfileFolders[index].first;
+        selectedProfilePath = steamProfiles + "/" + steamProfileFolders[index].first + "/controls.sii";
     } else if (index >= steamProfileFolders.size() && index < steamProfileFolders.size() + profileFolders.size()) {
-        selectedProfilePath = profiles + "/" + profileFolders[index - steamProfileFolders.size()].first;
+        selectedProfilePath = profiles + "/" + profileFolders[index - steamProfileFolders.size()].first + "/controls.sii";
     } else {
         qDebug() << "无效的配置文件索引:" << index;
         return false;
     }
 
-    QDir dir(selectedProfilePath);
-    if (!dir.exists()) {
-        qDebug() << "配置文件目录不存在:" << selectedProfilePath;
+    QFile selectedProfileFile(selectedProfilePath);
+    if (!selectedProfileFile.exists()) {
+        qDebug() << "配置文件不存在:" << selectedProfilePath;
         return false;
     }
 
-    return QFile::copy(selectedProfilePath + "/controls.sii",
-                       selectedProfilePath + "/controls.sii." + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") + ".bak");
+    return QFile::copy(selectedProfilePath, selectedProfilePath + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") + ".bak");
 }
 
 void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
@@ -271,7 +323,7 @@ void ETS2KeyBinderWizard::updateUserProfile() {
     for (const auto& folder : allProfileFolders) {
         ui->comboBox_3->addItem(folder.first + " (" + folder.second.toString("yyyy-MM-dd HH:mm:ss") + ")");
     }
-    selectedProfilePath = steamProfiles + steamProfileFolders[0].first; // 默认选择第一个配置文件
+    on_comboBox_3_activated(0); // 默认选择第一个配置文件
 }
 
 // 初始化 DirectInput
@@ -348,8 +400,8 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
 bool ETS2KeyBinderWizard::generateMappingFile(int hblightKeyIndex, int lightHornKeyIndex, bool multiBtnFlag) {
     // LightBinder.di_mappings_config 文件格式
     // [
-    //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"K", "keyboard_value":37, "remark":"远光灯",
-    //     "rotateAxis":0, "btnTriggerType":5},
+    //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"K", "keyboard_value":37,
+    //     "remark":"远光灯", "rotateAxis":0, "btnTriggerType":5},
     //     {"dev_btn_name":"按键4+按键7", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"J", "keyboard_value":36,
     //     "remark":"灯光喇叭", "rotateAxis":0, "btnTriggerType":0}
     // ]
@@ -426,18 +478,18 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
         // config_lines[397]: "mix lighton `joy3.b10?0 & joy3.b11?0 | semantical.lighton?0`"
         int gameJoyPosIndex = ui->comboBox_2->currentIndex();
         QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lightoff, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::lightoff, ets2BtnStr);
         ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
         if (diffKey2Index.size() > 1) {
             ets2BtnStr += " & !" + gameJoyPosNameList[gameJoyPosIndex] + ".b"
                           + QString::number((diffKey2Index[0] == diffKey1Index[0] ? diffKey2Index[1] : diffKey2Index[0]) + 1) + "?0";
         }
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lightpark, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::lightpark, ets2BtnStr);
         ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
         if (diffKey2Index.size() > 1) {
             ets2BtnStr += " & " + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index[1] + 1) + "?0";
         }
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lighton, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::lighton, ets2BtnStr);
     }
 }
 
@@ -559,9 +611,9 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
         // config_lines[402]: "mix rblinkerh `joy3.b7?0 | semantical.rblinkerh?0`"
         int gameJoyPosIndex = ui->comboBox_2->currentIndex();
         QString ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0";
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::lblinkerh, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::lblinkerh, ets2BtnStr);
         ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0";
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::rblinkerh, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::rblinkerh, ets2BtnStr);
     }
 }
 
@@ -632,13 +684,13 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
         QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0 & !"
                              + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0 & !"
                              + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey3Index + 1) + "?0";
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers0, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::wipers0, ets2BtnStr);
         ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0";
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers1, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::wipers1, ets2BtnStr);
         ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0";
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers2, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::wipers2, ets2BtnStr);
         ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey3Index + 1) + "?0";
-        modifyControlsSii(selectedProfilePath + "/controls.sii", BindingType::wipers3, ets2BtnStr);
+        modifyControlsSii(selectedProfilePath, BindingType::wipers3, ets2BtnStr);
     }
 }
 
@@ -662,7 +714,7 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
 
     if (SUCCEEDED(pDevice->GetDeviceState(sizeof(DIJOYSTATE2), &js))) {
         // 获取按键状态
-        for (int i = 0; i < capabilities.dwButtons; i++) {
+        for (size_t i = 0; i < capabilities.dwButtons; i++) {
             keyState.setBit(i, (js.rgbButtons[i] & 0x80));
         }
     } else {
@@ -671,4 +723,14 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
     }
 
     return keyState;
+}
+
+void ETS2KeyBinderWizard::on_comboBox_3_activated(int index) {
+    if (index >= 0 && index < steamProfileFolders.size()) {
+        selectedProfilePath = steamProfiles + "/" + steamProfileFolders[index].first + "/controls.sii";
+    } else if (index >= steamProfileFolders.size() && index < steamProfileFolders.size() + profileFolders.size()) {
+        selectedProfilePath = profiles + "/" + profileFolders[index - steamProfileFolders.size()].first + "/controls.sii";
+    } else {
+        qDebug() << "无效的配置文件索引:" << index;
+    }
 }
