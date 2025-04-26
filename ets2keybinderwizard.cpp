@@ -591,23 +591,17 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
     BigKey diffKey1 = keyState[0] ^ keyState[1]; // 关闭灯光和雨刮器1档的异或
     BigKey diffKey2 = keyState[0] ^ keyState[2]; // 关闭灯光和雨刮器2档的异或
     BigKey diffKey3 = keyState[0] ^ keyState[3]; // 关闭灯光和雨刮器3档的异或
-    qDebug() << "关闭灯光和雨刮器1档的异或:" << diffKey1;
-    qDebug() << "关闭灯光和雨刮器2档的异或:" << diffKey2;
-    qDebug() << "关闭灯光和雨刮器3档的异或:" << diffKey3;
 
     int diffKey1Index = -1, diffKey2Index = -1, diffKey3Index = -1;
     for (size_t i = 0; i < capabilities.dwButtons; i++) {
         if (diffKey1.getBit(i)) {
             diffKey1Index = i;
-            qDebug() << "关闭灯光和雨刮器1档的异或:" << i;
         }
         if (diffKey2.getBit(i)) {
             diffKey2Index = i;
-            qDebug() << "关闭灯光和雨刮器2档的异或:" << i;
         }
         if (diffKey3.getBit(i)) {
             diffKey3Index = i;
-            qDebug() << "关闭灯光和雨刮器3档的异或:" << i;
         }
     }
     if (diffKey1Index < 0 || diffKey2Index < 0 || diffKey3Index < 0) {
