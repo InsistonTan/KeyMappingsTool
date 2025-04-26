@@ -57,7 +57,7 @@ private:
     void updateUserProfile();
     bool backupProfile();
 
-    bool generateMappingFile(int keyIndex1, int keyIndex2);
+    bool generateMappingFile(int keyIndex1, int keyIndex2, bool multiBtnFlag);
 };
 
 #endif // ETS2KEYBINDERWIZARD_H
