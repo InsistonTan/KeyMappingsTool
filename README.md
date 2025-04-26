@@ -38,6 +38,8 @@
 
 - 组合按键映射 `例如: 设备按键1+设备按键2 映射 键盘按键A, 只有在设备按键1和设备按键2同时按下才会映射键盘按键A`
 
+- 欧卡2的特殊按键绑定 `例如: 拨杆动作同步欧卡2的转向灯的按键绑定`
+
 - 可设置映射的手柄的死区
 - ......
 --- 
@@ -49,7 +51,8 @@
 
 ## 感谢
 - [ViGEmClient](https://github.com/nefarius/ViGEmClient) , [ViGEmBus](https://github.com/nefarius/ViGEmBus) `感谢项目的开源, 才使得方向盘能映射xbox手柄`
-- [scs-sdk-plugin](https://github.com/RenCloud/scs-sdk-plugin/tree/V.1.12.1) `感谢项目开源, 使得获取欧卡2/美卡的遥测数据更方便`
+- [scs-sdk-plugin](https://github.com/RenCloud/scs-sdk-plugin/tree/V.1.12.1) `感谢项目的开源, 使得获取欧卡2/美卡的遥测数据更方便`
+- [ETS2-KeyBinder](https://github.com/Sab1e-GitHub/ETS2-KeyBinder)`感谢项目的开源，使欧卡2的特殊按键绑定有代码参考移植`
 - [m-RNA](https://github.com/m-RNA) `感谢m-RNA修复bug和新增多个功能`
 
 ---
