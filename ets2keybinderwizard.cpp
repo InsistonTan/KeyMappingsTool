@@ -83,8 +83,6 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                 }
             }
         } else if (id == 3) {
-            // 备份配置文件
-            backupProfile();
             // 连接设备
             if (deviceName.empty()) {
                 qDebug() << "设备名称为空！";
@@ -98,6 +96,8 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                 qDebug() << "打开设备失败！";
                 return;
             }
+            // 备份配置文件
+            backupProfile();
         }
     });
 }
