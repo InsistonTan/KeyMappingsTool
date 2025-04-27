@@ -1,5 +1,4 @@
 #include "ets2keybinderwizard.h"
-#include "global.h"
 #include "ui_ets2keybinderwizard.h"
 #include <QDateTime>
 #include <QDebug>
@@ -17,7 +16,7 @@ const QString MAPPING_FILE_NAME = "LightBinder";
 
 using namespace std;
 
-// 欧卡2 设置     “摇杆 Button0” 0基索引
+// 欧卡2 设置    “摇杆 Button0” 0基索引
 // 欧卡2 配置文件 “joy.b1”      1基索引
 // pygame Button_Index         0基索引
 
@@ -42,7 +41,8 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
     diDeviceList.clear();
     ui->comboBox->clear();
 
-    scanDevice(); // 重新扫描
+    this->initDirectInput(); // 初始化DirectInput
+    this->scanDevice();      // 重新扫描
     // 设备不为空
     if (!diDeviceList.empty()) {
         ui->comboBox->setPlaceholderText("");
@@ -66,7 +66,7 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             }
             diDeviceList.clear();
             ui->comboBox->clear();
-            scanDevice(); // 重新扫描
+            this->scanDevice(); // 重新扫描
 
             // 游戏控制设备不为空
             if (!diDeviceList.empty()) {
@@ -87,12 +87,15 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             backupProfile();
             // 连接设备
             if (deviceName.empty()) {
+                qDebug() << "设备名称为空！";
                 return;
             }
-            if (!initDirectInput()) {
+            if (!this->initDirectInput()) {
+                qDebug() << "初始化DirectInput失败！";
                 return;
             }
             if (!openDiDevice(ui->comboBox->currentIndex(), reinterpret_cast<HWND>(this->winId()))) {
+                qDebug() << "打开设备失败！";
                 return;
             }
         }
@@ -340,13 +343,10 @@ bool ETS2KeyBinderWizard::initDirectInput() {
 
     HINSTANCE hInstance = GetModuleHandle(NULL);
     if (FAILED(DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&pDirectInput, NULL))) {
-        pushToQueue(parseSuccessLog(LOG_HEADER + "DirectInput 初始化失败！"));
         qDebug() << "DirectInput 初始化失败！";
         QMessageBox::critical(nullptr, "错误", "初始化DirectInput: 初始化失败！");
         return false;
     }
-
-    pushToQueue(parseSuccessLog(LOG_HEADER + "DirectInput 初始化成功！"));
 
     return true;
 }
@@ -400,6 +400,17 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
     qDebug() << "按钮数量:" << capabilities.dwButtons;
 
     return true;
+}
+
+void ETS2KeyBinderWizard::scanDevice() {
+    if (pDirectInput == nullptr) {
+        return;
+    }
+
+    if (FAILED(pDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY))) {
+        QMessageBox::critical(nullptr, "错误", "扫描设备列表失败！");
+        return;
+    }
 }
 
 // 生成映射文件
@@ -714,7 +725,6 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
     // 检查是否成功获取
     if (FAILED(hr)) {
         qDebug() << "设备poll()失败，错误代码：" << HRESULT_CODE(hr);
-        pushToQueue(parseErrorLog("设备poll()失败，错误代码：" + QString(std::to_string(HRESULT_CODE(hr)).data())));
         return keyState;
     }
 

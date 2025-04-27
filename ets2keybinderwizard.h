@@ -6,6 +6,7 @@
 #include <QWizard>
 #include <dinput.h>
 #include <string.h>
+#include "global.h"
 #include <windows.h>
 
 namespace Ui {
@@ -64,6 +65,7 @@ private:
 
     bool hasLastDevInCurrentDeviceList(std::string lastDeviceName);
     bool openDiDevice(int deviceIndex, HWND hWnd);
+    void scanDevice();
     bool initDirectInput();
 
     void updateUserProfile();
