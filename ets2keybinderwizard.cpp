@@ -38,6 +38,7 @@ enum class BindingType
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
+    this->setWindowTitle("欧卡2/美卡-特殊按键绑定向导（实验性）" + QString(__DATE__) + " " + QString(__TIME__));
     diDeviceList.clear();
     ui->comboBox->clear();
 
