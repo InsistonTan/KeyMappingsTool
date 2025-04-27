@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>欧卡2/美卡特殊按键绑定向导</string>
+   <string>欧卡2/美卡-特殊按键绑定向导（实验性）</string>
   </property>
   <property name="wizardStyle">
    <enum>QWizard::WizardStyle::ModernStyle</enum>
@@ -56,7 +56,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="resource.qrc">:/ETS2_KEYBlinder/1_DisableSteamInput.jpg</pixmap>
+       <pixmap resource="resource.qrc">:/ETS2_KeyBinder/1_DisableSteamInput.jpg</pixmap>
       </property>
      </widget>
     </item>
@@ -102,7 +102,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="resource.qrc">:/ETS2_KEYBlinder/2_SelectInputDevice.jpg</pixmap>
+       <pixmap resource="resource.qrc">:/ETS2_KeyBinder/2_SelectInputDevice.jpg</pixmap>
       </property>
      </widget>
     </item>
