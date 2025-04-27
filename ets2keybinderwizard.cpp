@@ -50,7 +50,7 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             ui->comboBox->addItem(item.name.data());
         }
     }
-    deviceName = ui->comboBox->currentText().toStdString();
+    on_comboBox_activated(0); // 默认选择第一个设备
 
     connect(this, &QWizard::currentIdChanged, this, [=](int id) {
         if (id == 2) {
@@ -61,7 +61,9 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             for (auto item : gameJoyPosNameList) {
                 ui->comboBox_2->addItem(item);
             }
-
+            if (gameJoyPosNameList.contains(gameDeviceName.data())) {
+                ui->comboBox_2->setCurrentText(gameDeviceName.data());
+            }
             diDeviceList.clear();
             ui->comboBox->clear();
             scanDevice(); // 重新扫描
@@ -75,6 +77,7 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
 
                 if (hasLastDevInCurrentDeviceList(deviceName)) {
                     ui->comboBox->setCurrentText(deviceName.data());
+                    on_comboBox_activated(ui->comboBox->currentIndex());
                 } else {
                     ui->comboBox->setCurrentIndex(-1);
                 }
@@ -189,6 +192,21 @@ bool ETS2KeyBinderWizard::backupProfile() {
 
 void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
     deviceName = ui->comboBox->currentText().toStdString();
+    if (deviceName.empty()) {
+        return;
+    }
+
+    // 是否关联设备名称
+    if (ui->checkBox->isChecked()) {
+        // 检查comboBox_2是否有相同的设备名称，如果有则设置为当前选中项
+        for (int i = 0; i < ui->comboBox_2->count(); ++i) {
+            if (ui->comboBox_2->itemText(i).trimmed().contains(ui->comboBox->currentText().trimmed())) {
+                ui->comboBox_2->setCurrentIndex(i);
+                break;
+            }
+        }
+    }
+    gameDeviceName = ui->comboBox_2->currentText().toStdString();
 }
 
 // 修改 controls.sii 文件
@@ -722,4 +740,8 @@ void ETS2KeyBinderWizard::on_comboBox_3_activated(int index) {
     } else {
         qDebug() << "无效的配置文件索引:" << index;
     }
+}
+
+void ETS2KeyBinderWizard::on_comboBox_2_activated(int index) {
+    gameDeviceName = ui->comboBox_2->currentText().toStdString();
 }

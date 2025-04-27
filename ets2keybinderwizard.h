@@ -35,10 +35,13 @@ private slots:
 
     void on_comboBox_3_activated(int index);
 
+    void on_comboBox_2_activated(int index);
+
 private:
     Ui::ETS2KeyBinderWizard* ui;
 
-    std::string deviceName; // 设备名称
+    std::string deviceName;     // 硬件设备名称
+    std::string gameDeviceName; // 游戏输入设备名称
 
     QStringList gameJoyPosNameList = {
         "joy ", "joy2", "joy3", "joy4", "joy5",
