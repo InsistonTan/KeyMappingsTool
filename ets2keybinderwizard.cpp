@@ -10,7 +10,6 @@
 
 // 参考开源项目：https://github.com/Sab1e-GitHub/ETS2-KeyBinder
 
-const QString LOG_HEADER = "<b>特殊按键绑定</b> - ";
 const QString MEG_BOX_LINE = "------------------------";
 const QString MAPPING_FILE_NAME = "LightBinder";
 
@@ -97,8 +96,6 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                 qDebug() << "打开设备失败！";
                 return;
             }
-            // 备份配置文件
-            backupProfile();
         }
     });
 }
@@ -450,19 +447,30 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
 
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "示廓灯&近光灯：1/" + QString::number(stepSum), "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n关闭灯光");
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Ok);
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[0] = getKeyState(); // 获取按键状态
 
     // 2、将拨杆拨到示廓灯位置
     box.setWindowTitle("示廓灯&近光灯：2/" + QString::number(stepSum));
     box.setText("请将拨杆拧到：\n" + MEG_BOX_LINE + "\n示廓灯");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[1] = getKeyState(); // 获取按键状态
 
     // 3、将拨杆拨到近光灯位置
     box.setWindowTitle("示廓灯&近光灯：3/" + QString::number(stepSum));
     box.setText("请将拨杆拧到：\n" + MEG_BOX_LINE + "\n近光灯");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[2] = getKeyState(); // 获取按键状态
 
     // 找出变化按键，实际上不止一个变化
@@ -486,11 +494,10 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
     // 4、确定是否绑定
     box.setWindowTitle("示廓灯&近光灯");
     box.setText("是否绑定？");
-    box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    box.setDefaultButton(QMessageBox::Yes);
-
     int ret = box.exec();
     if (ret == QMessageBox::Yes) {
+        backupProfile(); // 备份配置文件
+
         // config_lines[395]: "mix lightoff `!joy3.b10?0 | semantical.lightoff?0`"
         // config_lines[396]: "mix lightpark `joy3.b10?0 & !joy3.b11?0 | semantical.lightpark?0`"
         // config_lines[397]: "mix lighton `joy3.b10?0 & joy3.b11?0 | semantical.lighton?0`"
@@ -519,19 +526,30 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
 
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "远光灯&灯光喇叭：1/" + QString::number(stepSum), "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置");
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Ok);
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[0] = getKeyState(); // 获取按键状态
 
     // 2、将拨杆拨到远光灯位置
     box.setWindowTitle("远光灯&灯光喇叭：2/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n远光灯");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[1] = getKeyState(); // 获取按键状态
 
     // 3、将拨杆拨到灯光喇叭位置
     box.setWindowTitle("远光灯&灯光喇叭：3/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n灯光喇叭");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[2] = getKeyState(); // 获取按键状态
 
     // 找出变化按键，实际上不止一个变化
@@ -574,6 +592,7 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
     // 4、生成配置文件
     box.setWindowTitle("远光灯&灯光喇叭");
     box.setText("欧卡不支持远光灯的同步绑定，已生成配置文件 <" + MAPPING_FILE_NAME + ">，请回到主界面后用此配置文件开启全局映射。");
+    box.setStandardButtons(QMessageBox::Ok);
     box.exec();
 }
 
@@ -585,19 +604,30 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
 
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "左转向灯&右转向灯：1/" + QString::number(stepSum), "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置");
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Ok);
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[0] = getKeyState();
 
     // 2、将拨杆拨到左转向灯位置
     box.setWindowTitle("左转向灯&右转向灯：2/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n左转向灯");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[1] = getKeyState(); // 获取按键状态
 
     // 3、将拨杆拨到右转向灯位置
     box.setWindowTitle("左转向灯&右转向灯：3/" + QString::number(stepSum));
     box.setText("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n右转向灯");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[2] = getKeyState(); // 获取按键状态
 
     // 找出变化按键
@@ -621,10 +651,10 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
     // 4、确定是否绑定
     box.setWindowTitle("左转向灯&右转向灯");
     box.setText("是否绑定？");
-    box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    box.setDefaultButton(QMessageBox::Yes);
     int ret = box.exec();
     if (ret == QMessageBox::Yes) {
+        backupProfile(); // 备份配置文件
+
         // config_lines[400]: "mix lblinkerh `joy3.b6?0 | semantical.lblinkerh?0`"
         // config_lines[402]: "mix rblinkerh `joy3.b7?0 | semantical.rblinkerh?0`"
         int gameJoyPosIndex = ui->comboBox_2->currentIndex();
@@ -643,25 +673,39 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
 
     // 1、将拨杆拨到关闭位置
     QMessageBox box(QMessageBox::Information, "雨刮器：1/" + QString::number(stepSum), "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置");
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Ok);
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[0] = getKeyState();
 
     // 2、将拨杆拨到雨刮器1档位置
     box.setWindowTitle("雨刮器：2/" + QString::number(stepSum));
     box.setText("请将拨杆拨到\n" + MEG_BOX_LINE + "\n雨刮器1档");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[1] = getKeyState(); // 获取按键状态
 
     // 3、将拨杆拨到雨刮器2档位置
     box.setWindowTitle("雨刮器：3/" + QString::number(stepSum));
     box.setText("请将拨杆拨到\n" + MEG_BOX_LINE + "\n雨刮器2档");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[2] = getKeyState(); // 获取按键状态
 
     // 4、将拨杆拨到雨刮器3档位置
     box.setWindowTitle("雨刮器：4/" + QString::number(stepSum));
     box.setText("请将拨杆拨到\n" + MEG_BOX_LINE + "\n雨刮器3档");
     box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
     keyState[3] = getKeyState(); // 获取按键状态
 
     // 找出变化按键
@@ -690,10 +734,10 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
     // 5、确定是否绑定
     box.setWindowTitle("雨刮器 绑定");
     box.setText("是否绑定？");
-    box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    box.setDefaultButton(QMessageBox::Yes);
     int ret = box.exec();
     if (ret == QMessageBox::Yes) {
+        backupProfile(); // 备份配置文件
+
         // config_lines[383]: "mix wipers0 `!joy3.b1?0 & !joy3.b2?0 & !joy3.b3?0 | semantical.wipers0?0`"
         // config_lines[384]: "mix wipers1 `joy3.b1?0 | semantical.wipers1?0`"
         // config_lines[385]: "mix wipers2 `joy3.b2?0 | semantical.wipers2?0`"
