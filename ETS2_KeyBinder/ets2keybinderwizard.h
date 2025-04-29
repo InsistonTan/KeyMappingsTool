@@ -3,12 +3,30 @@
 
 #include "BigKey.hpp"
 #include "global.h"
+#include "showkeystate.h"
 #include <QDir>
 #include <QWizard>
 #include <dinput.h>
 #include <string.h>
 #include <windows.h>
 
+// 枚举类型定义
+enum class BindingType
+{
+    lightoff,  // 关闭灯光
+    lightpark, // 示廓灯
+    lighton,   // 近光灯
+    lblinkerh, // 左转向灯
+    rblinkerh, // 右转向灯
+    hblight,   // 远光灯
+    lighthorn, // 灯光喇叭
+    wipers0,   // 雨刷器关闭
+    wipers1,   // 雨刷器1档
+    wipers2,   // 雨刷器2档
+    wipers3,   // 雨刷器3档
+};
+
+typedef std::map<int, bool> ActionEffect; // 受影响的按键位置和对应的新状态
 
 namespace Ui {
 class ETS2KeyBinderWizard;
@@ -22,6 +40,12 @@ public:
     ~ETS2KeyBinderWizard();
 
     QStringList getDeviceNameGameList();
+
+signals:
+    void keyStateUpdate_Signal(BigKey& keyState); // 更新按键状态信号
+
+public slots:
+    void modifyControlsSii_Slot(BindingType bindingType, ActionEffect actionEffect);
 
 private slots:
 
@@ -38,6 +62,10 @@ private slots:
     void on_comboBox_3_activated(int index);
 
     void on_comboBox_2_activated(int index);
+
+    void on_checkBox_3_clicked(bool checked);
+
+    void on_pushButton_16_clicked();
 
 private:
     Ui::ETS2KeyBinderWizard* ui;
@@ -61,6 +89,9 @@ private:
     LPDIRECTINPUTDEVICE8 pDevice = NULL;
     int lastDeviceIndex = -99;
     DIDEVCAPS capabilities;
+
+    ShowKeyState* showKeyState = nullptr; // 显示按键状态窗口
+    QTimer* timer = nullptr;              // 定时器
 
     BigKey getKeyState();
 

@@ -1,11 +1,12 @@
 #include "ets2keybinderwizard.h"
+#include "manuallybinder.h"
 #include "ui_ets2keybinderwizard.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QTimer>
 #include <map>
-#include <regex>
 #include <string>
 
 // 参考开源项目：https://github.com/Sab1e-GitHub/ETS2-KeyBinder
@@ -18,22 +19,6 @@ using namespace std;
 // 欧卡2 设置    “摇杆 Button0” 0基索引
 // 欧卡2 配置文件 “joy.b1”      1基索引
 // pygame Button_Index         0基索引
-
-// 枚举类型定义
-enum class BindingType
-{
-    lightoff,  // 关闭灯光
-    lighthorn, // 灯光喇叭
-    wipers0,   // 雨刷器关闭
-    wipers1,   // 雨刷器1档
-    wipers2,   // 雨刷器2档
-    wipers3,   // 雨刷器3档
-    lightpark, // 示廓灯
-    lighton,   // 近光灯
-    hblight,   // 远光灯
-    lblinkerh, // 左转向灯
-    rblinkerh  // 右转向灯
-};
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
@@ -95,6 +80,48 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             if (!openDiDevice(ui->comboBox->currentIndex(), reinterpret_cast<HWND>(this->winId()))) {
                 qDebug() << "打开设备失败！";
                 return;
+            }
+
+            if (showKeyState == nullptr) {
+                showKeyState = new ShowKeyState();
+                showKeyState->setWindowTitle("按键状态");
+                // 设置坐标为主窗口的左边
+                showKeyState->setGeometry(this->geometry().x() - 100, this->geometry().y(), 200, 200);
+                showKeyState->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Dialog | Qt::WindowCloseButtonHint); // 设置窗口为置顶
+                showKeyState->setKeyCount(capabilities.dwButtons);                                               // 设置按键数量
+                showKeyState->setAttribute(Qt::WA_DeleteOnClose);                                                // 关闭时删除窗口对象
+                showKeyState->show();                                                                            // 显示按键状态窗口
+
+                connect(showKeyState, &ShowKeyState::destroyed, this, [=]() {
+                    if (timer) {
+                        timer->stop(); // 停止定时器
+                        delete timer;  // 删除定时器对象
+                        timer = nullptr;
+                    }
+                    showKeyState = nullptr; // 释放指针
+                });
+
+                // 设置主窗口关闭时，按键状态窗口也关闭
+                connect(this, &QWizard::finished, this, [=]() {
+                    if (showKeyState) {
+                        showKeyState->close(); // 关闭按键状态窗口
+                    }
+                });
+
+            } else {
+                showKeyState->setKeyCount(capabilities.dwButtons); // 设置按键数量
+                showKeyState->show();                              // 显示按键状态窗口
+            }
+
+            if (timer == nullptr) {
+                timer = new QTimer(this);
+                connect(timer, &QTimer::timeout, this, [=]() {
+                    if (pDevice && showKeyState) {
+                        BigKey keyState = getKeyState();     // 获取按键状态
+                        showKeyState->setKeyState(keyState); // 更新按键状态窗口
+                    }
+                });
+                timer->start(100); // 每100毫秒更新一次
             }
         }
     });
@@ -502,17 +529,17 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
         // config_lines[396]: "mix lightpark `joy3.b10?0 & !joy3.b11?0 | semantical.lightpark?0`"
         // config_lines[397]: "mix lighton `joy3.b10?0 & joy3.b11?0 | semantical.lighton?0`"
         int gameJoyPosIndex = ui->comboBox_2->currentIndex();
-        QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
+        QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
         modifyControlsSii(selectedProfilePath, BindingType::lightoff, ets2BtnStr);
-        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
         if (diffKey2Index.size() > 1) {
-            ets2BtnStr += " & !" + gameJoyPosNameList[gameJoyPosIndex] + ".b"
+            ets2BtnStr += " & !" + gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b"
                           + QString::number((diffKey2Index[0] == diffKey1Index[0] ? diffKey2Index[1] : diffKey2Index[0]) + 1) + "?0";
         }
         modifyControlsSii(selectedProfilePath, BindingType::lightpark, ets2BtnStr);
-        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey1Index[0] + 1) + "?0";
         if (diffKey2Index.size() > 1) {
-            ets2BtnStr += " & " + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index[1] + 1) + "?0";
+            ets2BtnStr += " & " + gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey2Index[1] + 1) + "?0";
         }
         modifyControlsSii(selectedProfilePath, BindingType::lighton, ets2BtnStr);
     }
@@ -658,9 +685,9 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
         // config_lines[400]: "mix lblinkerh `joy3.b6?0 | semantical.lblinkerh?0`"
         // config_lines[402]: "mix rblinkerh `joy3.b7?0 | semantical.rblinkerh?0`"
         int gameJoyPosIndex = ui->comboBox_2->currentIndex();
-        QString ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0";
+        QString ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey1Index + 1) + "?0";
         modifyControlsSii(selectedProfilePath, BindingType::lblinkerh, ets2BtnStr);
-        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0";
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey2Index + 1) + "?0";
         modifyControlsSii(selectedProfilePath, BindingType::rblinkerh, ets2BtnStr);
     }
 }
@@ -743,15 +770,15 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
         // config_lines[385]: "mix wipers2 `joy3.b2?0 | semantical.wipers2?0`"
         // config_lines[386]: "mix wipers3 `joy3.b3?0 | semantical.wipers3?0`"
         int gameJoyPosIndex = ui->comboBox_2->currentIndex();
-        QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0 & !"
-                             + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0 & !"
-                             + gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey3Index + 1) + "?0";
+        QString ets2BtnStr = "!" + gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey1Index + 1) + "?0 & !"
+                             + gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey2Index + 1) + "?0 & !"
+                             + gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey3Index + 1) + "?0";
         modifyControlsSii(selectedProfilePath, BindingType::wipers0, ets2BtnStr);
-        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey1Index + 1) + "?0";
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey1Index + 1) + "?0";
         modifyControlsSii(selectedProfilePath, BindingType::wipers1, ets2BtnStr);
-        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey2Index + 1) + "?0";
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey2Index + 1) + "?0";
         modifyControlsSii(selectedProfilePath, BindingType::wipers2, ets2BtnStr);
-        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex] + ".b" + QString::number(diffKey3Index + 1) + "?0";
+        ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(diffKey3Index + 1) + "?0";
         modifyControlsSii(selectedProfilePath, BindingType::wipers3, ets2BtnStr);
     }
 }
@@ -799,4 +826,47 @@ void ETS2KeyBinderWizard::on_comboBox_3_activated(int index) {
 
 void ETS2KeyBinderWizard::on_comboBox_2_activated(int index) {
     gameDeviceName = ui->comboBox_2->currentText().toStdString();
+}
+
+void ETS2KeyBinderWizard::on_checkBox_3_clicked(bool checked) {
+    ui->stackedWidget->setCurrentIndex(checked);
+}
+
+// 手动绑定
+void ETS2KeyBinderWizard::on_pushButton_16_clicked() {
+    ManuallyBinder* manuallyBinder = new ManuallyBinder(this);
+    manuallyBinder->setAttribute(Qt::WA_DeleteOnClose); // 关闭时自动删除
+    // 当manuallyBinder没关闭时，不允许操作其他窗口
+    manuallyBinder->setWindowModality(Qt::ApplicationModal); // 设置窗口模式为应用程序模态
+
+    if (pDirectInput != nullptr) {
+        manuallyBinder->setKeyCount(capabilities.dwButtons); // 设置按键数量
+    } else {
+        manuallyBinder->setKeyCount(128); // 设置按键数量
+    }
+
+    // 连接信号槽
+    connect(manuallyBinder, &ManuallyBinder::keyBound, this, &ETS2KeyBinderWizard::modifyControlsSii_Slot, Qt::DirectConnection);
+    manuallyBinder->show();
+}
+
+void ETS2KeyBinderWizard::modifyControlsSii_Slot(BindingType bindingType, ActionEffect actionEffect) {
+    if (actionEffect.empty()) {
+        qDebug() << "没有受影响的按键！";
+        return;
+    }
+
+    QString ets2BtnStr;
+    for (const auto& action : actionEffect) {
+        int keyIndex = action.first; // 获取按键索引
+        if (action.second == false) {
+            ets2BtnStr += "!";
+        }
+        ets2BtnStr += gameJoyPosNameList[ui->comboBox_2->currentIndex()].trimmed() + ".b" + QString::number(keyIndex + 1) + " & "; // 1基索引
+    }
+    ets2BtnStr.chop(3); // 去掉最后的 " & "
+
+    qDebug() << "修改的按键:" << ets2BtnStr;
+    backupProfile(); // 备份配置文件
+    modifyControlsSii(selectedProfilePath, bindingType, ets2BtnStr);
 }
