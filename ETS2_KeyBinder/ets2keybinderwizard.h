@@ -2,12 +2,13 @@
 #define ETS2KEYBINDERWIZARD_H
 
 #include "BigKey.hpp"
+#include "global.h"
 #include <QDir>
 #include <QWizard>
 #include <dinput.h>
 #include <string.h>
-#include "global.h"
 #include <windows.h>
+
 
 namespace Ui {
 class ETS2KeyBinderWizard;

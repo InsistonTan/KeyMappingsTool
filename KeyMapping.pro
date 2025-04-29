@@ -16,7 +16,7 @@ SOURCES += \
     ForceFeedbackWorker.cpp \
     XboxDeadAreaSettings.cpp \
     deadareasettings.cpp \
-    ets2keybinderwizard.cpp \
+    ETS2_KeyBinder/ets2keybinderwizard.cpp \
     global.cpp \
     logwindow.cpp \
     main.cpp \
@@ -32,7 +32,7 @@ HEADERS += \
     XboxDeadAreaSettings.h \
     deadareasettings.h \
     device_info.h \
-    ets2keybinderwizard.h \
+    ETS2_KeyBinder/ets2keybinderwizard.h \
     global.h \
     key_map.h \
     logwindow.h \
@@ -48,7 +48,7 @@ FORMS += \
     ForceFeedbackSettingsWindow.ui \
     XboxDeadAreaSettings.ui \
     deadareasettings.ui \
-    ets2keybinderwizard.ui \
+    ETS2_KeyBinder/ets2keybinderwizard.ui \
     logwindow.ui \
     mainwindow.ui
 
