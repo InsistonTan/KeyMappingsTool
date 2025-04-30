@@ -40,6 +40,7 @@ public:
     ~ETS2KeyBinderWizard();
 
     QStringList getDeviceNameGameList();
+    void oneKeyBind(BindingType bindingType, const QString& message);
 
 signals:
     void keyStateUpdate_Signal(BigKey& keyState); // 更新按键状态信号
@@ -66,6 +67,28 @@ private slots:
     void on_checkBox_3_clicked(bool checked);
 
     void on_pushButton_16_clicked();
+
+    void on_pushButton_5_clicked();
+
+    void on_pushButton_6_clicked();
+
+    void on_pushButton_7_clicked();
+
+    void on_pushButton_8_clicked();
+
+    void on_pushButton_9_clicked();
+
+    void on_pushButton_10_clicked();
+
+    void on_pushButton_11_clicked();
+
+    void on_pushButton_12_clicked();
+
+    void on_pushButton_13_clicked();
+
+    void on_pushButton_14_clicked();
+
+    void on_pushButton_15_clicked();
 
 private:
     Ui::ETS2KeyBinderWizard* ui;

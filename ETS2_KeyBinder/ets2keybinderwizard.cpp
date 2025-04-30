@@ -18,7 +18,7 @@ using namespace std;
 
 // 欧卡2 设置    “摇杆 Button0” 0基索引
 // 欧卡2 配置文件 “joy.b1”      1基索引
-// pygame Button_Index         0基索引
+// dinput Button_Index         0基索引
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
@@ -165,7 +165,6 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
                 QString guid = "{" + match.captured(1) + "}|{" + match.captured(2) + "}";
                 QString name = match.captured(3).trimmed();
                 deviceNameList.insert_or_assign(guid, name);
-                qDebug() << "GUID:" << guid << "名称:" << name;
             }
         }
     }
@@ -215,7 +214,7 @@ bool ETS2KeyBinderWizard::backupProfile() {
         return false;
     }
 
-    return QFile::copy(selectedProfilePath, selectedProfilePath + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") + ".bak");
+    return QFile::copy(selectedProfilePath, selectedProfilePath + "." + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss") + ".bak");
 }
 
 void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
@@ -522,7 +521,7 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
     box.setWindowTitle("示廓灯&近光灯");
     box.setText("是否绑定？");
     int ret = box.exec();
-    if (ret == QMessageBox::Yes) {
+    if (ret == QMessageBox::Ok) {
         backupProfile(); // 备份配置文件
 
         // config_lines[395]: "mix lightoff `!joy3.b10?0 | semantical.lightoff?0`"
@@ -618,7 +617,10 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
 
     // 4、生成配置文件
     box.setWindowTitle("远光灯&灯光喇叭");
-    box.setText("欧卡不支持远光灯的同步绑定，已生成配置文件 <" + MAPPING_FILE_NAME + ">，请回到主界面后用此配置文件开启全局映射。");
+    box.setText("游戏不支持开关类型的远光灯绑定，已生成配置文件 \"" + MAPPING_FILE_NAME + "\"\n"
+                + "请打开“KeyMappingsTool”使用此配置文件，间接实现拨杆映射。\n\n配置文件路径：\n" + QDir::homePath()
+                + "/AppData/Local/KeyMappingToolData/userMappings/" + MAPPING_FILE_NAME + ".di_mappings_config\n\n"
+                + "KeyMappingsTool 下载地址：\nhttps://github.com/InsistonTan/KeyMappingsTool/releases");
     box.setStandardButtons(QMessageBox::Ok);
     box.exec();
 }
@@ -679,7 +681,7 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
     box.setWindowTitle("左转向灯&右转向灯");
     box.setText("是否绑定？");
     int ret = box.exec();
-    if (ret == QMessageBox::Yes) {
+    if (ret == QMessageBox::Ok) {
         backupProfile(); // 备份配置文件
 
         // config_lines[400]: "mix lblinkerh `joy3.b6?0 | semantical.lblinkerh?0`"
@@ -762,7 +764,7 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
     box.setWindowTitle("雨刮器 绑定");
     box.setText("是否绑定？");
     int ret = box.exec();
-    if (ret == QMessageBox::Yes) {
+    if (ret == QMessageBox::Ok) {
         backupProfile(); // 备份配置文件
 
         // config_lines[383]: "mix wipers0 `!joy3.b1?0 & !joy3.b2?0 & !joy3.b3?0 | semantical.wipers0?0`"
@@ -869,4 +871,99 @@ void ETS2KeyBinderWizard::modifyControlsSii_Slot(BindingType bindingType, Action
     qDebug() << "修改的按键:" << ets2BtnStr;
     backupProfile(); // 备份配置文件
     modifyControlsSii(selectedProfilePath, bindingType, ets2BtnStr);
+}
+
+void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& message) {
+    BigKey keyState[1];          // 记录按键状态
+    keyState[0] = getKeyState(); // 获取按键状态，第一次获取为0，应该是BUG
+
+    // 1、将拨杆拨到关闭位置
+    QMessageBox box(QMessageBox::Information, "单操作绑定", message);
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Ok);
+    box.exec();
+    if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
+        return; // 取消操作
+    }
+    keyState[0] = getKeyState(); // 获取按键状态
+    size_t keyPressCount = 0;
+    size_t keyPos = 0;
+    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+        if (keyState[0].getBit(i)) {
+            keyPressCount++;
+            keyPos = i;
+        }
+    }
+    if (keyPressCount < 1) {
+        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        return;
+    }
+    if (keyPressCount > 1) {
+        QMessageBox::critical(this, "错误", "找到多个按键按下！请重新操作！");
+        return;
+    }
+    // 2、确定是否绑定
+    box.setText("是否绑定？");
+    int ret = box.exec();
+    if (ret == QMessageBox::Ok) {
+        backupProfile(); // 备份配置文件
+        int gameJoyPosIndex = ui->comboBox_2->currentIndex();
+        QString ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(keyPos + 1) + "?0";
+        modifyControlsSii(selectedProfilePath, bindingType, ets2BtnStr);
+    }
+}
+
+// 关闭灯光
+void ETS2KeyBinderWizard::on_pushButton_5_clicked() {
+    oneKeyBind(BindingType::lightoff, "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n关闭灯光");
+}
+
+// 示廊灯
+void ETS2KeyBinderWizard::on_pushButton_6_clicked() {
+    oneKeyBind(BindingType::lightpark, "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n示廊灯");
+}
+
+// 近光灯
+void ETS2KeyBinderWizard::on_pushButton_7_clicked() {
+    oneKeyBind(BindingType::lighton, "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n近光灯");
+}
+
+// 左转向灯
+void ETS2KeyBinderWizard::on_pushButton_8_clicked() {
+    oneKeyBind(BindingType::lblinkerh, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n左转向灯");
+}
+
+// 右转向灯
+void ETS2KeyBinderWizard::on_pushButton_9_clicked() {
+    oneKeyBind(BindingType::rblinkerh, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n右转向灯");
+}
+
+// 关闭雨刷
+void ETS2KeyBinderWizard::on_pushButton_10_clicked() {
+    oneKeyBind(BindingType::wipers0, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭雨刷");
+}
+
+// 雨刷1档
+void ETS2KeyBinderWizard::on_pushButton_11_clicked() {
+    oneKeyBind(BindingType::wipers1, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷1档");
+}
+
+// 雨刷2档
+void ETS2KeyBinderWizard::on_pushButton_12_clicked() {
+    oneKeyBind(BindingType::wipers2, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷2档");
+}
+
+// 雨刷3档
+void ETS2KeyBinderWizard::on_pushButton_13_clicked() {
+    oneKeyBind(BindingType::wipers3, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷3档");
+}
+
+// 远光灯
+void ETS2KeyBinderWizard::on_pushButton_14_clicked() {
+    oneKeyBind(BindingType::hblight, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n远光灯");
+}
+
+// 灯光喇叭
+void ETS2KeyBinderWizard::on_pushButton_15_clicked() {
+    oneKeyBind(BindingType::lighthorn, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n灯光喇叭");
 }
