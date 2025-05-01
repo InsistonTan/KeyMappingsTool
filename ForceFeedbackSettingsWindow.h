@@ -21,10 +21,17 @@ public:
     ~ForceFeedbackSettingsWindow();
 
     QString throttleAxis = ""; // 油门所在的轴
+    QString throttleAxisDeviceName = ""; // 油门轴的设备名称
+
     QString brakeAxis = ""; // 刹车所在的轴
+    QString brakeAxisDeviceName = ""; // 刹车轴的设备名称
+
     QString steeringWheelAxis = "";// 方向盘盘面所在的轴
+    QString steeringWheelAxisDeviceName = "";// 方向盘盘面所在的轴的设备名称
+
     bool isThrottleReverse = false;// 是否反转油门
     bool isBrakeReverse = false;// 是否反转刹车
+
     double acceleration_100km_time_s = default_acceleration_100km_time_s;// 百公里加速所需时间(秒)
     int stop_100km_dis_m = default_stop_100km_dis_m;// 百公里刹停所需距离(米)
     int maxSpeed_km_h = default_maxSpeed_km_h;// 车辆最高时速(m/s)
