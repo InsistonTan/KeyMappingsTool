@@ -47,7 +47,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(972, 643);
-    this->setWindowTitle(QString("KeyMappingsTool ").append(CURRENT_VERSION));
+    this->setWindowTitle(QString("KeyMappingsTool v").append(CURRENT_VERSION));
 
     // 发送使用记录和检查更新
     sendUsageCount();
