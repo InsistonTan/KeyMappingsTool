@@ -77,11 +77,17 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     }
 
 
-    // 如果当前是单设备, 需要补全设备名称
+    // 如果当前是单设备, 如果设备名称为空则需要补全设备名称
     if(MainWindow::getCurrentSelectedDeviceList().size() == 1){
-        this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
-        this->forceFeedbackSettingsWindow->throttleAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
-        this->forceFeedbackSettingsWindow->brakeAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+        if(this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName.isEmpty()){
+            this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+        }
+        if(this->forceFeedbackSettingsWindow->throttleAxisDeviceName.isEmpty()){
+            this->forceFeedbackSettingsWindow->throttleAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+        }
+        if(this->forceFeedbackSettingsWindow->brakeAxisDeviceName.isEmpty()){
+            this->forceFeedbackSettingsWindow->brakeAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+        }
     }
     if(SYSTEM_enableForceFeedback && validateForceFeedbackParams()){
         pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 方向盘力反馈模拟");
@@ -389,11 +395,17 @@ void AssistFuncWindow::on_pushButton_clicked()
     if(ui->checkBox_4->isChecked()){
         // 力反馈选项由关闭到开启
         if(!SYSTEM_enableForceFeedback){
-            // 如果当前是单设备, 需要补全设备名称
+            // 如果当前是单设备, 如果设备名称为空则需要补全设备名称
             if(MainWindow::getCurrentSelectedDeviceList().size() == 1){
-                this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
-                this->forceFeedbackSettingsWindow->throttleAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
-                this->forceFeedbackSettingsWindow->brakeAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+                if(this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName.isEmpty()){
+                    this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+                }
+                if(this->forceFeedbackSettingsWindow->throttleAxisDeviceName.isEmpty()){
+                    this->forceFeedbackSettingsWindow->throttleAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+                }
+                if(this->forceFeedbackSettingsWindow->brakeAxisDeviceName.isEmpty()){
+                    this->forceFeedbackSettingsWindow->brakeAxisDeviceName = MainWindow::getCurrentSelectedDeviceList().at(0);
+                }
             }
 
             // 校验力反馈设置项是否正确
@@ -575,7 +587,7 @@ bool AssistFuncWindow::validateForceFeedbackParams(){
 
     // 检查设备是否支持力反馈
     if(!checkIsSupportForceFeedback(this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName)){
-        QMessageBox::critical(this, "错误", "开启力反馈模拟失败: 当前设置的转向设备不支持力反馈");
+        QMessageBox::critical(this, "错误", "开启力反馈模拟失败: 当前设置的转向设备["+this->forceFeedbackSettingsWindow->steeringWheelAxisDeviceName+"]未连接 或者 该设备不支持力反馈");
         ui->checkBox_4->setChecked(false);
         return false;
     }
