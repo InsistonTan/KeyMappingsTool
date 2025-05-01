@@ -340,12 +340,16 @@ void AssistFuncWindow::on_pushButton_clicked()
 
     // 开启开机自启动
     if(ui->checkBox_5->isChecked()){
-        setRunUponStartup(true);
-        SYSTEM_enableRunUponStartup = true;
+        if(!SYSTEM_enableRunUponStartup){
+            setRunUponStartup(true);
+            SYSTEM_enableRunUponStartup = true;
+        }
     }else{
         // 关闭开机自启动
-        setRunUponStartup(false);
-        SYSTEM_enableRunUponStartup = false;
+        if(SYSTEM_enableRunUponStartup){
+            setRunUponStartup(false);
+            SYSTEM_enableRunUponStartup = false;
+        }
     }
 
     // 开启欧卡2自动解除手刹
