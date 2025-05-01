@@ -215,7 +215,7 @@
        </rect>
       </property>
       <property name="toolTip">
-       <string>方向盘需支持力反馈功能</string>
+       <string>开机后将自动运行本软件</string>
       </property>
       <property name="text">
        <string>开机自启动</string>
