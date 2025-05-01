@@ -51,7 +51,7 @@ MainWindow::MainWindow(QMainWindow *parent)
     //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
 
     // 发送使用记录和检查更新
-    //sendUsageCount();
+    sendUsageCount();
     checkUpdate();
 
     // 初始化
