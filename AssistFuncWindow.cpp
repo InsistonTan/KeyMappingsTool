@@ -57,6 +57,7 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     // 开启开机自启动
     if(SYSTEM_enableRunUponStartup){
         ui->checkBox_5->setChecked(true);
+        setRunUponStartup(true);
     }
 
     // 开启欧卡2自动解除手刹
