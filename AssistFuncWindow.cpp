@@ -13,6 +13,9 @@
 #include<QFileDialog>
 #include<QTimer>
 #include<QMessageBox>
+#include<QCoreApplication>
+#include<QFileInfo>
+#include<QSettings>
 
 bool AssistFuncWindow::ETS2_enableAutoCancelHandbrake = false;
 bool AssistFuncWindow::SYSTEM_enableMappingAfterOpening = false;
@@ -49,6 +52,11 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
         ui->label_2->setStyleSheet("QLabel{color:black;}");
         ui->label_2->setToolTip(ETS2InstallPath);
         ui->label_2->setText(ETS2InstallPath.size() > 40 ? ETS2InstallPath.left(40) + "..." : ETS2InstallPath);
+    }
+
+    // 开启开机自启动
+    if(SYSTEM_enableRunUponStartup){
+        ui->checkBox_5->setChecked(true);
     }
 
     // 开启欧卡2自动解除手刹
@@ -112,9 +120,11 @@ void AssistFuncWindow::saveSettings(){
     text2.append("{\n\t");
 
     text2.append("\"ETS2_enableAutoCancelHandbrake\":").append(ui->checkBox->isChecked() ? "true" : "false").append(",\n\t");
+    text2.append("\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append(",\n\t");
+
+    text2.append("\"SYSTEM_enableRunUponStartup\":").append(ui->checkBox_5->isChecked() ? "true" : "false").append(",\n\t");
     text2.append("\"SYSTEM_enableMappingAfterOpening\":").append(ui->checkBox_2->isChecked() ? "true" : "false").append(",\n\t");
     text2.append("\"SYSTEM_enableOnlyLongestMapping\":").append(ui->checkBox_3->isChecked() ? "true" : "false").append(",\n\t");
-    text2.append("\"ETS2_installPath\":").append("\"" + ETS2InstallPath + "\"").append(",\n\t");
     text2.append("\"SYSTEM_enableForceFeedback\":").append(ui->checkBox_4->isChecked() ? "true" : "false").append(",\n\t");
 
     text2.append("\"SYSTEM_forceFeedbackSettings\":{\n\t\t");
@@ -129,6 +139,7 @@ void AssistFuncWindow::saveSettings(){
 
     text2.append("\"isThrottleReverse\":").append(forceFeedbackSettingsWindow->isThrottleReverse ? "true" : "false").append(",\n\t\t");
     text2.append("\"isBrakeReverse\":").append(forceFeedbackSettingsWindow->isBrakeReverse ? "true" : "false").append(",\n\t\t");
+
     text2.append("\"acceleration_100km_time_s\":").append(std::to_string(forceFeedbackSettingsWindow->acceleration_100km_time_s)).append(",\n\t\t");
     text2.append("\"stop_100km_dis_m\":").append(std::to_string(forceFeedbackSettingsWindow->stop_100km_dis_m)).append(",\n\t\t");
     text2.append("\"maxSpeed_km_h\":").append(std::to_string(forceFeedbackSettingsWindow->maxSpeed_km_h)).append(",\n\t\t");
@@ -173,10 +184,14 @@ void AssistFuncWindow::loadSettings(){
     bool enableETS2AutoCancelHandbrake = (jsonObj.contains("ETS2_enableAutoCancelHandbrake")) ? jsonObj["ETS2_enableAutoCancelHandbrake"].toBool() : false;
     bool enableAutoStartMapping = (jsonObj.contains("SYSTEM_enableMappingAfterOpening")) ? jsonObj["SYSTEM_enableMappingAfterOpening"].toBool() : false;
     bool enableOnlyLongestMapping = (jsonObj.contains("SYSTEM_enableOnlyLongestMapping")) ? jsonObj["SYSTEM_enableOnlyLongestMapping"].toBool() : false;
+    bool enableRunUponStartup = (jsonObj.contains("SYSTEM_enableRunUponStartup")) ? jsonObj["SYSTEM_enableRunUponStartup"].toBool() : false;
+
+    this->SYSTEM_enableRunUponStartup = enableRunUponStartup;
     this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;
     this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;
     this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;
     this->SYSTEM_enableForceFeedback = (jsonObj.contains("SYSTEM_enableForceFeedback")) ? jsonObj["SYSTEM_enableForceFeedback"].toBool() : false;
+
     // 欧卡2安装路径
     QString ets2Path = (jsonObj.contains("ETS2_installPath")) ? jsonObj["ETS2_installPath"].toString() : "";
     if(!ets2Path.isEmpty()){
@@ -322,6 +337,16 @@ void AssistFuncWindow::on_pushButton_clicked()
     // 保存设置
     saveSettings();
     save();
+
+    // 开启开机自启动
+    if(ui->checkBox_5->isChecked()){
+        setRunUponStartup(true);
+        SYSTEM_enableRunUponStartup = true;
+    }else{
+        // 关闭开机自启动
+        setRunUponStartup(false);
+        SYSTEM_enableRunUponStartup = false;
+    }
 
     // 开启欧卡2自动解除手刹
     if(ui->checkBox->isChecked()){
@@ -577,3 +602,33 @@ bool AssistFuncWindow::validateForceFeedbackParams(){
 }
 
 
+
+void AssistFuncWindow::on_checkBox_5_clicked()
+{
+    unsave();
+}
+
+// 设置开机自启动(isSetStartup = true), 取消开机自启动(isSetStartup = false)
+void AssistFuncWindow::setRunUponStartup(bool isSetStartup){
+    // 获取应用程序的路径
+    QString appPath = QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath();
+
+    // 获取程序名称
+    QString appName = QFileInfo(appPath).fileName();
+
+    // 创建 QSettings 对象，操作 Windows 注册表
+    QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+
+    if(isSetStartup){
+        // 在注册表中添加应用程序的启动项, 并且添加 --hide运行参数, 在main.cpp中检查运行参数, 带有--hide的隐藏主窗口运行
+        settings.setValue(appName, "\"" + appPath.replace("/", "\\") + "\" --hide");
+
+        pushToQueue(parseSuccessLog("已设置开机自启动"));
+    }else{
+        // 取消开机自启动
+        // 从注册表中移除应用程序的启动项
+        settings.remove(appName);
+
+        pushToQueue(parseSuccessLog("已取消开机自启动"));
+    }
+}

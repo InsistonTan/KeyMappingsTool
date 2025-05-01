@@ -1530,9 +1530,12 @@ void MainWindow::simulateMsgboxSlot(bool isError, QString text){
     if(isError){
         QMessageBox::critical(this, "错误", text);
     }else{
+        // 主窗口最小化, 不显示提醒消息框
+        if (this->isMinimized()) {
+            return;
+        }
         QMessageBox::information(this, "提醒", text);
     }
-
 }
 
 void MainWindow::simulateStartedSlot(){

@@ -53,6 +53,8 @@ private slots:
 
     void on_checkBox_4_clicked();
 
+    void on_checkBox_5_clicked();
+
 private:
     Ui::AssistFuncWindow *ui;
 
@@ -66,6 +68,7 @@ private:
     static bool SYSTEM_enableMappingAfterOpening;// 映射软件的系统功能_开启软件后立即开启映射
     static bool SYSTEM_enableOnlyLongestMapping;// 组合键按下时只执行组合键映射，不执行对应子键映射
     bool SYSTEM_enableForceFeedback = false;// 开启力反馈模拟
+    bool SYSTEM_enableRunUponStartup = false;// 开启开机自启动
 
     void scanETS2InstallPath();// 扫描欧卡2安装路径
 
@@ -81,6 +84,9 @@ private:
     void save();// 改动已保存
 
     bool validateForceFeedbackParams();
+
+    // 设置开机自启动(isSetStartup = true), 取消开机自启动(isSetStartup = false)
+    void setRunUponStartup(bool isSetStartup);
 };
 
 #endif // ASSISTFUNCWINDOW_H
