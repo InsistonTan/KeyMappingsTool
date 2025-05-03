@@ -67,7 +67,6 @@ void ManuallyBinder::on_pushButton_clicked() {
         qDebug() << "无效的绑定类型索引";
         return;
     }
-    BindingType bindingType = static_cast<BindingType>(bindingTypeIndex);
 
     // 获取当前选中的按键
     int keyIndex = ui->comboBox_2->currentText().toInt() - 1; // 转换为0基索引
