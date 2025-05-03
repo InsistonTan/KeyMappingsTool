@@ -472,10 +472,12 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
     // LightBinder.di_mappings_config 文件格式
     // [
     //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"K", "keyboard_value":37,
-    //     "remark":"远光灯", "rotateAxis":0, "btnTriggerType":5},
+    //     "remark":"远光灯", "rotateAxis":0, "btnTriggerType":5, "deviceName":"Generic   USB  Joystick  (00060079)"},
     //     {"dev_btn_name":"按键4+按键7", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"J", "keyboard_value":36,
-    //     "remark":"灯光喇叭", "rotateAxis":0, "btnTriggerType":0}
+    //     "remark":"灯光喇叭", "rotateAxis":0, "btnTriggerType":0, "deviceName":"Generic   USB  Joystick  (00060079)"}
     // ]
+
+    QString joyName = deviceName.data();
     QFile lightBindingFile(QDir::homePath() + "/AppData/Local/KeyMappingToolData/userMappings/" + MAPPING_FILE_NAME + ".di_mappings_config");
     if (!lightBindingFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件:" << lightBindingFile.fileName();
@@ -498,11 +500,13 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
     QTextStream in(&lightBindingFile);
     in << "[\n{\"dev_btn_name\":\"" << hblightKeyStr;
     in << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"K\", \"keyboard_value\":37, "
-          "\"remark\":\"远光灯\", \"rotateAxis\":0, \"btnTriggerType\":5},\n";
+          "\"remark\":\"远光灯\", \"rotateAxis\":0, \"btnTriggerType\":5, \"deviceName\":\"";
+    in << joyName << "\"},\n";
 
     in << "{\"dev_btn_name\":\"" << lighthornKeyStr;
     in << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"J\", \"keyboard_value\":36,"
-          "\"remark\":\"灯光喇叭\", \"rotateAxis\":0, \"btnTriggerType\":0}\n]\n";
+          "\"remark\":\"灯光喇叭\", \"rotateAxis\":0, \"btnTriggerType\":0, \"deviceName\":\"";
+    in << joyName << "\"}\n]";
     return true;
 }
 
@@ -677,9 +681,13 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
 #else
         // 此组件合并至 KeyMappingsTool 中，不再单独使用，所以不需要提示用户打开 KeyMappingsTool
         box.setText("游戏不支持开关类型的远光灯绑定\n\n"
-                    "请回到主界面，选择“映射键盘”\n"
-                    "并选择生成的配置文件\""
-                    + MAPPING_FILE_NAME + "\"\n");
+                    "请回到主界面\n"
+                    "选择设备：“"
+                    + QString::fromStdString(deviceName)
+                    + "”\n"
+                      "选择映射：“映射键盘”\n"
+                      "配置文件：\""
+                    + MAPPING_FILE_NAME + "\"");
         box.setStandardButtons(QMessageBox::Yes);
         box.exec();
 #endif
