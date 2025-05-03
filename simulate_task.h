@@ -3,12 +3,9 @@
 
 #include<mapping_relation.h>
 #include<QThread>
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include<windows.h>
 #include <ViGEm/Client.h>
 #include<key_map.h>
-#include"scs-telemetry-common.hpp"
 
 #define MAX_STR 255
 #define MAX_BUF 2048

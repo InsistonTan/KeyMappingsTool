@@ -20,7 +20,7 @@ ForceFeedbackSettingsWindow::~ForceFeedbackSettingsWindow()
 
 void ForceFeedbackSettingsWindow::on_pushButton_clicked()
 {
-    if(MainWindow::getCurrentSelectedDeviceIndex() < 0){
+    if(MainWindow::getCurrentSelectedDeviceList().isEmpty()){
         QMessageBox::critical(this, "错误", "还未选择设备!");
         return;
     }
@@ -36,27 +36,32 @@ void ForceFeedbackSettingsWindow::on_pushButton_clicked()
 
     if(mapping != nullptr){
         if(!mapping->dev_btn_name.empty()){
-            if(mapping->dev_btn_name == this->brakeAxis.toStdString()){
+            if(mapping->deviceName == this->brakeAxisDeviceName && mapping->dev_btn_name == this->brakeAxis.toStdString()){
                 QMessageBox::critical(this, "错误", "该轴已被设置为刹车!");
                 return;
             }
-            if(mapping->dev_btn_name == this->steeringWheelAxis.toStdString()){
+            if(mapping->deviceName == this->steeringWheelAxisDeviceName && mapping->dev_btn_name == this->steeringWheelAxis.toStdString()){
                 QMessageBox::critical(this, "错误", "该轴已被设置为转向轴!");
                 return;
             }
 
             this->throttleAxis = mapping->dev_btn_name.data();
+            this->throttleAxisDeviceName = mapping->deviceName;
             unsave();
         }
 
         // 设置是否反转该轴
         this->isThrottleReverse = mapping->rotateAxis == 1;
-
-        // 更新界面变化
-        this->updateUI();
     }else{
-        QMessageBox::critical(this, "错误", "未检测到踏板踩下!");
+        QMessageBox::critical(this, "错误", "未检测到踏板踩下, 将重置该项!");
+        this->throttleAxis = "";
+        this->throttleAxisDeviceName = "";
+        this->isThrottleReverse = false;
+        unsave();
     }
+
+    // 更新界面变化
+    this->updateUI();
 }
 
 MappingRelation* ForceFeedbackSettingsWindow::getDevInputAxis(){
@@ -65,7 +70,7 @@ MappingRelation* ForceFeedbackSettingsWindow::getDevInputAxis(){
         return nullptr;
     }
     // 连接设备
-    if(!openDiDevice(MainWindow::getCurrentSelectedDeviceIndex())){
+    if(!openDiDevice(MainWindow::getCurrentSelectedDeviceList())){
         return nullptr;
     }
 
@@ -81,10 +86,11 @@ MappingRelation* ForceFeedbackSettingsWindow::getDevInputAxis(){
             for(auto item : res){
                 // 方向盘的轴
                 if(item->dev_btn_type == (std::string)WHEEL_AXIS){
-                    auto tmpAxis = tempRecord.find(item->dev_btn_name);
+                    std::string btnStr = item->deviceName.toStdString() + "-" + item->dev_btn_name;
+                    auto tmpAxis = tempRecord.find(btnStr);
                     // 第一次读到该轴的值
                     if(tmpAxis == tempRecord.end()){
-                        tempRecord.insert_or_assign(item->dev_btn_name, item->dev_btn_value);
+                        tempRecord.insert_or_assign(btnStr, item->dev_btn_value);
                     }else{
                         // 不是第一次读到该轴的值, 与第一次的值比较, 大于一定量才能确定是该轴要新建映射
                         if(std::abs(item->dev_btn_value - tmpAxis->second) > AXIS_CHANGE_VALUE){
@@ -116,27 +122,33 @@ void ForceFeedbackSettingsWindow::updateUI(bool isFirstUpdate){
     // 更新油门轴的label
     if(this->throttleAxis.isEmpty()){
         ui->label_3->setText("未设置");
+        ui->label_3->setToolTip("");
         ui->label_3->setStyleSheet("QLabel{color:red;}");
     }else{
         ui->label_3->setText(this->throttleAxis);
+        ui->label_3->setToolTip(this->throttleAxisDeviceName);
         ui->label_3->setStyleSheet("QLabel{color:blue;}");
     }
 
     // 更新刹车轴的label
     if(this->brakeAxis.isEmpty()){
         ui->label_5->setText("未设置");
+        ui->label_5->setToolTip("");
         ui->label_5->setStyleSheet("QLabel{color:red;}");
     }else{
         ui->label_5->setText(this->brakeAxis);
+        ui->label_5->setToolTip(this->brakeAxisDeviceName);
         ui->label_5->setStyleSheet("QLabel{color:blue;}");
     }
 
     // 更新盘面轴的label
     if(this->steeringWheelAxis.isEmpty()){
         ui->label_14->setText("未设置");
+        ui->label_14->setToolTip("");
         ui->label_14->setStyleSheet("QLabel{color:red;}");
     }else{
         ui->label_14->setText(this->steeringWheelAxis);
+        ui->label_14->setToolTip(this->steeringWheelAxisDeviceName);
         ui->label_14->setStyleSheet("QLabel{color:blue;}");
     }
 
@@ -168,7 +180,7 @@ void ForceFeedbackSettingsWindow::updateUI(bool isFirstUpdate){
 
 void ForceFeedbackSettingsWindow::on_pushButton_2_clicked()
 {
-    if(MainWindow::getCurrentSelectedDeviceIndex() < 0){
+    if(MainWindow::getCurrentSelectedDeviceList().isEmpty()){
         QMessageBox::critical(this, "错误", "还未选择设备!");
         return;
     }
@@ -184,26 +196,31 @@ void ForceFeedbackSettingsWindow::on_pushButton_2_clicked()
 
     if(mapping != nullptr){
         if(!mapping->dev_btn_name.empty()){
-            if(mapping->dev_btn_name == this->throttleAxis.toStdString()){
+            if(mapping->deviceName == this->throttleAxisDeviceName && mapping->dev_btn_name == this->throttleAxis.toStdString()){
                 QMessageBox::critical(this, "错误", "该轴已被设置为油门!");
                 return;
             }
-            if(mapping->dev_btn_name == this->steeringWheelAxis.toStdString()){
+            if(mapping->deviceName == this->steeringWheelAxisDeviceName && mapping->dev_btn_name == this->steeringWheelAxis.toStdString()){
                 QMessageBox::critical(this, "错误", "该轴已被设置为转向轴!");
                 return;
             }
             this->brakeAxis = mapping->dev_btn_name.data();
+            this->brakeAxisDeviceName = mapping->deviceName;
             unsave();
         }
 
         // 设置是否反转该轴
         this->isBrakeReverse = mapping->rotateAxis == 1;
-
-        // 更新界面变化
-        this->updateUI();
     }else{
-        QMessageBox::critical(this, "错误", "未检测到踏板踩下!");
+        QMessageBox::critical(this, "错误", "未检测到踏板踩下, 将重置该项!");
+        this->brakeAxis = "";
+        this->brakeAxisDeviceName = "";
+        this->isBrakeReverse = false;
+        unsave();
     }
+
+    // 更新界面变化
+    this->updateUI();
 }
 
 
@@ -267,7 +284,7 @@ void ForceFeedbackSettingsWindow::on_checkBox_2_checkStateChanged(const Qt::Chec
 
 void ForceFeedbackSettingsWindow::on_pushButton_3_clicked()
 {
-    if(MainWindow::getCurrentSelectedDeviceIndex() < 0){
+    if(MainWindow::getCurrentSelectedDeviceList().isEmpty()){
         QMessageBox::critical(this, "错误", "还未选择设备!");
         return;
     }
@@ -283,24 +300,28 @@ void ForceFeedbackSettingsWindow::on_pushButton_3_clicked()
 
     if(mapping != nullptr){
         if(!mapping->dev_btn_name.empty()){
-            if(mapping->dev_btn_name == this->brakeAxis.toStdString()){
+            if(mapping->deviceName == this->brakeAxisDeviceName && mapping->dev_btn_name == this->brakeAxis.toStdString()){
                 QMessageBox::critical(this, "错误", "该轴已被设置为刹车!");
                 return;
             }
-            if(mapping->dev_btn_name == this->throttleAxis.toStdString()){
+            if(mapping->deviceName == this->throttleAxisDeviceName && mapping->dev_btn_name == this->throttleAxis.toStdString()){
                 QMessageBox::critical(this, "错误", "该轴已被设置为油门!");
                 return;
             }
 
             this->steeringWheelAxis = mapping->dev_btn_name.data();
+            this->steeringWheelAxisDeviceName = mapping->deviceName;
             unsave();
         }
-
-        // 更新界面变化
-        this->updateUI();
     }else{
-        QMessageBox::critical(this, "错误", "未检测到方向盘转动!");
+        QMessageBox::critical(this, "错误", "未检测到方向盘转动, 将重置该项!");
+        this->steeringWheelAxis = "";
+        this->steeringWheelAxisDeviceName = "";
+        unsave();
     }
+
+    // 更新界面变化
+    this->updateUI();
 }
 
 

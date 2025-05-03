@@ -1,6 +1,5 @@
 #include "ForceFeedbackWorker.h"
 #include "global.h"
-#include "mainwindow.h"
 #include<QThread>
 #include<QCoreApplication>
 #include<QMessageBox>
@@ -27,7 +26,8 @@ bool ForceFeedbackWorker::initDirectInput2() {
     HINSTANCE hInstance = GetModuleHandle(NULL);
     if (FAILED(DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&g_pDirectInput2, NULL))) {
         qDebug() << "DirectInput 初始化失败！";
-        QMessageBox::critical(nullptr, "错误", "初始化DirectInput: 初始化失败！");
+        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - DirectInput 初始化失败！"));
+
         return false;
     }
 
@@ -37,43 +37,48 @@ bool ForceFeedbackWorker::initDirectInput2() {
 }
 
 // 打开选择的设备
-bool ForceFeedbackWorker::openDiDevice2(int deviceIndex, HWND hWnd) {
-    if (deviceIndex < 0 || deviceIndex >= diDeviceList.size()) {
+bool ForceFeedbackWorker::openDiDevice2(QString deviceName, HWND hWnd) {
+    if (deviceName.isEmpty()) {
         return false;
     }
 
     // 相同设备, 无需重复打开
-    if (g_pDevice2 && lastDeviceIndex2 == deviceIndex) {
+    if (g_pDevice2 && lastSteerDeviceName == deviceName) {
         return true;
     }
 
     // 新设备
-    lastDeviceIndex2 = deviceIndex;
+    lastSteerDeviceName = deviceName;
     if(g_pDevice2){
         g_pDevice2->Unacquire();
         g_pDevice2->Release();
         g_pDevice2 = nullptr;
     }
 
+    int deviceIndex = -1;
+    for(int i = 0; i < diDeviceList.size(); i++){
+        if(deviceName.toStdString() == diDeviceList.at(i).name){
+            deviceIndex = i;
+            break;
+        }
+    }
+
     // 创建设备实例
-    if (FAILED(g_pDirectInput2->CreateDevice(diDeviceList[deviceIndex].guidInstance, &g_pDevice2, NULL))) {
+    if (deviceIndex < 0 || FAILED(g_pDirectInput2->CreateDevice(diDeviceList.at(deviceIndex).guidInstance, &g_pDevice2, NULL))) {
         qDebug() << "设备创建失败！";
-        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 设备创建失败！"));
-        QMessageBox::critical(nullptr, "错误", "初始化设备: 设备创建失败！");
+        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 转向轴设备"+deviceName+"创建失败！"));
         return false;
     }
 
     if (FAILED(g_pDevice2->SetDataFormat(&c_dfDIJoystick2))) {
         qDebug() << "设置数据格式失败！";
-        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 设置数据格式失败！"));
-        QMessageBox::critical(nullptr, "错误", "初始化设备: 设置数据格式失败！");
+        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 转向轴设备"+deviceName+"设置数据格式失败！"));
         return false;
     }
 
     if (FAILED(g_pDevice2->SetCooperativeLevel(hWnd, DISCL_EXCLUSIVE | DISCL_BACKGROUND ))) {
         qDebug() << "设置独占模式失败！";
-        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 设置独占模式失败！"));
-        QMessageBox::critical(nullptr, "错误", "初始化设备: 设置独占模式失败！");
+        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 转向轴设备"+deviceName+"设置独占模式失败！"));
         return false;
     }
 
@@ -82,12 +87,11 @@ bool ForceFeedbackWorker::openDiDevice2(int deviceIndex, HWND hWnd) {
     capabilities.dwSize = sizeof(DIDEVCAPS);
     if (FAILED(g_pDevice2->GetCapabilities(&capabilities))) {
         qDebug() << "获取设备能力失败！";
-        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 获取设备能力失败！"));
-        QMessageBox::critical(nullptr, "错误", "初始化设备: 获取设备能力失败！");
+        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 初始化设备: 转向轴设备"+deviceName+"获取设备能力失败！"));
         return false;
     }
 
-    pushToQueue(parseSuccessLog("<b>力反馈模拟线程</b> - 连接设备成功！"));
+    pushToQueue(parseSuccessLog("<b>力反馈模拟线程</b> - 连接转向轴设备"+deviceName+"成功！"));
 
     return true;
 }
@@ -236,7 +240,7 @@ void ForceFeedbackWorker::cleanup() {
     if (g_pDamper) g_pDamper->Release();
 }
 
-// 获取设备状态信息
+// 获取转向设备的状态信息
 QList<MappingRelation*> ForceFeedbackWorker::getInputState2() {
     QList<MappingRelation*> list;
 
@@ -315,8 +319,13 @@ ForceFeedbackWorker::ForceFeedbackWorker(ForceFeedbackSettingsWindow* forceFeedb
 
 void ForceFeedbackWorker::init(){
     this->throttleAxis = this->forceFeedbackSettings->throttleAxis;
+    this->throttleAxisDeviceName = this->forceFeedbackSettings->throttleAxisDeviceName;
+
     this->brakeAxis = this->forceFeedbackSettings->brakeAxis;
+    this->brakeAxisDeviceName = this->forceFeedbackSettings->brakeAxisDeviceName;
+
     this->steeringWheelAxis = this->forceFeedbackSettings->steeringWheelAxis;
+    this->steeringWheelAxisDeviceName = this->forceFeedbackSettings->steeringWheelAxisDeviceName;
 
     this->isBrakeReverse = this->forceFeedbackSettings->isBrakeReverse;
     this->isThrottleReverse = this->forceFeedbackSettings->isThrottleReverse;
@@ -327,29 +336,30 @@ void ForceFeedbackWorker::init(){
     this->maxForceFeedbackGain = this->forceFeedbackSettings->maxForceFeedbackGain;
 
     // 油门踏板的数值范围
-    this->throttleValueRange = axisValueRangeMap.find(this->throttleAxis.toStdString())->second;
+    this->throttleValueRange = axisValueRangeMap.find(this->throttleAxisDeviceName.toStdString()  + "-" + this->throttleAxis.toStdString())->second;
     // 刹车踏板的数值范围
-    this->brakeValueRange = axisValueRangeMap.find(this->brakeAxis.toStdString())->second;
+    this->brakeValueRange = axisValueRangeMap.find(this->brakeAxisDeviceName.toStdString() + "-" + this->brakeAxis.toStdString())->second;
 
     this->maxThrottleAxisA = 100.0 * 1000 / 3600 / this->acceleration_100km_time_s;// 最大油门加速度
     this->maxBrakeA = -771.6 / (2 * this->stop_100km_dis_m);// 最大刹车加速度
 
     if(isWorkerRunning){
-        if(!initDirectInput2() || !openDiDevice2(MainWindow::getCurrentSelectedDeviceIndex(), reinterpret_cast<HWND>(g_mainWindow->winId()))){
+        if(!initDirectInput2() || !openDiDevice2(this->steeringWheelAxisDeviceName, reinterpret_cast<HWND>(g_mainWindow->winId()))){
             pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 开启力反馈模拟失败: 初始化设备/独占模式打开设备失败!"));
             isWorkerRunning = false;
         }
 
-        if(!createDynamicEffects(this->steeringWheelAxis)){
-            pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 开启力反馈模拟失败: 创建力反馈效果失败!"));
-            isWorkerRunning = false;
-        }else{
-            // 开启力反馈效果
-            g_pSpringForce->Start(1, 0);
-            g_pDamper->Start(1, 0);
+        if(isWorkerRunning){
+            if(!createDynamicEffects(this->steeringWheelAxis)){
+                pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 开启力反馈模拟失败: 创建力反馈效果失败!"));
+                isWorkerRunning = false;
+            }else{
+                // 开启力反馈效果
+                g_pSpringForce->Start(1, 0);
+                g_pDamper->Start(1, 0);
+            }
         }
     }
-
 }
 
 
@@ -361,25 +371,45 @@ void ForceFeedbackWorker::doWork(){
 
     isWorkerRunning = true;
 
-    if(!initDirectInput2() || !openDiDevice2(MainWindow::getCurrentSelectedDeviceIndex(), reinterpret_cast<HWND>(g_mainWindow->winId()))){
+    if(!initDirectInput2() || !openDiDevice2(this->steeringWheelAxisDeviceName, reinterpret_cast<HWND>(g_mainWindow->winId()))){
         pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 开启力反馈模拟失败: 初始化设备/独占模式打开设备失败!"));
+
+        QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+            QMessageBox::critical(nullptr, "错误", "开启力反馈模拟失败: 初始化设备/独占模式打开设备失败!");
+        }, Qt::QueuedConnection);
+
         isWorkerRunning = false;
     }
 
-    if(!createDynamicEffects(this->steeringWheelAxis)){
-        pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 开启力反馈模拟失败: 创建力反馈效果失败!"));
-        isWorkerRunning = false;
-    }else{
-        // 开启力反馈效果
-        g_pSpringForce->Start(1, 0);
-        g_pDamper->Start(1, 0);
+    if(isWorkerRunning){
+        if(!createDynamicEffects(this->steeringWheelAxis)){
+            pushToQueue(parseErrorLog("<b>力反馈模拟线程</b> - 开启力反馈模拟失败: 创建力反馈效果失败!"));
 
-        pushToQueue(parseSuccessLog("<b>力反馈模拟线程</b> - 开启力反馈模拟成功!"));
+            QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+                QMessageBox::critical(nullptr, "错误", "开启力反馈模拟失败: 创建力反馈效果失败!");
+            }, Qt::QueuedConnection);
+
+            isWorkerRunning = false;
+        }else{
+            // 开启力反馈效果
+            g_pSpringForce->Start(1, 0);
+            g_pDamper->Start(1, 0);
+
+            pushToQueue(parseSuccessLog("<b>力反馈模拟线程</b> - 开启力反馈模拟成功!"));
+        }
     }
+
 
     while(isWorkerRunning){
         // 轮询设备状态
-        auto res = getInputState2();
+        auto res = getInputState();
+
+        // 重新拉取转向轴设备, 防止力反馈丢失
+        g_pDevice2->Acquire();
+        // 检查连接状态
+        if (FAILED(g_pDevice2->Poll())) {
+            g_pDevice2->Acquire();
+        }
 
         double totalA = 0.0;// 总的加速度
 
@@ -390,7 +420,7 @@ void ForceFeedbackWorker::doWork(){
 
         for(auto devData : res){
             // 获取油门数据
-            if(devData->dev_btn_name == this->throttleAxis.toStdString()){
+            if(devData->deviceName == this->throttleAxisDeviceName && devData->dev_btn_name == this->throttleAxis.toStdString()){
                 // 油门踩下的程度(0-1)
                 double throttlePer = (!this->isThrottleReverse)
                                          ? (static_cast<double>(devData->dev_btn_value) - this->throttleValueRange.lMin)/(this->throttleValueRange.lMax - this->throttleValueRange.lMin)
@@ -413,7 +443,7 @@ void ForceFeedbackWorker::doWork(){
 
             }
             // 获取刹车数据
-            if(devData->dev_btn_name == this->brakeAxis.toStdString()){
+            if(devData->deviceName == this->brakeAxisDeviceName && devData->dev_btn_name == this->brakeAxis.toStdString()){
                 // 刹车踩下的程度(0-1)
                 double brakePer = (!this->isBrakeReverse)
                                          ? (static_cast<double>(devData->dev_btn_value) - this->brakeValueRange.lMin)/(this->brakeValueRange.lMax - this->brakeValueRange.lMin)

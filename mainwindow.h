@@ -14,7 +14,7 @@
 #include "AssistFuncWindow.h"
 #include "XboxDeadAreaSettings.h"
 
-#define CURRENT_VERSION "1.2.0" // 当前版本号
+#define CURRENT_VERSION "1.2.1" // 当前版本号
 
 #define MAX_STR 255
 #define MAX_BUF 2048
@@ -26,7 +26,7 @@
 #define MAPPING_FILE_SUFFIX_XBOX ".di_xbox_mappings_config"
 #define KEYBOARD "keyboard"
 #define XBOX "xbox"
-#define AXIS_CHANGE_VALUE 1000 //识别轴需要变化的最小值
+#define AXIS_CHANGE_VALUE 2000 //识别轴需要变化的最小值
 
 #define DEFAULT_API_HOST "https://xh36dstw.lc-cn-n1-shared.com" //默认的api域名
 #define X_LC_Id "xH36dsTwk1T5XoXmO4EHA1qg-gzGzoHsz"
@@ -47,7 +47,7 @@ public:
     MainWindow(QMainWindow *parent = nullptr);
     ~MainWindow();
     // 获取当前选择的设备的下标
-    static int getCurrentSelectedDeviceIndex();
+    static QList<QString> getCurrentSelectedDeviceList();
 
 private:
     Ui::MainWindow *ui;
@@ -65,18 +65,17 @@ private:
 
     QString appDataDirPath; // 软件本地数据存放的路径
 
-    static volatile int currentSelectedDeviceIndex; // 当前选择的设备的下标
+    static QList<QString> currentSelectedDeviceList; // 当前选择的设备列表
+
+    QMap<QString, QString> mappingFileNameMap; // 用户映射配置文件map, key为无后缀文件名, value为文件绝对路径
 
     QLabel *label;
 
 protected:
+    // 初始化
+    void init();
+
     MappingRelation* getDevBtnData();
-
-    //int openDevice(short vid, short pid);
-
-    //int closeDevice();
-
-    //int listAllDevice();
 
     std::map<std::string, short> getConstKeyMap(std::string dev_btn_type);
 
@@ -89,7 +88,7 @@ protected:
 
     void showErrorMessage(std::string *text);
 
-    bool hasAddToMappingList(std::string btn_name);
+    bool hasAddToMappingList(MappingRelation* mapping);
 
     void saveMappingsToFile(std::string filename);
     void saveLastDeviceToFile(bool isOnlySaveLastDevice = false);
@@ -121,6 +120,16 @@ protected:
     // 检查软件是否有更新
     void checkUpdate(QString apiHost = "");
 
+    // 启动全局映射后, 将部分控件设置为不可点击
+    void disableUiAfterStartMapping();
+    // 停止全局映射后, 将部分控件恢复正常状态
+    void enableUiAfterStopMapping();
+
+    // 更新已选择设备的label
+    void updateSelectedDeviceLabel();
+
+    // 获取省略模式的文本(文本超出组件显示范围将显示省略号...)
+    QString getElidedText(QWidget* widget, QString srcText);
 
 public slots:
     // 模拟服务报错的slot
@@ -168,5 +177,6 @@ private slots:
     void on_pushButton_8_clicked();
     void on_pushButton_9_clicked();
     void on_pushButton_10_clicked();
+    void on_pushButton_11_clicked();
 };
 #endif // MAINWINDOW_H

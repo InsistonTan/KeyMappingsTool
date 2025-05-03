@@ -1,4 +1,3 @@
-#include "AssistFuncWorker.h"
 #include <simulate_task.h>
 #include "AssistFuncWindow.h"
 #include <global.h>
@@ -13,24 +12,18 @@ std::vector<MappingRelation> SimulateTask::handleMultiBtnVectorSorted = {};// �
 void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
     // 记录按键触发模式
     if(mapping != nullptr){
-        keyTriggerTypeMap.insert_or_assign(mapping->dev_btn_name, mapping->btnTriggerType);
-    }
+        std::string btnStr = mapping->deviceName.toStdString() + "-" + mapping->dev_btn_name;
 
-    // 记录需要反转的轴
-    if(mapping->rotateAxis == 1){
-        rotateAxisList.push_back(mapping->dev_btn_name);
-    }
+        keyTriggerTypeMap.insert_or_assign(btnStr, mapping->btnTriggerType);
 
-    // handleMap还没有该按键, 直接添加
-    if(handleMap.find(mapping->dev_btn_name) == handleMap.end()){
-        handleMap.insert_or_assign(mapping->dev_btn_name, mapping->keyboard_value);
-        return;
-    }
+        // 记录需要反转的轴
+        if(mapping->rotateAxis == 1){
+            rotateAxisList.push_back(btnStr);
+        }
 
-    for(int i=1;;i++){
-        if(handleMap.find(mapping->dev_btn_name + "#" + std::to_string(i)) == handleMap.end()){
-            handleMap.insert_or_assign(mapping->dev_btn_name + "#" + std::to_string(i), mapping->keyboard_value);
-            return;
+        // handleMap还没有该按键, 直接添加
+        if(handleMap.find(btnStr) == handleMap.end()){
+            handleMap.insert_or_assign(btnStr, mapping->keyboard_value);
         }
     }
 }
@@ -114,7 +107,7 @@ bool isCurrentBtnInList(QList<MappingRelation*> pressBtnList, std::string curren
     }
 
     for(auto item : pressBtnList){
-        if(item->dev_btn_name == currentBtn){
+        if(item->deviceName.toStdString() + "-" + item->dev_btn_name == currentBtn){
             return true;
         }
     }
@@ -128,12 +121,12 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
 
         std::string btnStr = item->first;
 
-        // 找到 '#' 字符的位置
-        size_t pos = btnStr.find('#');
-        // 如果找到了 '#', 截取子串
-        if (pos != std::string::npos) {
-            btnStr = btnStr.substr(0, pos);
-        }
+        // // 找到 '#' 字符的位置
+        // size_t pos = btnStr.find('#');
+        // // 如果找到了 '#', 截取子串
+        // if (pos != std::string::npos) {
+        //     btnStr = btnStr.substr(0, pos);
+        // }
 
         // 本次按下的按键列表为空, 或者当前按下的按键列表中不包含当前按键, 则松开当前按键
         if (pressBtnList.empty() || !isCurrentBtnInList(pressBtnList, btnStr)) {
@@ -508,206 +501,207 @@ void SimulateTask::doWork(){
         // 对当前按下的按键列表循环操作
         for(int i=0; !res.empty() && i < res.size(); i++){
             // 当前设备按钮的字符串
-            auto btnStrList = getBtnStrListFromHandleMap(res[i]->dev_btn_name);
+            //auto btnStrList = getBtnStrListFromHandleMap(res[i]->dev_btn_name);
 
-            for(auto btnStr : btnStrList){
-                // 先检查当前按钮是否在持续按下
-                if(isCurrentKeyHolding(btnStr)){
-                    // 持续按下
+            // 当前方向盘按键
+            auto currentBtn = res[i];
+
+            // 按键名称补上设备名称
+            std::string btnStr = currentBtn->deviceName.toStdString() + "-" + currentBtn->dev_btn_name;
+
+            // 先检查当前按钮是否在持续按下
+            if(isCurrentKeyHolding(btnStr)){
+                // 持续按下
+                continue;
+            }
+
+            // 查找设备按键映射键盘扫描码map
+            auto item = handleMap.find(btnStr);
+
+            // 该按键存在映射, 模拟映射的键盘按键操作
+            if (item != handleMap.end()) {
+                //qDebug("按键存在映射, 正在模拟对应操作");
+
+                // 按下了配置的暂停按键
+                if(item->second == PAUSE_BTN_VAL){
+                    clickPauseBtn();
+                    releaseAllKey({});
+
+                    // 提交暂停按键被按下的信号
+                    emit pauseClickSignal();
+
+                    Sleep(500);
+                }
+
+                // qDebug() << "当前isPause值: " << (isPause ? "true" : "false");
+
+                // 如果当前是暂停状态, 跳过后续的映射操作
+                if(getIsPause()){
                     continue;
                 }
 
-                // 当前方向盘按键
-                auto currentBtn = res[i];
-
-                // 查找设备按键映射键盘扫描码map
-                auto item = handleMap.find(btnStr);
-
-                // 该按键存在映射, 模拟映射的键盘按键操作
-                if (item != handleMap.end()) {
-                    //qDebug("按键存在映射, 正在模拟对应操作");
-
-                    // 按下了配置的暂停按键
-                    if(item->second == PAUSE_BTN_VAL){
-                        clickPauseBtn();
-                        releaseAllKey({});
-
-                        // 提交暂停按键被按下的信号
-                        emit pauseClickSignal();
-
-                        Sleep(500);
+                // 映射键盘
+                if(!getIsXboxMode()){
+                    // 对映射鼠标左键(-7), 鼠标右键(-8), 鼠标中键(-11), 以及其它键盘按键进行按下记录
+                    if(item->second == -7 || item->second == -8 || item->second == -11 ||  item->second > 0){
+                        // 记录按键按下
+                        keyHoldingMap.insert_or_assign(btnStr, item->second);
                     }
 
-                    // qDebug() << "当前isPause值: " << (isPause ? "true" : "false");
-
-                    // 如果当前是暂停状态, 跳过后续的映射操作
-                    if(getIsPause()){
-                        continue;
+                    // 根据触发模式, 进行对应处理
+                    switch (keyTriggerTypeMap[btnStr]) {
+                    case TriggerTypeEnum::Delay1s:
+                        //qDebug() << "延迟1s触发";
+                        // 延迟1s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 1000);
+                        break;
+                    case TriggerTypeEnum::Delay3s:
+                        //qDebug() << "延迟3s触发";
+                        // 延迟3s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 3000);
+                        break;
+                    case TriggerTypeEnum::Delay5s:
+                        //qDebug() << "延迟5s触发";
+                        // 延迟5s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 5000);
+                        break;
+                    case TriggerTypeEnum::Release:
+                        // 松开按键才触发
+                        break;
+                    case TriggerTypeEnum::PressAndRelease:
+                        // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
+                        simulateKeyPressMs(item->second, RELEASE_DELAY_MS);
+                        break;
+                    case TriggerTypeEnum::Normal:
+                        //qDebug() << "默认的同步模式";
+                        // 默认的同步模式
+                        simulateKeyPress(item->second, false);
+                        break;
                     }
 
-                    // 映射键盘
-                    if(!getIsXboxMode()){
-                        // 对映射鼠标左键(-7), 鼠标右键(-8), 鼠标中键(-11), 以及其它键盘按键进行按下记录
-                        if(item->second == -7 || item->second == -8 || item->second == -11 ||  item->second > 0){
-                            // 记录按键按下
-                            keyHoldingMap.insert_or_assign(btnStr, item->second);
-                        }
+                    //qDebug("映射键盘模式-按键按下");
+
+                }else{
+                    // 映射xbox
+                    //auto currentBtn = res[i];
+
+                    // 映射普通xbox按键
+                    if(currentBtn->dev_btn_type == (std::string)WHEEL_BUTTON){
+                        // qDebug("映射Xbox模式-按键按下:%s", btnStr.data());
+
+                        // 记录按键按下
+                        keyHoldingMap.insert_or_assign(btnStr, item->second);
 
                         // 根据触发模式, 进行对应处理
-                        switch (keyTriggerTypeMap[currentBtn->dev_btn_name]) {
+                        switch (keyTriggerTypeMap[btnStr]) {
                         case TriggerTypeEnum::Delay1s:
                             //qDebug() << "延迟1s触发";
                             // 延迟1s触发
-                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 1000);
+                            simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 1000);
                             break;
                         case TriggerTypeEnum::Delay3s:
                             //qDebug() << "延迟3s触发";
                             // 延迟3s触发
-                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 3000);
+                            simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 3000);
                             break;
                         case TriggerTypeEnum::Delay5s:
                             //qDebug() << "延迟5s触发";
                             // 延迟5s触发
-                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 5000);
+                            simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 5000);
                             break;
                         case TriggerTypeEnum::Release:
                             // 松开按键才触发
                             break;
                         case TriggerTypeEnum::PressAndRelease:
                             // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
-                            simulateKeyPressMs(item->second, RELEASE_DELAY_MS);
+                            simulateXboxKeyPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS);
                             break;
                         case TriggerTypeEnum::Normal:
                             //qDebug() << "默认的同步模式";
                             // 默认的同步模式
-                            simulateKeyPress(item->second, false);
+                            // 按下xbox对应按键
+                            simulateXboxKeyPress(NormalButton, item->second, 0, false);
                             break;
                         }
 
-                        //qDebug("映射键盘模式-按键按下");
-
                     }else{
-                        // 映射xbox
-                        //auto currentBtn = res[i];
 
-                        // 映射普通xbox按键
-                        if(currentBtn->dev_btn_type == (std::string)WHEEL_BUTTON){
-                            // qDebug("映射Xbox模式-按键按下:%s", btnStr.data());
+                        // 映射xbox轴
+                        // 计算映射到手柄轴的实际值
+                        auto xboxRange = XBOX_AXIS_VALUE_RANGE_MAP.find(item->second)->second;
+                        int xboxMin = xboxRange.minVal, xboxMax = xboxRange.maxVal;
 
-                            // 记录按键按下
-                            keyHoldingMap.insert_or_assign(btnStr, item->second);
+                        auto currentRange = axisValueRangeMap.find(btnStr)->second;
+                        int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
 
-                            // 根据触发模式, 进行对应处理
-                            switch (keyTriggerTypeMap[currentBtn->dev_btn_name]) {
-                            case TriggerTypeEnum::Delay1s:
-                                //qDebug() << "延迟1s触发";
-                                // 延迟1s触发
-                                simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 1000);
-                                break;
-                            case TriggerTypeEnum::Delay3s:
-                                //qDebug() << "延迟3s触发";
-                                // 延迟3s触发
-                                simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 3000);
-                                break;
-                            case TriggerTypeEnum::Delay5s:
-                                //qDebug() << "延迟5s触发";
-                                // 延迟5s触发
-                                simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 5000);
-                                break;
-                            case TriggerTypeEnum::Release:
-                                // 松开按键才触发
-                                break;
-                            case TriggerTypeEnum::PressAndRelease:
-                                // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
-                                simulateXboxKeyPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS);
-                                break;
-                            case TriggerTypeEnum::Normal:
-                                //qDebug() << "默认的同步模式";
-                                // 默认的同步模式
-                                // 按下xbox对应按键
-                                simulateXboxKeyPress(NormalButton, item->second, 0, false);
-                                break;
-                            }
+                        // 按键类型
+                        XboxInputType inputType = static_cast<XboxInputType>(item->second);
 
+                        double devAxisDataPer = 0.0;// 设备的值占设备值的范围的百分比
+                        if(!isAxisRotate(btnStr)){
+                            devAxisDataPer = (static_cast<double>(currentBtn->dev_btn_value) - currentMin) / (currentMax - currentMin);
                         }else{
-
-                            // 映射xbox轴
-                            // 计算映射到手柄轴的实际值
-                            auto xboxRange = XBOX_AXIS_VALUE_RANGE_MAP.find(item->second)->second;
-                            int xboxMin = xboxRange.minVal, xboxMax = xboxRange.maxVal;
-
-                            auto currentRange = axisValueRangeMap.find(currentBtn->dev_btn_name)->second;
-                            int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
-
-                            // 按键类型
-                            XboxInputType inputType = static_cast<XboxInputType>(item->second);
-
-                            double devAxisDataPer = 0.0;// 设备的值占设备值的范围的百分比
-                            if(!isAxisRotate(btnStr)){
-                                devAxisDataPer = (static_cast<double>(currentBtn->dev_btn_value) - currentMin) / (currentMax - currentMin);
-                            }else{
-                                devAxisDataPer = (currentMax - static_cast<double>(currentBtn->dev_btn_value)) /(currentMax - currentMin);
-                            }
-
-                            int finalValue = 0;// 最终映射成手柄的值
-
-                            // 设置的摇杆内部死区值
-                            if(inputType == XboxInputType::LeftJoystick || inputType == XboxInputType::RightJoystick){
-                                // 摇杆内部死区值
-                                int innerDeadAreaValue = (xboxMax - xboxMin) / 2 * getXboxJoystickInnerDeadAreaValue();
-
-                                int leftMin = xboxMin, leftMax = innerDeadAreaValue; // 手柄左半区的最小值最大值
-                                int rightMin = -innerDeadAreaValue, rightMax = xboxMax;// 手柄右半区的最小值最大值
-
-                                // 对应手柄的左半区
-                                if(devAxisDataPer <= 0.5){
-                                    // 计算出对应手柄的值, 并设置有效值范围为 <= 0
-                                    finalValue = std::min((int)(leftMin + (leftMax - leftMin) * devAxisDataPer * 2), 0);
-                                }else{
-                                    // 手柄右半区, 计算出对应手柄的值, 并设置有效值范围为 >= 0
-                                    finalValue = std::max((int)(rightMin + (rightMax - rightMin) * (devAxisDataPer - 0.5) * 2), 0);
-                                }
-                            }
-
-                            // 设置的扳机内部死区值
-                            if(inputType == XboxInputType::LeftTrigger || inputType == XboxInputType::RightTrigger){
-                                // 扳机内部死区值
-                                int innerDeadAreaValue = (xboxMax - xboxMin) * getXboxTriggerInnerDeadAreaValue();
-
-                                // 施加死区影响之后的值的区间范围
-                                int tempMin = xboxMin - innerDeadAreaValue;
-                                int tempMax = xboxMax - innerDeadAreaValue;
-
-                                if(innerDeadAreaValue >= 0){
-                                    // 当前值处于区间的内的值
-                                    int tempValue = (int)(tempMin + (tempMax - tempMin) * devAxisDataPer);
-
-                                    tempMin = xboxMin;
-                                    tempMax = xboxMax - innerDeadAreaValue;
-
-                                    // 新区间百分比
-                                    double newAreaPer = (double)tempValue / (tempMax - tempMin);
-                                    newAreaPer = std::max(newAreaPer, 0.0);
-
-                                    // 根据新区间百分比 计算出 原xbox区间的值
-                                    finalValue = std::max(xboxMin, std::min((int)(newAreaPer * (xboxMax - xboxMin)), xboxMax));
-                                }else{
-
-                                    tempMin = xboxMin - innerDeadAreaValue;
-                                    tempMax = xboxMax;
-
-                                    // 根据新区间百分比 计算出 原xbox区间的值
-                                    finalValue = std::max(xboxMin, std::min((int)(tempMin + (tempMax - tempMin) * devAxisDataPer), xboxMax));
-                                }
-
-                            }
-
-                            // 模拟xbox轴
-                            simulateXboxKeyPress(inputType, finalValue, 0, false);
+                            devAxisDataPer = (currentMax - static_cast<double>(currentBtn->dev_btn_value)) /(currentMax - currentMin);
                         }
-                    }
 
+                        int finalValue = 0;// 最终映射成手柄的值
+
+                        // 设置的摇杆内部死区值
+                        if(inputType == XboxInputType::LeftJoystick || inputType == XboxInputType::RightJoystick){
+                            // 摇杆内部死区值
+                            int innerDeadAreaValue = (xboxMax - xboxMin) / 2 * getXboxJoystickInnerDeadAreaValue();
+
+                            int leftMin = xboxMin, leftMax = innerDeadAreaValue; // 手柄左半区的最小值最大值
+                            int rightMin = -innerDeadAreaValue, rightMax = xboxMax;// 手柄右半区的最小值最大值
+
+                            // 对应手柄的左半区
+                            if(devAxisDataPer <= 0.5){
+                                // 计算出对应手柄的值, 并设置有效值范围为 <= 0
+                                finalValue = std::min((int)(leftMin + (leftMax - leftMin) * devAxisDataPer * 2), 0);
+                            }else{
+                                // 手柄右半区, 计算出对应手柄的值, 并设置有效值范围为 >= 0
+                                finalValue = std::max((int)(rightMin + (rightMax - rightMin) * (devAxisDataPer - 0.5) * 2), 0);
+                            }
+                        }
+
+                        // 设置的扳机内部死区值
+                        if(inputType == XboxInputType::LeftTrigger || inputType == XboxInputType::RightTrigger){
+                            // 扳机内部死区值
+                            int innerDeadAreaValue = (xboxMax - xboxMin) * getXboxTriggerInnerDeadAreaValue();
+
+                            // 施加死区影响之后的值的区间范围
+                            int tempMin = xboxMin - innerDeadAreaValue;
+                            int tempMax = xboxMax - innerDeadAreaValue;
+
+                            if(innerDeadAreaValue >= 0){
+                                // 当前值处于区间的内的值
+                                int tempValue = (int)(tempMin + (tempMax - tempMin) * devAxisDataPer);
+
+                                tempMin = xboxMin;
+                                tempMax = xboxMax - innerDeadAreaValue;
+
+                                // 新区间百分比
+                                double newAreaPer = (double)tempValue / (tempMax - tempMin);
+                                newAreaPer = std::max(newAreaPer, 0.0);
+
+                                // 根据新区间百分比 计算出 原xbox区间的值
+                                finalValue = std::max(xboxMin, std::min((int)(newAreaPer * (xboxMax - xboxMin)), xboxMax));
+                            }else{
+
+                                tempMin = xboxMin - innerDeadAreaValue;
+                                tempMax = xboxMax;
+
+                                // 根据新区间百分比 计算出 原xbox区间的值
+                                finalValue = std::max(xboxMin, std::min((int)(tempMin + (tempMax - tempMin) * devAxisDataPer), xboxMax));
+                            }
+
+                        }
+
+                        // 模拟xbox轴
+                        simulateXboxKeyPress(inputType, finalValue, 0, false);
+                    }
                 }
+
             }
         }
 

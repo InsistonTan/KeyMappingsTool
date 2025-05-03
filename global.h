@@ -25,7 +25,9 @@ void clickPauseBtn();
 bool getIsPause();
 
 extern LPDIRECTINPUT8 g_pDirectInput;
-extern LPDIRECTINPUTDEVICE8 g_pDevice;
+//extern LPDIRECTINPUTDEVICE8 g_pDevice;
+extern QList<LPDIRECTINPUTDEVICE8> initedDeviceList; // 已初始化的设备列表
+void clearInitedDeviceList();// 清空已初始化的设备列表
 struct DiDeviceInfo {
     std::string name;
     GUID guidInstance;
@@ -73,17 +75,17 @@ BOOL CALLBACK EnumDevicesCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pC
 // 初始化DirectInput
 bool initDirectInput();
 // 打开设备
-bool openDiDevice(int deviceIndex);
+bool openDiDevice(QList<QString> deviceList);
 // 获取设备状态数据
-QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelation> multiBtnVector = {});
+QList<MappingRelation*> getInputState(bool enableLog = false, std::vector<MappingRelation> multiBtnVector = {});
 void cleanupDirectInput();
 // 获取轴的数值范围
-void getDipropRange(long axisCode, std::string axisName);
+void getDipropRange(LPDIRECTINPUTDEVICE8 g_pDevice, long axisCode, std::string axisName);
 // 扫描设备
 void scanDevice();
 
 // 检测是否支持力反馈
-bool checkIsSupportForceFeedback();
+bool checkIsSupportForceFeedback(QString deviceName);
 
 void setIsRuning(bool val);
 

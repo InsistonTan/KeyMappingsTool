@@ -34,7 +34,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 
-volatile int MainWindow::currentSelectedDeviceIndex = -1; // 当前选择的设备的下标
+QList<QString> MainWindow::currentSelectedDeviceList = {}; // 当前选择的设备列表
 
 MainWindow::~MainWindow(){
     cleanupDirectInput();
@@ -46,13 +46,19 @@ MainWindow::MainWindow(QMainWindow *parent)
 {
     ui->setupUi(this);
 
-    this->setFixedSize(910, 584);
-    this->setWindowTitle(QString("KeyMappingsTool ").append(CURRENT_VERSION));
-    //this->setWindowIcon(QIcon(":/icon/wheel_icon.png"));
+    this->setFixedSize(972, 643);
+    this->setWindowTitle(QString("KeyMappingsTool v").append(CURRENT_VERSION));
 
-    // 遍历所有设备
-    // listAllDevice();
+    // 发送使用记录和检查更新
+    sendUsageCount();
+    checkUpdate();
 
+    // 初始化
+    init();
+}
+
+
+void MainWindow::init(){
     // 获取软件本地数据目录
     appDataDirPath = getAppDataDirStr();
     QDir dir = QDir(QDir::homePath() + "/AppData/Local/");
@@ -74,11 +80,6 @@ MainWindow::MainWindow(QMainWindow *parent)
 
     QComboBox *comboBox  = ui->comboBox;
     comboBox->setMaximumHeight(30);
-    // comboBox->setStyleSheet("QComboBox { "
-    //                         "border: 1px solid black; "  // 边框宽度和颜色
-    //                         "border-radius: 1px; "       // 圆角半径
-    //                         "} ");
-
     // 使用迭代器遍历
     for (int i=0; i< (int)diDeviceList.size(); i++) {
         comboBox->addItem(diDeviceList[i].name.data());
@@ -86,6 +87,8 @@ MainWindow::MainWindow(QMainWindow *parent)
     comboBox->setCurrentIndex(-1);
     if(diDeviceList.empty()){
         comboBox->setPlaceholderText("未扫描到设备");
+    }else{
+        comboBox->setPlaceholderText("请选择设备");
     }
 
 
@@ -148,10 +151,6 @@ MainWindow::MainWindow(QMainWindow *parent)
     this->xboxDeadareaSettings = new XboxDeadAreaSettings();
 
     g_mainWindow = this;
-
-    // 发送使用记录和检查更新
-    sendUsageCount();
-    checkUpdate();
 }
 
 void MainWindow::scanMappingFile(){
@@ -162,24 +161,75 @@ void MainWindow::scanMappingFile(){
         // 获取文件列表，并筛选指定后缀的文件
         QFileInfoList list = dir.entryInfoList();
         for (const QFileInfo &fileInfo : list) {
+            // 匹配指定后缀的文件，加入下拉列表
             if ("." + fileInfo.suffix() == (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX :MAPPING_FILE_SUFFIX)) {
-                // 匹配指定后缀的文件，加入下拉列表
-                ui->comboBox_2->addItem(fileInfo.completeBaseName());
+
+                // 当前选择了多个设备, 配置文件名需要跟当前选择的设备匹配
+                if(currentSelectedDeviceList.size() > 1){
+                    bool isAccept = true;
+                    for(auto deviceName : currentSelectedDeviceList){
+                        if(!fileInfo.completeBaseName().contains(deviceName)){
+                            isAccept = false;
+                        }
+                    }
+                    if(isAccept){
+                        QString shortName = fileInfo.completeBaseName();
+
+                        int lastUnderlinePos = shortName.lastIndexOf('_'); // 查找最后一个下划线的位置
+                        if(lastUnderlinePos >= 0){
+                            shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
+                        }
+
+                        ui->comboBox_2->addItem(shortName);
+                        mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
+                    }
+                }else if(currentSelectedDeviceList.size() == 1){
+                    // 当前为单设备, 只显示单设备的配置
+                    // 过滤掉多设备的配置文件
+                    if(fileInfo.completeBaseName().contains("_[") && fileInfo.completeBaseName().contains(",]")){
+                        continue;
+                    }
+
+                    ui->comboBox_2->addItem(fileInfo.completeBaseName());
+                    mappingFileNameMap[fileInfo.completeBaseName()] = fileInfo.absoluteFilePath();
+                }else if(currentSelectedDeviceList.size() == 0){
+                    // 当前选择的设备为空, 显示所有配置
+                    // 下拉框显示的配置名
+                    QString shortName = fileInfo.completeBaseName();
+
+                    int lastUnderlinePos = shortName.lastIndexOf('_'); // 查找最后一个下划线的位置
+                    if(lastUnderlinePos >= 0){
+                        shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
+                    }
+
+                    ui->comboBox_2->addItem(shortName);
+                    mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
+                }
             }
         }
 
-        ui->comboBox_2->setCurrentIndex(-1);
+        //ui->comboBox_2->setCurrentIndex(-1);
     }
 }
 
-bool MainWindow::hasLastDevInCurrentDeviceList(std::string lastDeviceName){
-    for(auto item : diDeviceList){
-        if(item.name == lastDeviceName){
-            return true;
+bool MainWindow::hasLastDevInCurrentDeviceList(std::string lastDeviceNameListStr){
+    if(lastDeviceNameListStr.empty()){
+        return false;
+    }
+
+    // 按分隔符分割出设备列表
+    auto lastDeviceNameList = QString(lastDeviceNameListStr.data()).split(SPE);
+
+    int count = 0;
+    for(auto deviceName : lastDeviceNameList){
+        for(auto item : diDeviceList){
+            if(deviceName.toStdString() == item.name){
+                count++;
+            }
         }
     }
 
-    return false;
+    return count == lastDeviceNameList.size();
 }
 
 void MainWindow::repaintMappings(){
@@ -200,7 +250,7 @@ void MainWindow::repaintMappings(){
 void MainWindow::on_pushButton_2_clicked()
 {
     if(!getIsRunning()){
-        if(deviceName.empty()){
+        if(currentSelectedDeviceList.isEmpty()){
             showErrorMessage(nullptr);
             return;
         }
@@ -221,8 +271,17 @@ void MainWindow::on_pushButton_2_clicked()
             return;
         }
         // 连接设备
-        if(!openDiDevice(ui->comboBox->currentIndex())){
+        if(!openDiDevice(getCurrentSelectedDeviceList())){
             return;
+        }
+
+        // 当前为单设备映射, 需要给映射关系补上设备名称
+        if (currentSelectedDeviceList.size() == 1) {
+            for(auto mapping : mappingList){
+                if(mapping != nullptr){
+                    mapping->deviceName = currentSelectedDeviceList[0];
+                }
+            }
         }
 
         // 创建监听设备输入数据的任务
@@ -263,11 +322,6 @@ void MainWindow::on_pushButton_2_clicked()
         ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);}");
     }
     else{
-        if(deviceName.empty()){
-            showErrorMessage(nullptr);
-            return;
-        }
-
         // 如果处于暂停状态, 将其重置
         if(getIsPause()){
             clickPauseBtn();
@@ -279,12 +333,7 @@ void MainWindow::on_pushButton_2_clicked()
         ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);}");
         setIsRuning(false);
 
-        if(!getIsXboxMode()){
-            ui->pushButton_8->show();
-        }
-
-        // 显示信息框
-        //QMessageBox::information(this, "提醒", "已停止全局映射!");
+        //enableUiAfterStopMapping();
     }
 }
 
@@ -312,9 +361,12 @@ void MainWindow::showErrorMessage(std::string *text) {
 
 }
 
-bool MainWindow::hasAddToMappingList(std::string btn_name){
+bool MainWindow::hasAddToMappingList(MappingRelation* mapping){
     for(int i=0; i < (int)mappingList.size(); i++){
-        if(mappingList[i] && (mappingList[i]->dev_btn_name == btn_name)){
+        if(mappingList[i] != nullptr && mapping != nullptr
+            && mappingList[i]->dev_btn_name == mapping->dev_btn_name
+            && mappingList[i]->deviceName == mapping->deviceName){
+
             return true;
         }
     }
@@ -342,34 +394,34 @@ void MainWindow::onTriggerTypeComboBoxActivated(int index){
 
 void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     // isClickNewLineBtn()为true 代表是新增加的一行, 不是读取历史配置
-    MappingRelation *mappingDevBtnData = nullptr;
-    if(isClickNewLineBtn(mapping)){
+    bool isAddNewMapping = isClickNewLineBtn(mapping);
+    if(isAddNewMapping){
 
         // 获取设备按下的按键位置和值
-        mappingDevBtnData = getDevBtnData();
+        mapping = getDevBtnData();
 
-        if(mappingDevBtnData == nullptr){
+        if(mapping == nullptr){
             showErrorMessage(new std::string("未检测到按键被按下!"));
             return;
         }
 
-        if(mappingDevBtnData->dev_btn_name.empty()){
+        if(mapping->dev_btn_name.empty()){
             return;
         }
 
 
         // 检查该设备按键是否已经添加
-        if(hasAddToMappingList(mappingDevBtnData->dev_btn_name)){
-            showErrorMessage(new std::string("该设备按键已经配置了映射!"));
+        if(hasAddToMappingList(mapping)){
+            showErrorMessage(new std::string("设备[" + mapping->deviceName.toStdString() + "]的 \"" + mapping->dev_btn_name + "\" 已经配置了映射!"));
             return;
         }
 
         // 将设备按键数据添加进新的映射关系
-        mappingList.push_back(mappingDevBtnData);
+        mappingList.push_back(mapping);
     }
 
     // 记录当前行的index值
-    auto currentRowIndex = isClickNewLineBtn(mapping) ? std::to_string(mappingList.size() - 1) : std::to_string(index);
+    auto currentRowIndex = isAddNewMapping ? std::to_string(mappingList.size() - 1) : std::to_string(index);
 
     QGridLayout *layout = ui->gridLayout;
     layout->setAlignment(Qt::AlignTop);
@@ -400,10 +452,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         layout->addWidget(h5, 0, ++col, Qt::AlignLeft);
     }
 
-    QString label1Text = isClickNewLineBtn(mapping)
-                             ? mappingDevBtnData->dev_btn_name.data()
-                             // 历史配置展示
-                             : mapping->dev_btn_name.data();
+    QString label1Text = mapping->dev_btn_name.data();
 
     QLabel *label1 = new QLabel(label1Text.length() > 14 ? label1Text.left(14) + "..." : label1Text);
     label1->setMaximumHeight(30);
@@ -411,7 +460,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label1->setMaximumWidth(160);
     label1->setStyleSheet("QLabel{color:blue;padding-right:10px;}");
     label1->setObjectName(currentRowIndex);
-    label1->setToolTip(label1Text);
+    label1->setToolTip(mapping->deviceName.isEmpty() ? label1Text : mapping->deviceName + ": " +label1Text);
 
     QLabel *label2 = new QLabel("->");
     label2->setMaximumHeight(30);
@@ -421,13 +470,11 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label2->setObjectName(currentRowIndex);
 
     // 键盘按键下拉框
-    QComboBox *comboBox = createAKeyBoardComboBox(
-        isClickNewLineBtn(mapping) ? mappingDevBtnData->dev_btn_type : mapping->dev_btn_type
-        );
+    QComboBox *comboBox = createAKeyBoardComboBox(mapping->dev_btn_type);
     // 设置一个序号, 为后续操作提供一个位置
     comboBox->setObjectName(currentRowIndex);
     // 历史配置展示
-    if(!isClickNewLineBtn(mapping)){
+    if(!isAddNewMapping){
         comboBox->setCurrentText(mapping->keyboard_name.data());
     }
     // 连接信号和槽
@@ -454,14 +501,14 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     // 设置一个序号, 为后续操作提供一个位置
     triggerTypeComboBox->setObjectName(currentRowIndex);
     // 历史配置展示
-    if(!isClickNewLineBtn(mapping)){
+    if(!isAddNewMapping){
         triggerTypeComboBox->setCurrentText(TRIGGER_TYPE_ENUM_MAP[mapping->btnTriggerType].data());
     }
     // 连接信号和槽
     connect(triggerTypeComboBox, &QComboBox::activated, this, &MainWindow::onTriggerTypeComboBoxActivated);
 
 
-    QLineEdit *lineEdit = new QLineEdit(isClickNewLineBtn(mapping) ? "" : mapping->remark.data());
+    QLineEdit *lineEdit = new QLineEdit(isAddNewMapping ? "" : mapping->remark.data());
     lineEdit->setMaximumHeight(30);
     lineEdit->setMinimumHeight(30);
     lineEdit->setMinimumWidth(150);
@@ -490,9 +537,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     layout->addWidget(lineEdit, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(deleteBtn, row, ++columnIndex, Qt::AlignLeft);
 
-    if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)
-        || (mappingDevBtnData != nullptr && mappingDevBtnData->dev_btn_type == (std::string)WHEEL_AXIS)){
-
+    if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)){
         // 轴隐藏按键触发模式的下拉框
         triggerTypeComboBox->setDisabled(true);
 
@@ -503,7 +548,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         checkBox->setMaximumWidth(80);
         checkBox->setObjectName(currentRowIndex);
         // 保存的配置, 恢复
-        if(!isClickNewLineBtn(mapping) && mapping->rotateAxis == 1){
+        if(!isAddNewMapping && mapping->rotateAxis == 1){
             checkBox->setChecked(true);
         }
 
@@ -527,7 +572,7 @@ void MainWindow::onCheckBoxToggle(bool checked){
 void MainWindow::on_pushButton_clicked()
 {
     // 未选择设备
-    if(deviceName.empty()){
+    if(currentSelectedDeviceList.isEmpty()){
         showErrorMessage(nullptr);
         return;
     }
@@ -535,7 +580,7 @@ void MainWindow::on_pushButton_clicked()
     //qDebug(("deviceName: " + deviceName).data());
 
     if(getIsRunning()){
-        showErrorMessage(new std::string("请先停止全局模拟"));
+        showErrorMessage(new std::string("请先停止全局映射!"));
         return;
     }
 
@@ -544,7 +589,7 @@ void MainWindow::on_pushButton_clicked()
     ui->pushButton->setText("等待输入...");
 
     // 下面的函数会导致界面卡死, 需要重绘一下
-    this->repaint ();
+    this->repaint();
 
     paintOneLineMapping(nullptr, -1);
 
@@ -567,10 +612,19 @@ void MainWindow::saveLastDeviceToFile(bool isOnlySaveLastDevice){
         mappingMode = ui->radioButton->isChecked() ? KEYBOARD : XBOX;
     }
 
+    QString lastDeviceName = "";
+    for(auto deviceName : currentSelectedDeviceList){
+        lastDeviceName.append(deviceName).append(SPE);
+    }
+    // 去掉最后的分隔符
+    if(lastDeviceName.contains(SPE)){
+        lastDeviceName = lastDeviceName.left(lastDeviceName.length() - QString(SPE).length());
+    }
+
     // 创建一个 QFile 对象，并打开文件进行写入
     QFile file2(appDataDirPath + LAST_DEVICE_FILENAME);
     QString text2;
-    text2.append(ui->comboBox->currentText().toStdString() + "\n");
+    text2.append(lastDeviceName + "\n");
     text2.append(mappingMode);
 
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -601,8 +655,8 @@ void MainWindow::saveMappingsToFile(std::string filename){
             text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
             text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
-            text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType));// 最后一个, 后面不用加逗号
-            
+            text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType)).append(", ");
+            text.append("\"deviceName\":\"" + item->deviceName + "\"");// 最后一个, 后面不用加逗号
           
             text.append("},\n\t");
         }
@@ -626,11 +680,33 @@ void MainWindow::saveMappingsToFile(std::string filename){
         }
     }
 
-    // 创建一个 QFile 对象，并打开文件进行写入
+    // 最终保存的文件名
+    QString finalFileName = appDataDirPath;
     // 如果filename不为空, 则使用USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX后缀为文件名
-    QFile file(filename.size() > 0
-                   ? (appDataDirPath.toStdString() + USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
-                   : (appDataDirPath.toStdString() + MAPPINGS_FILENAME).data());
+    if(filename.size() > 0){
+        finalFileName.append(USER_MAPPINGS_DIR + filename);
+
+        // 当前为多设备
+        if(currentSelectedDeviceList.size() > 1){
+            finalFileName.append("_[");
+            for(auto deviceName : currentSelectedDeviceList){
+                finalFileName.append(deviceName).append(",");
+            }
+            finalFileName.append("]");
+        }
+
+        // 文件后缀
+        if(getIsXboxMode()){
+            finalFileName.append(MAPPING_FILE_SUFFIX_XBOX);
+        }else{
+            finalFileName.append(MAPPING_FILE_SUFFIX);
+        }
+    }else{
+        finalFileName.append(MAPPINGS_FILENAME);
+    }
+
+    // 创建一个 QFile 对象，并打开文件进行写入
+    QFile file(finalFileName);
 
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file);  // 创建一个文本流对象
@@ -747,17 +823,19 @@ void MainWindow::loadLastDeviceFile(){
                 qDebug("上一次使用的设备在当前设备列表中");
                 pushToQueue("上一次使用的设备在当前设备列表中, 自动选择该设备");
 
-                deviceName = line0.toStdString();
-                ui->comboBox->setCurrentText(deviceName.data());
-                // 记录当前选择的设备的下标
-                currentSelectedDeviceIndex = ui->comboBox->currentIndex();
+                auto deviceList = line0.split(SPE);
+                // 将上一次使用的设备添加到当前选择的设备列表
+                currentSelectedDeviceList.append(deviceList);
 
-                if(!in.atEnd()) {
-                    if(in.readLine().toStdString() == XBOX){
-                        ui->radioButton_2->setChecked(true);
-                        //ui->label_7->setText("Xbox按键");
-                        setIsXboxMode(true);
-                    }
+                // 更新已选择设备label
+                updateSelectedDeviceLabel();
+            }
+
+            if(!in.atEnd()) {
+                if(in.readLine().toStdString() == XBOX){
+                    ui->radioButton_2->setChecked(true);
+                    //ui->label_7->setText("Xbox按键");
+                    setIsXboxMode(true);
                 }
             }
 
@@ -773,15 +851,25 @@ void MainWindow::loadLastDeviceFile(){
 
 void MainWindow::loadMappingsFile(std::string filename){
     // 未选择设备, 但是要求加载上一次使用的配置
-    if(deviceName.empty() && filename.size() <= 0 ){
+    if(currentSelectedDeviceList.isEmpty() && filename.size() <= 0 ){
         qDebug() << "未选择设备, 无法加载历史映射文件!";
         return;
     }
 
+    QString finalFilePath;
+    if(!filename.empty()){
+        if(mappingFileNameMap.contains(filename.data())){
+            finalFilePath = mappingFileNameMap[filename.data()];
+        }else{
+            QMessageBox::critical(this, "错误", ("加载配置文件[" + filename + "]失败:\n\n获取该文件绝对路径失败!").data());
+            return;
+        }
+    }else{
+        finalFilePath = appDataDirPath + MAPPINGS_FILENAME;
+    }
+
     // 要读取的文件路径
-    QString filePath = filename.size() > 0
-                           ? (appDataDirPath.toStdString() + USER_MAPPINGS_DIR + filename + (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX : MAPPING_FILE_SUFFIX)).data()
-                           : (appDataDirPath.toStdString() + MAPPINGS_FILENAME).data();
+    QString filePath = finalFilePath;
     QFile file(filePath);
 
     // 文件不存在, 操作结束
@@ -832,6 +920,8 @@ void MainWindow::loadMappingsFile(std::string filename){
                     (jsonObj.contains("btnTriggerType") && jsonObj["btnTriggerType"].toInt() > 0 && jsonObj["btnTriggerType"].toInt() < TriggerTypeEnum::End)
                                               ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
                                               : TriggerTypeEnum::Normal;
+                mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
+
                 mappingList.push_back(mapping);
             }
         }
@@ -897,6 +987,10 @@ void MainWindow::onDeleteBtnClicked(){
     // 获取到该映射的位置
     int rowIndex = deleteBtn->objectName().toInt();
 
+    if(rowIndex < 0){
+        return;
+    }
+
     // 释放该位置的指针
     delete mappingList[rowIndex];
     // 替换为空指针
@@ -921,11 +1015,12 @@ MappingRelation* MainWindow::getDevBtnData(){
         return nullptr;
     }
     // 连接设备
-    if(!openDiDevice(ui->comboBox->currentIndex())){
+    if(!openDiDevice(getCurrentSelectedDeviceList())){
         return nullptr;
     }
 
     std::map<std::string, int> tempRecord;
+    bool isFirstData = true;
 
     bool enableLogs = getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog();
 
@@ -933,14 +1028,24 @@ MappingRelation* MainWindow::getDevBtnData(){
     for(int i=0; i<60; i++){
         // 获取设备状态数据
         auto res = getInputState(enableLogs);
+
+        // 跳过第一次数据获取(第一次res有可能为空, 会影响后面记录第一次数据)
+        if(i == 0){
+            // 释放res内存
+            qDeleteAll(res);  // 删除所有指针指向的对象
+            res.clear();      // 清空列表
+            Sleep(50);
+            continue;
+        }
+
         if(res.size() > 0){
             for(auto item : res){
                 // 方向盘的轴
                 if(item->dev_btn_type == (std::string)WHEEL_AXIS){
-                    auto tmpAxis = tempRecord.find(item->dev_btn_name);
-                    // 第一次读到该轴的值
+                    auto tmpAxis = tempRecord.find(item->deviceName.toStdString() + "-" + item->dev_btn_name);
+                    // 记录第一次数据
                     if(tmpAxis == tempRecord.end()){
-                        tempRecord.insert_or_assign(item->dev_btn_name, item->dev_btn_value);
+                        tempRecord.insert_or_assign(item->deviceName.toStdString() + "-" + item->dev_btn_name, item->dev_btn_value);
                     }else{
                         // 不是第一次读到该轴的值, 与第一次的值比较, 大于一定量才能确定是该轴要新建映射
                         if(std::abs(item->dev_btn_value - tmpAxis->second) > AXIS_CHANGE_VALUE){
@@ -949,24 +1054,24 @@ MappingRelation* MainWindow::getDevBtnData(){
                                 return item;
                             }else{
                                 // 映射键盘模式
-                                // 确定是方向盘盘面转动轴还是踏板轴
+                                // 确定是方向盘转向轴还是踏板轴
                                 // 创建一个 QMessageBox
                                 QMessageBox msgBox;
                                 msgBox.setWindowTitle("请确认");
-                                msgBox.setText("检测到轴, 请确认是方向盘盘面转动, 还是踏板踩下");
+                                msgBox.setText("检测到设备[" + item->deviceName + "]的轴\n\n请确认是转向轴, 还是踏板轴");
                                 // 设置图标
                                 msgBox.setIcon(QMessageBox::Information);
                                 // 创建并添加自定义按钮
-                                QPushButton* panti = msgBox.addButton("是盘面轴", QMessageBox::ActionRole);
+                                QPushButton* panti = msgBox.addButton("是转向轴", QMessageBox::ActionRole);
                                 QPushButton* taban = msgBox.addButton("是踏板轴", QMessageBox::ActionRole);
                                 QPushButton* cancel = msgBox.addButton("取消", QMessageBox::RejectRole);
                                 // 设置默认按钮
                                 msgBox.setDefaultButton(cancel);
                                 // 显示消息框
                                 msgBox.exec();
-                                // 判断用户点击'是盘面轴'按钮
+                                // 判断用户点击'是转向轴'按钮
                                 if (msgBox.clickedButton() == panti){
-                                    // 值增大, 说明是盘面轴右转
+                                    // 值增大, 说明是转向轴右转
                                     if(item->dev_btn_value > tmpAxis->second){
                                         item->dev_btn_name += "右转";
                                         return item;
@@ -986,10 +1091,20 @@ MappingRelation* MainWindow::getDevBtnData(){
                         }
                     }
                 }else{
-                    // 方向盘按键, 直接返回
-                    return item;
+                    // 方向盘按键
+                    // 记录第一次数据
+                    if(isFirstData){
+                        tempRecord.insert_or_assign(item->deviceName.toStdString() + "-" + item->dev_btn_name, item->dev_btn_value);
+                    }else{
+                        // 当前按键是新按下的
+                        if(tempRecord.find(item->deviceName.toStdString() + "-" + item->dev_btn_name) == tempRecord.end()){
+                            return item;
+                        }
+                    }
                 }
             }
+
+            isFirstData = false;
         }
 
         // 释放res内存
@@ -1086,25 +1201,37 @@ void MainWindow::onKeyBoardComboBoxActivated(int index){
 
 void MainWindow::on_comboBox_activated(int index)
 {
+    if(getIsRunning()){
+        ui->comboBox->setCurrentIndex(-1);
+        QMessageBox::critical(this, "错误", "请先停止全局映射!");
+        return;
+    }
+
     //qDebug("index:%d", index);
     if(index >= 0){
-        // 如果选择的是新的设备, 需要清空列表
-        if(ui->comboBox->currentText().toStdString() != deviceName){
-            deviceName = ui->comboBox->currentText().toStdString();
+        // 添加选择的设备进列表
+        if(!currentSelectedDeviceList.contains(ui->comboBox->currentText())){
+            currentSelectedDeviceList.append(ui->comboBox->currentText());
 
-            // 清空数组
-            mappingList.clear();
-            // 清空界面
-            clearMappingsArea();
+            // 更新label
+            updateSelectedDeviceLabel();
 
+            // 重置配置文件下拉
+            ui->comboBox_2->clear();
+            ui->comboBox_2->addItem("空白配置");
             // 重置配置选择下拉为空白配置
             ui->comboBox_2->setCurrentIndex(0);
             // 重置当前配置文件名
             currentMappingFileName = "";
+            // 重新扫描配置文件
+            scanMappingFile();
+
+            // 清空映射列表
+            clearMappingsArea();
+            mappingList.clear();
         }
 
-        // 记录当前选择的设备的下标
-        currentSelectedDeviceIndex = index;
+        ui->comboBox->setCurrentIndex(-1);
     }
 }
 
@@ -1175,6 +1302,17 @@ void MainWindow::on_comboBox_2_activated(int index)
     // if(getIsRunning()){
     //     setIsRuning(false);
     // }
+
+    if(getIsRunning()){
+        if(currentMappingFileName.empty()){
+            ui->comboBox_2->setCurrentIndex(-1);
+        }else{
+            ui->comboBox_2->setCurrentText(currentMappingFileName.data());
+        }
+
+        QMessageBox::critical(this, "错误", "请先停止全局映射!");
+        return;
+    }
 
     // 选择了空白配置
     if(index == 0){
@@ -1281,6 +1419,14 @@ void MainWindow::on_radioButton_clicked()
         return;
     }
 
+    if(getIsRunning()){
+        if(getIsXboxMode()){
+            ui->radioButton_2->setChecked(true);
+        }
+        QMessageBox::critical(this, "错误", "请先停止全局映射!");
+        return;
+    }
+
     //ui->label_7->setText("键盘按键");
 
     // 设置为键盘模式
@@ -1306,6 +1452,14 @@ void MainWindow::on_radioButton_clicked()
 void MainWindow::on_radioButton_2_clicked()
 {
     if(getIsXboxMode()){
+        return;
+    }
+
+    if(getIsRunning()){
+        if(!getIsXboxMode()){
+            ui->radioButton->setChecked(true);
+        }
+        QMessageBox::critical(this, "错误", "请先停止全局映射!");
         return;
     }
 
@@ -1344,16 +1498,18 @@ void MainWindow::on_pushButton_6_clicked()
 
     // 设备不为空
     if(!diDeviceList.empty()){
-        ui->comboBox->setPlaceholderText("");
+        ui->comboBox->setPlaceholderText("请选择设备");
         for(auto item : diDeviceList){
             ui->comboBox->addItem(item.name.data());
         }
 
-        if(hasLastDevInCurrentDeviceList(deviceName)){
-            ui->comboBox->setCurrentText(deviceName.data());
-        }else{
-            ui->comboBox->setCurrentIndex(-1);
-        }
+        // if(hasLastDevInCurrentDeviceList(deviceName)){
+        //     ui->comboBox->setCurrentText(deviceName.data());
+        // }else{
+        //     ui->comboBox->setCurrentIndex(-1);
+        // }
+    }else{
+        ui->comboBox->setPlaceholderText("未扫描到设备");
     }
 }
 
@@ -1373,18 +1529,19 @@ void MainWindow::simulateMsgboxSlot(bool isError, QString text){
     if(isError){
         QMessageBox::critical(this, "错误", text);
     }else{
+        // 主窗口最小化, 不显示提醒消息框
+        if (this->isMinimized()) {
+            return;
+        }
         QMessageBox::information(this, "提醒", text);
     }
-
 }
 
 void MainWindow::simulateStartedSlot(){
     ui->label_4->setText("已启动");
     ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
-    if(!getIsXboxMode()){
-        ui->pushButton_8->hide();
-    }
 
+    //disableUiAfterStartMapping();
 }
 
 
@@ -1450,8 +1607,8 @@ void MainWindow::on_pushButton_10_clicked()
 }
 
 // 获取当前选择的设备的下标
-int MainWindow::getCurrentSelectedDeviceIndex(){
-    return currentSelectedDeviceIndex;
+QList<QString> MainWindow::getCurrentSelectedDeviceList(){
+    return currentSelectedDeviceList;
 }
 
 void MainWindow::saveLastDeviceToFileSlot(){
@@ -1636,3 +1793,90 @@ void MainWindow::checkUpdate(QString apiHost){
 }
 
 
+
+void MainWindow::on_pushButton_11_clicked()
+{
+    if(getIsRunning()){
+        QMessageBox::critical(this, "错误", "请先停止全局映射!");
+        return;
+    }
+
+    // 清空当前选择的设备
+    currentSelectedDeviceList.clear();
+    // 清空已初始化的设备
+    clearInitedDeviceList();
+    // 更新label
+    updateSelectedDeviceLabel();
+
+    // 重置配置文件下拉
+    ui->comboBox_2->clear();
+    ui->comboBox_2->addItem("空白配置");
+    // 重置配置选择下拉为空白配置
+    ui->comboBox_2->setCurrentIndex(0);
+    // 重置当前配置文件名
+    currentMappingFileName = "";
+    // 重新扫描配置文件
+    scanMappingFile();
+
+    // 清空一切
+    mappingList.clear();
+    clearMappingsArea();
+}
+
+// 启动全局映射后, 将部分控件设置为不可点击
+void MainWindow::disableUiAfterStartMapping(){
+    ui->comboBox->setEnabled(false);
+    ui->pushButton_11->setEnabled(false);
+    ui->radioButton->setEnabled(false);
+    ui->radioButton_2->setEnabled(false);
+    ui->comboBox_2->setEnabled(false);
+    ui->pushButton->setEnabled(false);
+}
+// 停止全局映射后, 将部分控件恢复正常状态
+void MainWindow::enableUiAfterStopMapping(){
+    ui->comboBox->setEnabled(true);
+    ui->pushButton_11->setEnabled(true);
+    ui->radioButton->setEnabled(true);
+    ui->radioButton_2->setEnabled(true);
+    ui->comboBox_2->setEnabled(true);
+    ui->pushButton->setEnabled(true);
+}
+
+// 更新已选择设备的label
+void MainWindow::updateSelectedDeviceLabel(){
+    QString labelText = "";
+
+    if(currentSelectedDeviceList.size() == 0){
+        ui->label_2->setText("已选择设备(<b style='color:red;'>0</b>):");
+        ui->label_5->setText("暂无");
+        ui->label_5->setStyleSheet("QLabel{color:black;}");
+        ui->label_5->setToolTip("");
+    }else{
+        for(auto str : currentSelectedDeviceList){
+            labelText.append(str).append(", ");
+        }
+        int index = labelText.lastIndexOf(", ");
+        if(index >= 0){
+            labelText = labelText.left(index);
+        }
+
+        ui->label_2->setText(QString("已选择设备(<b style='color:green;'>") + std::to_string(currentSelectedDeviceList.size()).data() + "</b>):");
+
+        // 获取 QFontMetrics 对象
+        QFontMetrics metrics(ui->label_5->font());
+        int labelHeight = ui->label_5->height(); // 标签高度（像素）
+        int lineHeight = metrics.height(); // 单行高度
+        int maxLines = labelHeight/lineHeight; // 计算最大行数
+        // 设置省略模式
+        ui->label_5->setText(metrics.elidedText(labelText, Qt::ElideLeft,
+                                          ui->label_5->width() * maxLines));
+
+        ui->label_5->setStyleSheet("QLabel{color:green;}");
+        ui->label_5->setToolTip(labelText.replace(", ", "<br>"));
+    }
+}
+
+// 获取省略模式的文本(文本超出组件显示范围将显示省略号...)
+QString MainWindow::getElidedText(QWidget* widget, QString srcText){
+    return "";
+}

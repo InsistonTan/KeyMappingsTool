@@ -17,8 +17,14 @@ private:
     ForceFeedbackSettingsWindow* forceFeedbackSettings;
 
     QString throttleAxis = ""; // 油门所在的轴
+    QString throttleAxisDeviceName = ""; // 油门轴的设备名称
+
     QString brakeAxis = ""; // 刹车所在的轴
+    QString brakeAxisDeviceName = ""; // 刹车轴的设备名称
+
     QString steeringWheelAxis = "";// 方向盘盘面所在的轴
+    QString steeringWheelAxisDeviceName = "";// 方向盘盘面所在的轴的设备名称
+
     bool isThrottleReverse = false;// 是否反转油门
     bool isBrakeReverse = false;// 是否反转刹车
     double acceleration_100km_time_s = default_acceleration_100km_time_s;// 百公里加速所需时间(秒)
@@ -36,7 +42,7 @@ private:
 
     LPDIRECTINPUT8 g_pDirectInput2 = NULL;
     LPDIRECTINPUTDEVICE8 g_pDevice2 = NULL;// 输入设备
-    int lastDeviceIndex2 = -99;
+    QString lastSteerDeviceName = "";// 上一个转向设备
 
     LPDIRECTINPUTEFFECT g_pSpringForce = NULL; // 弹簧效果
     LPDIRECTINPUTEFFECT g_pDamper = NULL;       // 阻尼效果
@@ -53,7 +59,7 @@ private:
     // 初始化 DirectInput
     bool initDirectInput2();
     // 打开选择的设备
-    bool openDiDevice2(int deviceIndex, HWND hWnd);
+    bool openDiDevice2(QString deviceName, HWND hWnd);
     // 创建力回馈效果
     bool createDynamicEffects(QString steerWheelAxis);
     // 根据车速更新力回馈
