@@ -5,5 +5,6 @@
     <qresource prefix="/">
         <file>ETS2_KeyBinder/2_SelectInputDevice.jpg</file>
         <file>ETS2_KeyBinder/1_DisableSteamInput.jpg</file>
+        <file>ETS2_KeyBinder/ConnectTip_WuLing.jpg</file>
     </qresource>
 </RCC>
