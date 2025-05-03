@@ -161,7 +161,7 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
     QTextStream inGlobal(&file);
     map<QString, QString> deviceNameList;
 
-    QRegularExpression regex1(R"(`di8\.'{(.*?)}\|{(.*?)}'`.*?\|(.+?)\s*")");
+    QRegularExpression regex1(R"(`di8\.'{(.*?)}\|{(.*?)}'`.*?\|(.+)\s*")");
     while (!inGlobal.atEnd()) {
         QString line = inGlobal.readLine();
         if (line.contains("di8") && line.count("|") == 2) {
@@ -169,7 +169,7 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
             QRegularExpressionMatch match = regex1.match(line);
             if (match.hasMatch()) {
                 QString guid = "{" + match.captured(1) + "}|{" + match.captured(2) + "}";
-                QString name = match.captured(3).trimmed();
+                QString name = match.captured(3);
                 deviceNameList.insert_or_assign(guid, name);
             }
         }
@@ -194,7 +194,7 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
                 if (match.hasMatch()) {
                     QString guid = "{" + match.captured(1) + "}|{" + match.captured(2) + "}";
                     QString name = deviceNameList[guid];
-                    profileList[i] = name;
+                    profileList[i] = name + "(" + match.captured(2).left(8) + ")";
                 }
             }
         }
