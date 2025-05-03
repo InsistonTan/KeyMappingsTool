@@ -3,6 +3,7 @@
 #include "AssistFuncWorker.h"
 #include "simulate_task.h"
 #include "mainwindow.h"
+#include "ets2keybinderwizard.h"
 #include "ForceFeedbackWorker.h"
 #include<QThread>
 #include"global.h"
@@ -649,3 +650,11 @@ void AssistFuncWindow::setRunUponStartup(bool isSetStartup){
         pushToQueue(parseSuccessLog("已取消开机自启动"));
     }
 }
+
+void AssistFuncWindow::on_pushButton_4_clicked(){
+    ETS2KeyBinderWizard *ets2KeyBinderWizard = new ETS2KeyBinderWizard(this);
+    ets2KeyBinderWizard->setAttribute(Qt::WA_DeleteOnClose, true); // 设置关闭时删除对象
+    ets2KeyBinderWizard->setWindowModality(Qt::ApplicationModal);  // 设置模态
+    ets2KeyBinderWizard->show();
+}
+
