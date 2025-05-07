@@ -49,12 +49,12 @@ MainWindow::MainWindow(QMainWindow *parent)
     this->setFixedSize(972, 643);
     this->setWindowTitle(QString("KeyMappingsTool v").append(CURRENT_VERSION));
 
+    // 初始化
+    init();
+
     // 发送使用记录和检查更新
     sendUsageCount();
     checkUpdate();
-
-    // 初始化
-    init();
 }
 
 
