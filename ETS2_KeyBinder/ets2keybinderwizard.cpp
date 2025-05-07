@@ -912,11 +912,7 @@ void ETS2KeyBinderWizard::on_pushButton_16_clicked() {
     // 当manuallyBinder没关闭时，不允许操作其他窗口
     manuallyBinder->setWindowModality(Qt::ApplicationModal); // 设置窗口模式为应用程序模态
 
-    if (pDirectInput != nullptr && isDeviceReady) {
-        manuallyBinder->setKeyCount(capabilities.dwButtons); // 设置按键数量
-    } else {
-        manuallyBinder->setKeyCount(128); // 设置按键数量
-    }
+    manuallyBinder->setKeyCount(128); // 设置按键数量
 
     // 连接信号槽
     connect(manuallyBinder, &ManuallyBinder::keyBound, this, &ETS2KeyBinderWizard::modifyControlsSii_Slot, Qt::DirectConnection);
