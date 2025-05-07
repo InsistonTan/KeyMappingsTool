@@ -1753,7 +1753,7 @@ void MainWindow::checkUpdate(QString apiHost){
                     if(obj.contains("latest_version") && obj["latest_version"].toString() > CURRENT_VERSION){
                         qDebug() << "检查到有新版本";
                         QString text = "新版本: " + obj["latest_version"].toString()
-                                        + "\n更新内容:\n" + (obj.contains("desc") && !obj["desc"].toString().isEmpty() ? obj["desc"].toString() : "暂无更新日志")
+                                        + "\n\n更新内容:\n" + (obj.contains("desc") && !obj["desc"].toString().isEmpty() ? obj["desc"].toString() : "暂无更新日志")
                                         + "";
                         // 创建一个 QMessageBox
                         QMessageBox msgBox;
