@@ -55,6 +55,8 @@ private slots:
 
     void on_checkBox_5_clicked();
 
+    void on_pushButton_4_clicked();
+
 private:
     Ui::AssistFuncWindow *ui;
 

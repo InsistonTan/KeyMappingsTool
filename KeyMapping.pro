@@ -12,10 +12,13 @@ SOURCES += \
     AssistFuncWindow.cpp \
     AssistFuncWorker.cpp \
     BtnTriggerTypeEnum.cpp \
+    ETS2_KeyBinder/manuallybinder.cpp \
+    ETS2_KeyBinder/showkeystate.cpp \
     ForceFeedbackSettingsWindow.cpp \
     ForceFeedbackWorker.cpp \
     XboxDeadAreaSettings.cpp \
     deadareasettings.cpp \
+    ETS2_KeyBinder/ets2keybinderwizard.cpp \
     global.cpp \
     logwindow.cpp \
     main.cpp \
@@ -26,11 +29,14 @@ HEADERS += \
     AssistFuncWindow.h \
     AssistFuncWorker.h \
     BtnTriggerTypeEnum.h \
+    ETS2_KeyBinder/manuallybinder.h \
+    ETS2_KeyBinder/showkeystate.h \
     ForceFeedbackSettingsWindow.h \
     ForceFeedbackWorker.h \
     XboxDeadAreaSettings.h \
     deadareasettings.h \
     device_info.h \
+    ETS2_KeyBinder/ets2keybinderwizard.h \
     global.h \
     key_map.h \
     logwindow.h \
@@ -43,9 +49,12 @@ HEADERS += \
 
 FORMS += \
     AssistFuncWindow.ui \
+    ETS2_KeyBinder/manuallybinder.ui \
+    ETS2_KeyBinder/showkeystate.ui \
     ForceFeedbackSettingsWindow.ui \
     XboxDeadAreaSettings.ui \
     deadareasettings.ui \
+    ETS2_KeyBinder/ets2keybinderwizard.ui \
     logwindow.ui \
     mainwindow.ui
 
@@ -59,7 +68,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 #win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../release/ -lhidapi
 #else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../debug/ -lhidapi
 
-INCLUDEPATH += $$PWD/SCS_Telemetry
+INCLUDEPATH += \
+    SCS_Telemetry\
+    ETS2_KeyBinder
+
 # DEPENDPATH += $$PWD/.
 
 #LIBS += -L$$PWD/ -lhidapi

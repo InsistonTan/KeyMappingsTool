@@ -28,6 +28,7 @@ class BigKey {
     // 基本运算符重载
     const friend BigKey operator&(const BigKey&, const BigKey&);  // 按位与重载
     const friend BigKey operator|(const BigKey&, const BigKey&);  // 按位或重载
+    const friend BigKey operator^(const BigKey&, const BigKey&);  // 按位异或重载
     const friend BigKey operator~(BigKey&);                       // 取反重载
 
     friend BigKey operator&=(BigKey&, const BigKey&);  // 按位与重载
@@ -62,6 +63,7 @@ public:
     // 转换为字符串
     string toString() const;              // decimalNum 用于控制小数位数，赋值为0时小数部分全部输出
     void setBit(size_t pos, bool value);  // 设置按键值
+    bool getBit(size_t pos) const;        // 获取按键值
     void clear();                         // 清空按键值
 
     static const BigKey& ZERO() {
@@ -156,6 +158,15 @@ inline const BigKey operator|(const BigKey& num1,
     return temp;
 }
 
+inline const BigKey operator^(const BigKey& num1, 
+                              const BigKey& num2) { // 按位异或重载
+    BigKey temp;
+    for (int i = 0; i < BIGKEY_NUMBER; i++) {
+        temp.key[i] = num1.key[i] ^ num2.key[i];  // 按位异或
+    }
+    return temp;
+}
+
 inline const BigKey operator~(BigKey& num1) {
     // 取反重载
     BigKey temp(num1);
@@ -175,6 +186,14 @@ inline void BigKey::setBit(size_t pos, bool value) {
     } else {
         key[pos / (sizeof(BIGKEY_TYPE_INTERNAL) * 8)] &= ~((BIGKEY_TYPE_INTERNAL)1 << (pos % (sizeof(BIGKEY_TYPE_INTERNAL) * 8)));  // 设置为0
     }
+}
+
+inline bool BigKey::getBit(size_t pos) const {
+    if (pos > MAX_BUTTONS) {
+        throw std::out_of_range("Position out of range");
+    }
+    // 获取按键值
+    return (key[pos / (sizeof(BIGKEY_TYPE_INTERNAL) * 8)] >> (pos % (sizeof(BIGKEY_TYPE_INTERNAL) * 8))) & 1;  // 获取按键值
 }
 
 inline void BigKey::clear() {
