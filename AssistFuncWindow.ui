@@ -234,7 +234,7 @@
        </rect>
       </property>
       <property name="toolTip">
-       <string>支持绑定: 转向灯拨杆/雨刮器拨杆/档位开关</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;支持绑定: 转向灯拨杆/雨刮器拨杆/档位开关&lt;/span&gt;&lt;/p&gt;&lt;p&gt;该功能集成自@m-RNA的github项目ETS2-KeyBinder&lt;/p&gt;&lt;p&gt;如需详细讲解视频请在哔哩哔哩搜索用户 m-RNA&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="text">
        <string>欧卡2/美卡 原生按键绑定</string>
