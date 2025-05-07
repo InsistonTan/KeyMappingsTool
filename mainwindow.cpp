@@ -52,8 +52,15 @@ MainWindow::MainWindow(QMainWindow *parent)
     // 初始化
     init();
 
-    // 发送使用记录和检查更新
-    sendUsageCount();
+    // 当前exe程序所在路径
+    QString exePath = QCoreApplication::applicationDirPath();
+    // 发送使用记录, 开发环境不发送
+    if(exePath.contains("build") && (exePath.contains("release") || exePath.contains("debug"))){
+        qDebug() << "当前为开发环境, 不发送使用统计";
+    }else{
+        sendUsageCount();
+    }
+    // 检查更新
     checkUpdate();
 }
 
