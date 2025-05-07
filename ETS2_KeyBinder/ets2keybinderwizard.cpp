@@ -24,11 +24,11 @@ using namespace std;
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
+    this->setWindowTitle("欧卡2/美卡-原生按键绑定向导 v1.0-beta.6");
 #if defined(INDEPENDENT_MODE)
-    this->setWindowTitle("欧卡2/美卡-特殊按键绑定向导（实验性）" + QString(__DATE__) + " " + QString(__TIME__));
-#else
-    this->setWindowTitle("欧卡2/美卡-特殊按键绑定向导（实验性）v1.0-beta.5");
+    this->setWindowTitle(this->windowTitle() + " " + QString(__DATE__) + " " + QString(__TIME__));
 #endif
+
     diDeviceList.clear();
     ui->comboBox->clear();
 
@@ -608,6 +608,17 @@ std::vector<BigKey> ETS2KeyBinderWizard::getMultiKeyState(const QString& title, 
     return keyStates;
 }
 
+bool hasSameKeyState(std::vector<BigKey> keyStates) {
+    for (size_t i = 0; i < keyStates.size(); i++) {
+        for (size_t j = i + 1; j < keyStates.size(); j++) {
+            if (keyStates[i] == keyStates[j]) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // 1、示廓灯&近光灯
 void ETS2KeyBinderWizard::on_pushButton_clicked() {
     QString messageTitle = "示廓灯&近光灯";
@@ -619,6 +630,12 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
     std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
     if (keyStates.empty()) {
         return; // 取消操作
+    }
+
+    // 检查每个按键直接是否有一样的
+    if (hasSameKeyState(keyStates)) {
+        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
+        return;
     }
 
     std::map<BindingType, ActionEffect> actionEffectMap = {
@@ -730,6 +747,12 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
         return; // 取消操作
     }
 
+    // 检查每个按键直接是否有一样的
+    if (hasSameKeyState(keyStates)) {
+        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
+        return;
+    }
+
     map<BindingType, ActionEffect> actionEffectMap = {
         {BindingType::lblinkerh, ActionEffect()},
         {BindingType::rblinkerh, ActionEffect()},
@@ -742,10 +765,7 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
             actionEffectMap[BindingType::rblinkerh].insert_or_assign(i, keyStates[2].getBit(i));
         }
     }
-    if (actionEffectMap[BindingType::lblinkerh].size() < 1 || actionEffectMap[BindingType::rblinkerh].size() < 1) {
-        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
-        return;
-    }
+
     multiKeyBind(actionEffectMap); // 多按键绑定
 }
 
@@ -761,6 +781,12 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
     std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
     if (keyStates.empty()) {
         return; // 取消操作
+    }
+
+    // 检查每个按键直接是否有一样的
+    if (hasSameKeyState(keyStates)) {
+        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
+        return;
     }
 
     std::map<BindingType, ActionEffect> actionEffectMap = {
@@ -784,11 +810,7 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
             actionEffectMap[BindingType::wipers3].insert_or_assign(i, keyStates[3].getBit(i));
         }
     }
-    if (actionEffectMap[BindingType::wipers0].size() < 1 || actionEffectMap[BindingType::wipers1].size() < 1
-        || actionEffectMap[BindingType::wipers2].size() < 1) {
-        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
-        return;
-    }
+
     multiKeyBind(actionEffectMap); // 多按键绑定
 }
 
