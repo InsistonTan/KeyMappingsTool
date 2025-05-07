@@ -137,6 +137,7 @@ private:
     LPDIRECTINPUTDEVICE8 pDevice = NULL;
     int lastDeviceIndex = -99;
     DIDEVCAPS capabilities;
+    bool isDeviceReady = false; // 设备是否准备好
 
     ShowKeyState* showKeyState = nullptr; // 显示按键状态窗口
     QTimer* timer = nullptr;              // 定时器
@@ -147,6 +148,7 @@ private:
     bool openDiDevice(int deviceIndex, HWND hWnd);
     void scanDevice();
     bool initDirectInput();
+    bool checkHardwareDeviceAndMsgBox();
 
     void updateUserProfile();
     bool backupProfile();

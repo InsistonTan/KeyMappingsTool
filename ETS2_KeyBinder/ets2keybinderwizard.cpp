@@ -511,8 +511,9 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
 }
 
 bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox() {
-    if (deviceName.empty()) {
-        QMessageBox box(QMessageBox::Critical, "错误", "请将您的设备连接到电脑！\n" + MEG_BOX_LINE + "\n或者进行手动绑定？");
+    if (deviceName.empty() || isDeviceReady == false) {
+        QMessageBox box(QMessageBox::Critical, "错误",
+                        "请返回第3步，将设备连接到电脑，\n在“硬件控制设备”下拉框选择设备\n" + MEG_BOX_LINE + "\n或者进行手动绑定？");
         box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
         box.setDefaultButton(QMessageBox::Ok);
         box.exec();
@@ -850,6 +851,7 @@ void ETS2KeyBinderWizard::on_pushButton_19_clicked() {
 }
 
 BigKey ETS2KeyBinderWizard::getKeyState() {
+    isDeviceReady = false;
     if (pDevice == nullptr) {
         return BigKey(); // 设备未打开
     }
@@ -874,6 +876,7 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
         // 获取按键状态
         for (size_t i = 0; i < capabilities.dwButtons; i++) {
             keyState.setBit(i, (js.rgbButtons[i] & 0x80));
+            isDeviceReady = true;
         }
     } else {
         qDebug() << "获取设备状态信息失败!";
