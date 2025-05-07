@@ -193,10 +193,11 @@ void AssistFuncWindow::loadSettings(){
     bool enableOnlyLongestMapping = (jsonObj.contains("SYSTEM_enableOnlyLongestMapping")) ? jsonObj["SYSTEM_enableOnlyLongestMapping"].toBool() : false;
     bool enableRunUponStartup = (jsonObj.contains("SYSTEM_enableRunUponStartup")) ? jsonObj["SYSTEM_enableRunUponStartup"].toBool() : false;
 
-    this->SYSTEM_enableRunUponStartup = enableRunUponStartup;
-    this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;
-    this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;
-    this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;
+    this->SYSTEM_enableRunUponStartup = enableRunUponStartup;// 开机自启动
+    this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;// 欧卡2自动解除手刹
+    this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;// 打开软件自动开启映射
+    this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;// 最长组合键优先
+    // 力反馈模拟
     this->SYSTEM_enableForceFeedback = (jsonObj.contains("SYSTEM_enableForceFeedback")) ? jsonObj["SYSTEM_enableForceFeedback"].toBool() : false;
 
     // 欧卡2安装路径
