@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>513</width>
+    <width>509</width>
     <height>422</height>
    </rect>
   </property>
@@ -62,8 +62,11 @@
         <height>23</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>踩油门将自动解除手刹, 要求手刹的键盘按键为空格键</string>
+      </property>
       <property name="text">
-       <string>自动解除手刹 (踩油门将自动解除手刹, 要求手刹的键盘按键为空格键)</string>
+       <string>自动解除手刹</string>
       </property>
      </widget>
      <widget class="Line" name="line">
@@ -112,7 +115,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>180</y>
+        <y>190</y>
         <width>471</width>
         <height>21</height>
        </rect>
@@ -125,7 +128,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>110</y>
+        <y>120</y>
         <width>141</width>
         <height>19</height>
        </rect>
@@ -143,7 +146,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>130</y>
+        <y>140</y>
         <width>471</width>
         <height>16</height>
        </rect>
@@ -159,7 +162,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>210</y>
+        <y>220</y>
         <width>471</width>
         <height>19</height>
        </rect>
@@ -175,7 +178,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>240</y>
+        <y>250</y>
         <width>341</width>
         <height>19</height>
        </rect>
@@ -191,7 +194,7 @@
       <property name="geometry">
        <rect>
         <x>360</x>
-        <y>230</y>
+        <y>240</y>
         <width>121</width>
         <height>31</height>
        </rect>
@@ -209,7 +212,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>150</y>
+        <y>160</y>
         <width>341</width>
         <height>19</height>
        </rect>
@@ -224,14 +227,17 @@
      <widget class="QLabel" name="label_4">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>30</x>
         <y>80</y>
-        <width>361</width>
+        <width>171</width>
         <height>16</height>
        </rect>
       </property>
+      <property name="toolTip">
+       <string>支持绑定: 转向灯拨杆/雨刮器拨杆/档位开关</string>
+      </property>
       <property name="text">
-       <string>欧卡2/美卡 原生按键绑定（转向灯拨杆/雨刮器拨杆/档位开关）</string>
+       <string>欧卡2/美卡 原生按键绑定</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_4">
@@ -240,7 +246,7 @@
         <x>370</x>
         <y>70</y>
         <width>111</width>
-        <height>31</height>
+        <height>28</height>
        </rect>
       </property>
       <property name="font">
@@ -250,6 +256,28 @@
       </property>
       <property name="text">
        <string>绑定向导</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_6">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>80</y>
+        <width>16</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
      </widget>
     </widget>
