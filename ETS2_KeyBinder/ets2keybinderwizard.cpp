@@ -510,7 +510,25 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
     return true;
 }
 
+bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox() {
+    if (deviceName.empty()) {
+        QMessageBox box(QMessageBox::Critical, "错误", "请将您的设备连接到电脑！\n" + MEG_BOX_LINE + "\n或者进行手动绑定？");
+        box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+        box.setDefaultButton(QMessageBox::Ok);
+        box.exec();
+        if (box.clickedButton() == box.button(QMessageBox::Ok)) {
+            on_pushButton_16_clicked();
+        }
+        return false;
+    }
+    return true;
+}
+
 void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& message) {
+    if (checkHardwareDeviceAndMsgBox() == false) {
+        return; // 设备未连接，取消操作
+    }
+
     BigKey keyState[1];          // 记录按键状态
     keyState[0] = getKeyState(); // 获取按键状态，第一次获取为0，应该是BUG
 
@@ -565,6 +583,10 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
 }
 
 std::vector<BigKey> ETS2KeyBinderWizard::getMultiKeyState(const QString& title, const QStringList& messages) {
+    if (checkHardwareDeviceAndMsgBox() == false) {
+        return {}; // 设备未连接，取消操作
+    }
+
     int stepSum = messages.size(); // 步骤总数
     if (stepSum < 1) {
         return {};
@@ -828,6 +850,10 @@ void ETS2KeyBinderWizard::on_pushButton_19_clicked() {
 }
 
 BigKey ETS2KeyBinderWizard::getKeyState() {
+    if (pDevice == nullptr) {
+        return BigKey(); // 设备未打开
+    }
+
     BigKey keyState;
     DIJOYSTATE2 js;
     pDevice->Acquire();
