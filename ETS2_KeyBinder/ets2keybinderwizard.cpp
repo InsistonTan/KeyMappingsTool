@@ -24,11 +24,11 @@ using namespace std;
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
-#if defined(INDEPENDENT_MODE)
-    this->setWindowTitle("欧卡2/美卡-特殊按键绑定向导（实验性）" + QString(__DATE__) + " " + QString(__TIME__));
-#else
     this->setWindowTitle("欧卡2/美卡-特殊按键绑定向导（实验性）v1.0-beta.5");
+#if defined(INDEPENDENT_MODE)
+    this->setWindowTitle(this->windowTitle() + " " + QString(__DATE__) + " " + QString(__TIME__));
 #endif
+
     diDeviceList.clear();
     ui->comboBox->clear();
 
