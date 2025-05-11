@@ -11,6 +11,8 @@
 #define WHEEL_BUTTON "wheel_button"
 #define WHEEL_AXIS "wheel_axis"
 
+#define DEFAULT_INNER_DEADAREA_VALUE 0.03
+
 extern QWidget* g_mainWindow;
 
 // 全局映射是否开启

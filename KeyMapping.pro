@@ -12,12 +12,11 @@ SOURCES += \
     AssistFuncWindow.cpp \
     AssistFuncWorker.cpp \
     BtnTriggerTypeEnum.cpp \
+    DeadAreaSettings.cpp \
     ETS2_KeyBinder/manuallybinder.cpp \
     ETS2_KeyBinder/showkeystate.cpp \
     ForceFeedbackSettingsWindow.cpp \
     ForceFeedbackWorker.cpp \
-    XboxDeadAreaSettings.cpp \
-    deadareasettings.cpp \
     ETS2_KeyBinder/ets2keybinderwizard.cpp \
     global.cpp \
     logwindow.cpp \
@@ -29,12 +28,11 @@ HEADERS += \
     AssistFuncWindow.h \
     AssistFuncWorker.h \
     BtnTriggerTypeEnum.h \
+    DeadAreaSettings.h \
     ETS2_KeyBinder/manuallybinder.h \
     ETS2_KeyBinder/showkeystate.h \
     ForceFeedbackSettingsWindow.h \
     ForceFeedbackWorker.h \
-    XboxDeadAreaSettings.h \
-    deadareasettings.h \
     device_info.h \
     ETS2_KeyBinder/ets2keybinderwizard.h \
     global.h \
@@ -49,11 +47,10 @@ HEADERS += \
 
 FORMS += \
     AssistFuncWindow.ui \
+    DeadAreaSettings.ui \
     ETS2_KeyBinder/manuallybinder.ui \
     ETS2_KeyBinder/showkeystate.ui \
     ForceFeedbackSettingsWindow.ui \
-    XboxDeadAreaSettings.ui \
-    deadareasettings.ui \
     ETS2_KeyBinder/ets2keybinderwizard.ui \
     logwindow.ui \
     mainwindow.ui

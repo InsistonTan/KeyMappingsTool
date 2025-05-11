@@ -43,9 +43,9 @@ bool getIsPause(){
 
 // 内部死区比例
 // 盘面轴死区
-double innerDeadAreaPanti = 0.03;
+double innerDeadAreaPanti = DEFAULT_INNER_DEADAREA_VALUE;
 // 踏板轴死区
-double innerDeadAreaTaban = 0.03;
+double innerDeadAreaTaban = DEFAULT_INNER_DEADAREA_VALUE;
 void setInnerDeadAreaPanti(double val){
     innerDeadAreaPanti = val;
 }

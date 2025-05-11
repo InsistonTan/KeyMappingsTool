@@ -1,46 +1,48 @@
-#include "XboxDeadAreaSettings.h"
-#include "ui_XboxDeadAreaSettings.h"
+#include "DeadAreaSettings.h"
+#include "ui_DeadAreaSettings.h"
 #include "global.h"
 #include<QFile>
 #include<QMessageBox>
 #include<QJsonDocument>
 #include<QJsonObject>
 
-XboxDeadAreaSettings::XboxDeadAreaSettings(QWidget *parent)
+DeadAreaSettings::DeadAreaSettings(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::XboxDeadAreaSettings)
+    , ui(new Ui::DeadAreaSettings)
 {
     ui->setupUi(this);
 
-    setWindowTitle("手柄死区设置");
+    setWindowTitle("死区设置");
 
     loadSettingsFile();
 
     this->ui->lineEdit->setText(std::to_string(getXboxJoystickInnerDeadAreaValue()).data());
     this->ui->lineEdit_2->setText(std::to_string(getXboxTriggerInnerDeadAreaValue()).data());
+    this->ui->lineEdit_4->setText(std::to_string(getInnerDeadAreaPanti()).data());
+    this->ui->lineEdit_3->setText(std::to_string(getInnerDeadAreaTaban()).data());
 
     save();
 }
 
-XboxDeadAreaSettings::~XboxDeadAreaSettings()
+DeadAreaSettings::~DeadAreaSettings()
 {
     delete ui;
 }
 
-void XboxDeadAreaSettings::unsave(){
-    setWindowTitle("手柄死区设置 *设置未保存");
+void DeadAreaSettings::unsave(){
+    setWindowTitle("死区设置 *设置未保存");
 }
-void XboxDeadAreaSettings::save(){
-    setWindowTitle("手柄死区设置");
+void DeadAreaSettings::save(){
+    setWindowTitle("死区设置");
 }
 
-void XboxDeadAreaSettings::on_lineEdit_textChanged(const QString &arg1)
+void DeadAreaSettings::on_lineEdit_textChanged(const QString &arg1)
 {
     unsave();
 }
 
 
-void XboxDeadAreaSettings::on_lineEdit_editingFinished()
+void DeadAreaSettings::on_lineEdit_editingFinished()
 {
     bool ok;
     double value = ui->lineEdit->text().toDouble(&ok);
@@ -52,7 +54,7 @@ void XboxDeadAreaSettings::on_lineEdit_editingFinished()
 }
 
 
-void XboxDeadAreaSettings::on_pushButton_clicked()
+void DeadAreaSettings::on_pushButton_clicked()
 {
     double value = ui->lineEdit->text().toDouble();
     if(value <= -1 || value >= 1){
@@ -68,17 +70,30 @@ void XboxDeadAreaSettings::on_pushButton_clicked()
     }
     setXboxTriggerInnerDeadAreaValue(value2);
 
+    // 设置轴映射键盘按键时, 转向轴的内部死区
+    setInnerDeadAreaPanti(ui->lineEdit_4->text().toDouble());
+    // 设置轴映射键盘按键时, 踏板轴的内部死区
+    setInnerDeadAreaTaban(ui->lineEdit_3->text().toDouble());
+
     saveSettingsToFile();
 
     save();
 }
 
-void XboxDeadAreaSettings::saveSettingsToFile(){
+void DeadAreaSettings::saveSettingsToFile(){
     // 创建一个 QFile 对象，并打开文件进行写入
     QFile file2(getAppDataDirStr() + SETTINGS_FILE_NAME);
     QString text2;
     text2.append("{\n\t");
+
+    // 映射键盘按键, 转向轴的内部死区
+    text2.append("\"keyboardWheelAxisInnerDeadAreaValue\":").append(std::to_string(ui->lineEdit_4->text().toDouble())).append(",\n\t");
+    // 映射键盘按键, 踏板轴的内部死区
+    text2.append("\"keyboardPedalAxisInnerDeadAreaValue\":").append(std::to_string(ui->lineEdit_3->text().toDouble())).append(",\n\t");
+
+    // 映射手柄, 手柄摇杆的内部死区
     text2.append("\"xboxJoystickInnerDeadAreaValue\":").append(std::to_string(ui->lineEdit->text().toDouble())).append(",\n\t");
+    // 映射手柄, 手柄扳机的内部死区
     text2.append("\"xboxTriggerInnerDeadAreaValue\":").append(std::to_string(ui->lineEdit_2->text().toDouble())).append("");
 
     text2.append("\n}");
@@ -95,7 +110,7 @@ void XboxDeadAreaSettings::saveSettingsToFile(){
     }
 }
 
-void XboxDeadAreaSettings::loadSettingsFile(){
+void DeadAreaSettings::loadSettingsFile(){
     // 打开 JSON 文件
     QFile file(getAppDataDirStr() + SETTINGS_FILE_NAME);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -134,10 +149,32 @@ void XboxDeadAreaSettings::loadSettingsFile(){
         setXboxTriggerInnerDeadAreaValue(value);
         this->ui->lineEdit_2->setText(std::to_string(value).data());
     }
+
+    if(jsonObj.contains("keyboardWheelAxisInnerDeadAreaValue")){
+        double value = jsonObj["keyboardWheelAxisInnerDeadAreaValue"].toDouble(DEFAULT_INNER_DEADAREA_VALUE);
+        // 输入超出范围 -1, 1
+        if(value < 0 || value > 1){
+            value = DEFAULT_INNER_DEADAREA_VALUE;
+        }
+
+        setInnerDeadAreaPanti(value);
+        this->ui->lineEdit_4->setText(std::to_string(value).data());
+    }
+
+    if(jsonObj.contains("keyboardPedalAxisInnerDeadAreaValue")){
+        double value = jsonObj["keyboardPedalAxisInnerDeadAreaValue"].toDouble(DEFAULT_INNER_DEADAREA_VALUE);
+        // 输入超出范围 -1, 1
+        if(value < 0 || value > 1){
+            value = DEFAULT_INNER_DEADAREA_VALUE;
+        }
+
+        setInnerDeadAreaTaban(value);
+        this->ui->lineEdit_3->setText(std::to_string(value).data());
+    }
 }
 
 
-void XboxDeadAreaSettings::on_lineEdit_2_editingFinished()
+void DeadAreaSettings::on_lineEdit_2_editingFinished()
 {
     bool ok;
     double value = ui->lineEdit_2->text().toDouble(&ok);
@@ -149,8 +186,44 @@ void XboxDeadAreaSettings::on_lineEdit_2_editingFinished()
 }
 
 
-void XboxDeadAreaSettings::on_lineEdit_2_textChanged(const QString &arg1)
+void DeadAreaSettings::on_lineEdit_2_textChanged(const QString &arg1)
 {
     unsave();
+}
+
+
+void DeadAreaSettings::on_lineEdit_4_textChanged(const QString &arg1)
+{
+    unsave();
+}
+
+
+void DeadAreaSettings::on_lineEdit_3_textChanged(const QString &arg1)
+{
+    unsave();
+}
+
+
+void DeadAreaSettings::on_lineEdit_4_editingFinished()
+{
+    bool ok;
+    double value = ui->lineEdit_4->text().toDouble(&ok);
+
+    // 输入超出范围 0, 1
+    if (!ok || value < 0 || value > 1) {
+        ui->lineEdit_4->setText(std::to_string(DEFAULT_INNER_DEADAREA_VALUE).data());
+    }
+}
+
+
+void DeadAreaSettings::on_lineEdit_3_editingFinished()
+{
+    bool ok;
+    double value = ui->lineEdit_3->text().toDouble(&ok);
+
+    // 输入超出范围 0, 1
+    if (!ok || value < 0 || value > 1) {
+        ui->lineEdit_3->setText(std::to_string(DEFAULT_INNER_DEADAREA_VALUE).data());
+    }
 }
 

@@ -11,9 +11,8 @@
 #include <device_info.h>
 #include <mapping_relation.h>
 #include "logwindow.h"
-#include "deadareasettings.h"
 #include "AssistFuncWindow.h"
-#include "XboxDeadAreaSettings.h"
+#include "DeadAreaSettings.h"
 
 #define CURRENT_VERSION "1.2.2" // 当前版本号
 
@@ -55,9 +54,8 @@ private:
     Ui::MainWindow *ui;
 
     LogWindow *logWindow;// 日志窗口
-    DeadAreaSettings *settings;// 死区设置窗口
     AssistFuncWindow *assistWindow;// 辅助功能窗口
-    XboxDeadAreaSettings *xboxDeadareaSettings;// xbox死区设置窗口
+    DeadAreaSettings *deadareaSettings;// 死区设置窗口
 
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
 
