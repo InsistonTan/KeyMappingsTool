@@ -531,20 +531,27 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     btn->setMinimumWidth(80);
     updateASwitchPushButton(btn, mapping->mappingType);
     btn->setObjectName(currentRowIndex);
-    // 绑定信号和槽
-    connect(btn, &QPushButton::clicked, this, [=](){
-        if (mapping->mappingType == MappingType::Keyboard){
-            mapping->setMappingType(MappingType::Xbox);
-        }else if (mapping->mappingType == MappingType::Xbox){
-            mapping->setMappingType(MappingType::Keyboard);
-        }
-        updateASwitchPushButton(btn, mapping->mappingType);
-        updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
-        /* ## 还需要处理 轴映射
-         * 待处理
-         */
-    });
+    /* ## 转向轴映射 的处理可以再优化一下
+    * 待处理
+    */
+    QString btnText = QString::fromStdString(mapping->dev_btn_name);
+    if (!btnText.contains("右转") && !btnText.contains("左转")) {
+        // 绑定信号和槽
+        connect(btn, &QPushButton::clicked, this, [=](){
+            if (mapping->mappingType == MappingType::Keyboard){
+                mapping->setMappingType(MappingType::Xbox);
+            }else if (mapping->mappingType == MappingType::Xbox){
+                mapping->setMappingType(MappingType::Keyboard);
+            }
+            updateASwitchPushButton(btn, mapping->mappingType);
+            updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
 
+        });
+        btn->setEnabled(true);
+    } else {
+        // 转向轴映射, 暂不支持混合映射切换
+        btn->setEnabled(false);
+    }
 
     // 按键触发模式下拉框
     QComboBox *triggerTypeComboBox = new QComboBox();
@@ -1117,11 +1124,12 @@ MappingRelation* MainWindow::getDevBtnData(){
         if(res.size() > 0){
             for(auto item : res){
                 // 方向盘的轴
+                auto btnOrAxisStr = item->deviceName.toStdString() + "-" + item->dev_btn_name;
                 if(item->dev_btn_type == (std::string)WHEEL_AXIS){
-                    auto tmpAxis = tempRecord.find(item->deviceName.toStdString() + "-" + item->dev_btn_name);
+                    auto tmpAxis = tempRecord.find(btnOrAxisStr);
                     // 记录第一次数据
                     if(tmpAxis == tempRecord.end()){
-                        tempRecord.insert_or_assign(item->deviceName.toStdString() + "-" + item->dev_btn_name, item->dev_btn_value);
+                        tempRecord.insert_or_assign(btnOrAxisStr, item->dev_btn_value);
                     }else{
                         // 不是第一次读到该轴的值, 与第一次的值比较, 大于一定量才能确定是该轴要新建映射
                         if(std::abs(item->dev_btn_value - tmpAxis->second) > AXIS_CHANGE_VALUE){
@@ -1170,10 +1178,10 @@ MappingRelation* MainWindow::getDevBtnData(){
                     // 方向盘按键
                     // 记录第一次数据
                     if(isFirstData){
-                        tempRecord.insert_or_assign(item->deviceName.toStdString() + "-" + item->dev_btn_name, item->dev_btn_value);
+                        tempRecord.insert_or_assign(btnOrAxisStr, item->dev_btn_value);
                     }else{
                         // 当前按键是新按下的
-                        if(tempRecord.find(item->deviceName.toStdString() + "-" + item->dev_btn_name) == tempRecord.end()){
+                        if(tempRecord.find(btnOrAxisStr) == tempRecord.end()){
                             return item;
                         }
                     }
