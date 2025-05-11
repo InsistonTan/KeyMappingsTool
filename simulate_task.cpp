@@ -406,11 +406,9 @@ QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
 QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
     if(!res.isEmpty()){
         for(auto &currentBtn : res){
-            auto btnStr = currentBtn->dev_btn_name;
+            auto btnStr = currentBtn->deviceName.toStdString() + "-" + currentBtn->dev_btn_name;
             // 轴映射键盘
-            // std::string btnStr2 = currentBtn->deviceName.toStdString() + "-" + btnStr;
-            // if((keyMappingTypeMap[btnStr2] == MappingType::Keyboard) && btnStr.find("轴") != std::string::npos){
-            if(getDefaultMappingType() == MappingType::Keyboard && btnStr.find("轴") != std::string::npos){
+            if((keyMappingTypeMap[btnStr] == MappingType::Keyboard) && btnStr.find("轴") != std::string::npos){
                 // 当前轴的值范围
                 auto currentRange = axisValueRangeMap.find(btnStr)->second;
                 int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
