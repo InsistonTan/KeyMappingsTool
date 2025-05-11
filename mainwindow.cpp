@@ -433,7 +433,11 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         mapping = getDevBtnData();
 
         // 根据用户配置的默认映射方式配置
-        mapping->setMappingType(getIsXboxMode() ? MappingType::Xbox : MappingType::Keyboard);
+        if (ui->radioButton->isChecked()) {
+            mapping->setMappingType(MappingType::Keyboard);
+        } else if (ui->radioButton_2->isChecked()) {
+            mapping->setMappingType(MappingType::Xbox);
+        } 
 
         if(mapping == nullptr){
             showErrorMessage(new std::string("未检测到按键被按下!"));
@@ -528,7 +532,11 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     btn->setObjectName(currentRowIndex);
     // 绑定信号和槽
     connect(btn, &QPushButton::clicked, this, [=](){
-        mapping->setMappingType(mapping->mappingType == MappingType::Xbox ? MappingType::Keyboard : MappingType::Xbox);
+        if (mapping->mappingType == MappingType::Keyboard){
+            mapping->setMappingType(MappingType::Xbox);
+        }else if (mapping->mappingType == MappingType::Xbox){
+            mapping->setMappingType(MappingType::Keyboard);
+        }
         updateASwitchPushButton(btn, mapping->mappingType);
         updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
     });
@@ -710,7 +718,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
             text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
             text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType)).append(", ");
-            text.append("\"mappingType\":" + QString::number(item->mappingType == MappingType::Xbox ? 1 : 0)).append(", ");
+            text.append("\"mappingType\":" + QString::number((int)item->mappingType)).append(", ");
             text.append("\"deviceName\":\"" + item->deviceName + "\"");// 最后一个, 后面不用加逗号
           
             text.append("},\n\t");
@@ -975,7 +983,14 @@ void MainWindow::loadMappingsFile(std::string filename){
                 } else if (mappingFileNameMap[filename.data()].endsWith(MAPPING_FILE_SUFFIX)) {
                     mapping->mappingType = MappingType::Keyboard;
                 } else {
-                    mapping->mappingType = ((MappingType)(jsonObj.contains("mappingType") && jsonObj["mappingType"].toInt()) == MappingType::Xbox) ? MappingType::Xbox : MappingType::Keyboard;
+                    if (jsonObj.contains("mappingType")) {
+                        // 读取映射类型
+                        if ((MappingType)jsonObj["mappingType"].toInt() == MappingType::Xbox) {
+                            mapping->mappingType = MappingType::Xbox;
+                        } else if ((MappingType)jsonObj["mappingType"].toInt() == MappingType::Keyboard) {
+                            mapping->mappingType = MappingType::Keyboard;
+                        }
+                    } 
                 }
                 mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
 
@@ -1199,13 +1214,13 @@ std::map<std::string, short> MainWindow::getConstKeyMap(std::string dev_btn_type
 }
 
 void MainWindow::updateASwitchPushButton(QPushButton *btn, MappingType mappingType){
-        if(mappingType == MappingType::Keyboard){
-            btn->setText("> 键盘 <");
-            btn->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);margin-left:7;color: black;}");
-        }else if (mappingType == MappingType::Xbox){
-            btn->setText("> Xbox <");
-            btn->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);margin-left:7;color: black;}");
-        }
+    if(mappingType == MappingType::Keyboard){
+        btn->setText("> 键盘 <");
+        btn->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);margin-left:7;color: black;}");
+    }else if (mappingType == MappingType::Xbox){
+        btn->setText("> Xbox <");
+        btn->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);margin-left:7;color: black;}");
+    }
 }
     
 void MainWindow::updateAKeyBoardComboBox(QComboBox *comboBox, std::string dev_btn_type, MappingType mappingType){
