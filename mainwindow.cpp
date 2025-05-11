@@ -545,7 +545,8 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
             }
             updateASwitchPushButton(btn, mapping->mappingType);
             updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
-
+            mapping->keyboard_name = comboBox->currentText().toStdString();
+            mapping->keyboard_value = 0;
         });
         btn->setEnabled(true);
     } else {
@@ -1254,6 +1255,7 @@ void MainWindow::updateAKeyBoardComboBox(QComboBox *comboBox, std::string dev_bt
         }
         comboBox->addItem(item->first.data());
     }
+    comboBox->setCurrentIndex(-1);
 }
 
 // 创建一个键盘按键下拉选择框
