@@ -6,6 +6,11 @@
 //using namespace std;
 #define BUTTONS_VALUE_TYPE BigKey
 
+enum class MappingType{
+    Keyboard,
+    Xbox,
+};
+
 class MappingRelation{
 public:
     int dev_btn_pos; // 设备按键位置
@@ -19,6 +24,7 @@ public:
     int rotateAxis = 0; // 是否反转轴, 0不反转, 1反转
     TriggerTypeEnum btnTriggerType = TriggerTypeEnum::Normal; // 按键触发类型, 默认同步模式
     QString deviceName = "";// 当前映射所属设备名称
+    MappingType mappingType = MappingType::Keyboard; // 映射类型, 默认键盘映射
 
     MappingRelation(){}
     MappingRelation(int dev_btn_pos, int dev_btn_value, short keyboard_value, std::string keyboard_name){
@@ -68,6 +74,10 @@ public:
 
     void setDeviceName(QString deviceName){
         this->deviceName = deviceName;
+    }
+
+    void setMappingType(MappingType mappingType){
+        this->mappingType = mappingType;
     }
 };
 

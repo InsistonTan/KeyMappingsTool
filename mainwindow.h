@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QLabel>
+#include <QPushButton>
 #include <windows.h>
 #include <cstring>
 #include <QVBoxLayout>
@@ -24,6 +25,7 @@
 #define USER_MAPPINGS_DIR "userMappings/"
 #define MAPPING_FILE_SUFFIX ".di_mappings_config"
 #define MAPPING_FILE_SUFFIX_XBOX ".di_xbox_mappings_config"
+#define MAPPING_FILE_SUFFIX_MIXED ".di_mixed_mappings_config"
 #define KEYBOARD "keyboard"
 #define XBOX "xbox"
 #define AXIS_CHANGE_VALUE 2000 //识别轴需要变化的最小值
@@ -77,14 +79,16 @@ protected:
 
     MappingRelation* getDevBtnData();
 
-    std::map<std::string, short> getConstKeyMap(std::string dev_btn_type);
+    std::map<std::string, short> getConstKeyMap(std::string dev_btn_type, MappingType mappingType);
 
     void scanMappingFile();
 
     // 上一次使用的设备是否在当前设备列表
     bool hasLastDevInCurrentDeviceList(std::string lastDeviceName);
 
-    QComboBox* createAKeyBoardComboBox(std::string dev_btn_type);
+    QComboBox* createAKeyBoardComboBox(std::string dev_btn_type, MappingType mappingType);
+    void updateAKeyBoardComboBox(QComboBox* comboBox, std::string dev_btn_type, MappingType mappingType);
+    void updateASwitchPushButton(QPushButton* btn, MappingType mappingType);
 
     void showErrorMessage(std::string *text);
 

@@ -14,7 +14,11 @@ void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
     if(mapping != nullptr){
         std::string btnStr = mapping->deviceName.toStdString() + "-" + mapping->dev_btn_name;
 
+        // 记录按键触发模式
         keyTriggerTypeMap.insert_or_assign(btnStr, mapping->btnTriggerType);
+
+        // 记录按键映射类型
+        keyMappingTypeMap.insert_or_assign(btnStr, mapping->mappingType);
 
         // 记录需要反转的轴
         if(mapping->rotateAxis == 1){
@@ -132,7 +136,7 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
         if (pressBtnList.empty() || !isCurrentBtnInList(pressBtnList, btnStr)) {
             //qDebug("按键释放");
             // 映射键盘
-            if(!getIsXboxMode()){
+            if(keyMappingTypeMap[btnStr] == MappingType::Keyboard){
                 // 根据触发模式, 进行对应处理
                 switch (keyTriggerTypeMap[btnStr]) {
                 case TriggerTypeEnum::Release:
@@ -404,9 +408,9 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
         for(auto &currentBtn : res){
             // 按键名称补上设备名称
             auto btnStr = currentBtn->deviceName.toStdString() + "-" + currentBtn->dev_btn_name;
-
+          
             // 轴映射键盘
-            if(!getIsXboxMode() && currentBtn->dev_btn_name.find("轴") != std::string::npos){
+            if((keyMappingTypeMap[btnStr] == MappingType::Keyboard) && btnStr.find("轴") != std::string::npos){
                 // 当前轴的值范围
                 auto currentRange = axisValueRangeMap.find(btnStr)->second;
                 int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
@@ -473,16 +477,16 @@ void SimulateTask::doWork(){
     qDebug("全局映射启动!");
 
     // 模拟xbox手柄, 需要初始化
-    if(getIsXboxMode()){
-        if(!initXboxController()){
-            // 关闭虚拟xbox设备
-            closeXboxController();
+    // if(getDefaultMappingType() == MappingType::Xbox){
+    if(!initXboxController()){
+        // 关闭虚拟xbox设备
+        closeXboxController();
 
-            // 提交工作结束信号
-            emit workFinished();
-            return;
-        }
+        // 提交工作结束信号
+        emit workFinished();
+        return;
     }
+    // }
 
     setIsRuning(true);
     emit startedSignal();
@@ -543,7 +547,7 @@ void SimulateTask::doWork(){
                 }
 
                 // 映射键盘
-                if(!getIsXboxMode()){
+                if(keyMappingTypeMap[btnStr] == MappingType::Keyboard){
                     // 对映射鼠标左键(-7), 鼠标右键(-8), 鼠标中键(-11), 以及其它键盘按键进行按下记录
                     if(item->second == -7 || item->second == -8 || item->second == -11 ||  item->second > 0){
                         // 记录按键按下
