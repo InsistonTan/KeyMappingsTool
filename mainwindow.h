@@ -25,6 +25,7 @@
 #define USER_MAPPINGS_DIR "userMappings/"
 #define MAPPING_FILE_SUFFIX ".di_mappings_config"
 #define MAPPING_FILE_SUFFIX_XBOX ".di_xbox_mappings_config"
+#define MAPPING_FILE_SUFFIX_MIXED ".di_mixed_mappings_config"
 #define KEYBOARD "keyboard"
 #define XBOX "xbox"
 #define AXIS_CHANGE_VALUE 2000 //识别轴需要变化的最小值

@@ -167,9 +167,34 @@ void MainWindow::scanMappingFile(){
         dir.cd(USER_MAPPINGS_DIR);
         // 获取文件列表，并筛选指定后缀的文件
         QFileInfoList list = dir.entryInfoList();
+
+        /* ## 这里最好需要处理同名文件，以下是临时方法
+         * 只处理和 mixed 文件同名的文件
+         * 最好不要弄同名文件
+         */
+        QFileInfoList listMixed;
+        for (const QFileInfo &fileInfo : list) {
+            if ("." + fileInfo.suffix() == MAPPING_FILE_SUFFIX_MIXED) {
+                listMixed.append(fileInfo);
+            }
+        }
+        for (int i = 0; i < list.size(); i++) {
+            if ("." +list[i].suffix() != MAPPING_FILE_SUFFIX_MIXED) {
+                for (auto item : listMixed) {
+                    if (list[i].baseName() == item.baseName()) {
+                        list.removeAt(i);
+                        i--;
+                        break;
+                    }
+                }
+            }
+        }
+
         for (const QFileInfo &fileInfo : list) {
             // 匹配指定后缀的文件，加入下拉列表
-            if ("." + fileInfo.suffix() == (getIsXboxMode() ? MAPPING_FILE_SUFFIX_XBOX :MAPPING_FILE_SUFFIX)) {
+            if ("." + fileInfo.suffix() == MAPPING_FILE_SUFFIX ||
+                "." + fileInfo.suffix() == MAPPING_FILE_SUFFIX_XBOX ||
+                "." + fileInfo.suffix() == MAPPING_FILE_SUFFIX_MIXED) {
 
                 // 当前选择了多个设备, 配置文件名需要跟当前选择的设备匹配
                 if(currentSelectedDeviceList.size() > 1){
@@ -406,6 +431,9 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
         // 获取设备按下的按键位置和值
         mapping = getDevBtnData();
+
+        // 根据用户配置的默认映射方式配置
+        mapping->setMappingType(getIsXboxMode() ? MappingType::Xbox : MappingType::Keyboard);
 
         if(mapping == nullptr){
             showErrorMessage(new std::string("未检测到按键被按下!"));
@@ -722,12 +750,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
             finalFileName.append("]");
         }
 
-        // 文件后缀
-        if(getIsXboxMode()){
-            finalFileName.append(MAPPING_FILE_SUFFIX_XBOX);
-        }else{
-            finalFileName.append(MAPPING_FILE_SUFFIX);
-        }
+        finalFileName.append(MAPPING_FILE_SUFFIX_MIXED);
     }else{
         finalFileName.append(MAPPINGS_FILENAME);
     }
@@ -947,7 +970,13 @@ void MainWindow::loadMappingsFile(std::string filename){
                     (jsonObj.contains("btnTriggerType") && jsonObj["btnTriggerType"].toInt() > 0 && jsonObj["btnTriggerType"].toInt() < TriggerTypeEnum::End)
                                               ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
                                               : TriggerTypeEnum::Normal;
-                mapping->mappingType = ((MappingType)(jsonObj.contains("mappingType") && jsonObj["mappingType"].toInt()) == MappingType::Xbox) ? MappingType::Xbox : MappingType::Keyboard;
+                if (mappingFileNameMap[filename.data()].endsWith(MAPPING_FILE_SUFFIX_XBOX)) {
+                    mapping->mappingType = MappingType::Xbox;
+                } else if (mappingFileNameMap[filename.data()].endsWith(MAPPING_FILE_SUFFIX)) {
+                    mapping->mappingType = MappingType::Keyboard;
+                } else {
+                    mapping->mappingType = ((MappingType)(jsonObj.contains("mappingType") && jsonObj["mappingType"].toInt()) == MappingType::Xbox) ? MappingType::Xbox : MappingType::Keyboard;
+                }
                 mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
 
                 mappingList.push_back(mapping);
@@ -1462,23 +1491,10 @@ void MainWindow::on_radioButton_clicked()
         return;
     }
 
-    if(getIsRunning()){
-        if(getIsXboxMode()){
-            ui->radioButton_2->setChecked(true);
-        }
-        QMessageBox::critical(this, "错误", "请先停止全局映射!");
-        return;
-    }
-
     //ui->label_7->setText("键盘按键");
 
     // 设置为键盘模式
     setIsXboxMode(false);
-
-    // 重置映射数据
-    mappingList.clear();
-    clearMappingsArea();
-    currentMappingFileName = "";
 
     // 重置配置文件下拉
     ui->comboBox_2->clear();
@@ -1498,14 +1514,6 @@ void MainWindow::on_radioButton_2_clicked()
         return;
     }
 
-    if(getIsRunning()){
-        if(!getIsXboxMode()){
-            ui->radioButton->setChecked(true);
-        }
-        QMessageBox::critical(this, "错误", "请先停止全局映射!");
-        return;
-    }
-
     //ui->label_7->setText("Xbox按键");
 
     // 检查驱动
@@ -1514,15 +1522,9 @@ void MainWindow::on_radioButton_2_clicked()
     // 设置为xbox模式
     setIsXboxMode(true);
 
-    // 重置映射数据
-    mappingList.clear();
-    clearMappingsArea();
-    currentMappingFileName = "";
-
     // 重置配置文件下拉
     ui->comboBox_2->clear();
     ui->comboBox_2->addItem("空白配置");
-
 
     // 重新寻找保存的配置文件(xbox)
     scanMappingFile();
