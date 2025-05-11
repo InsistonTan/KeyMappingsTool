@@ -410,7 +410,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
             // 轴映射键盘
             // std::string btnStr2 = currentBtn->deviceName.toStdString() + "-" + btnStr;
             // if((keyMappingTypeMap[btnStr2] == MappingType::Keyboard) && btnStr.find("轴") != std::string::npos){
-            if(!getIsXboxMode() && btnStr.find("轴") != std::string::npos){
+            if(getDefaultMappingType() == MappingType::Keyboard && btnStr.find("轴") != std::string::npos){
                 // 当前轴的值范围
                 auto currentRange = axisValueRangeMap.find(btnStr)->second;
                 int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
@@ -477,7 +477,7 @@ void SimulateTask::doWork(){
     qDebug("全局映射启动!");
 
     // 模拟xbox手柄, 需要初始化
-    // if(getIsXboxMode()){
+    // if(getDefaultMappingType() == MappingType::Xbox){
     if(!initXboxController()){
         // 关闭虚拟xbox设备
         closeXboxController();

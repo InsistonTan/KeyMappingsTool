@@ -11,7 +11,7 @@
 QWidget* g_mainWindow = nullptr;
 
 bool isRuning = false;
-bool isXboxMode = false;
+MappingType defaultMappingType = MappingType::Keyboard;
 LPDIRECTINPUT8 g_pDirectInput = nullptr;
 QList<LPDIRECTINPUTDEVICE8> initedDeviceList; // 已初始化的设备列表
 QList<DiDeviceInfo> diDeviceList;
@@ -125,12 +125,12 @@ bool getIsRunning(){
     return isRuning;
 }
 
-void setIsXboxMode(bool val){
-    isXboxMode = val;
+void setDefaultMappingType(MappingType val){
+    defaultMappingType = val;
 }
 
-bool getIsXboxMode(){
-    return isXboxMode;
+MappingType getDefaultMappingType(){
+    return defaultMappingType;
 }
 
 std::string guidToString(const GUID& guid)
@@ -477,7 +477,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
 
             // 映射xbox
-            //if(getIsXboxMode()){
+            // if(getDefaultMappingType() == MappingType::Xbox){
             if(true){
                 if(js.lX == js.lY && js.lY == js.lRx && js.lZ == js.lRx && js.lRx == js.lRy && js.lRy == js.lRz){
                     return list;

@@ -16,8 +16,8 @@ extern QWidget* g_mainWindow;
 // 全局映射是否开启
 extern bool isRuning;
 
-// 当前运行模式, true为模拟xbox手柄, false为模拟键盘
-extern bool isXboxMode;
+// 当前默认的映射类型
+extern MappingType defaultMappingType;
 
 // 是否暂停全局映射
 extern bool isPause;
@@ -91,9 +91,9 @@ void setIsRuning(bool val);
 
 bool getIsRunning();
 
-void setIsXboxMode(bool val);
+void setDefaultMappingType(MappingType val);
 
-bool getIsXboxMode();
+MappingType getDefaultMappingType();
 
 extern double xboxJoystickInnerDeadAreaValue;
 extern double xboxTriggerInnerDeadAreaValue;

@@ -293,7 +293,7 @@ void MainWindow::on_pushButton_2_clicked()
         }
 
         // xbox模式, 但驱动未安装, 无法启动
-        // if(getIsXboxMode() && !checkDriverInstalled()){
+        // if(getDefaultMappingType() == MappingType::Xbox && !checkDriverInstalled()){
         if(!checkDriverInstalled()){
             qDebug("驱动未安装, 无法启动!");
             return;
@@ -897,7 +897,7 @@ void MainWindow::loadLastDeviceFile(){
                 if(in.readLine().toStdString() == XBOX){
                     ui->radioButton_2->setChecked(true);
                     //ui->label_7->setText("Xbox按键");
-                    setIsXboxMode(true);
+                    setDefaultMappingType(MappingType::Xbox);
                 }
             }
 
@@ -1126,7 +1126,7 @@ MappingRelation* MainWindow::getDevBtnData(){
                         // 不是第一次读到该轴的值, 与第一次的值比较, 大于一定量才能确定是该轴要新建映射
                         if(std::abs(item->dev_btn_value - tmpAxis->second) > AXIS_CHANGE_VALUE){
                             // 映射xbox模式
-                            if(getIsXboxMode()){
+                            if(getDefaultMappingType() == MappingType::Xbox){
                                 return item;
                             }else{
                                 // 映射键盘模式
@@ -1506,14 +1506,14 @@ bool MainWindow::checkDriverInstalled() {
 
 void MainWindow::on_radioButton_clicked()
 {
-    if(!getIsXboxMode()){
+    if(getDefaultMappingType() == MappingType::Keyboard){
         return;
     }
 
     //ui->label_7->setText("键盘按键");
 
     // 设置为键盘模式
-    setIsXboxMode(false);
+    setDefaultMappingType(MappingType::Keyboard);
 
     // 重置配置文件下拉
     ui->comboBox_2->clear();
@@ -1529,7 +1529,7 @@ void MainWindow::on_radioButton_clicked()
 
 void MainWindow::on_radioButton_2_clicked()
 {
-    if(getIsXboxMode()){
+    if(getDefaultMappingType() == MappingType::Xbox){
         return;
     }
 
@@ -1539,7 +1539,7 @@ void MainWindow::on_radioButton_2_clicked()
     checkDriverInstalled();
 
     // 设置为xbox模式
-    setIsXboxMode(true);
+    setDefaultMappingType(MappingType::Xbox);
 
     // 重置配置文件下拉
     ui->comboBox_2->clear();
@@ -1612,7 +1612,7 @@ void MainWindow::simulateStartedSlot(){
 void MainWindow::on_pushButton_8_clicked()
 {
     // 如果是映射xbox模式, 打开xbox死区设置窗口
-    if(getIsXboxMode()){
+    if(getDefaultMappingType() == MappingType::Xbox){
         // 如果窗口是最小化状态, 清除最小化
         if(this->xboxDeadareaSettings->windowState() == Qt::WindowMinimized){
             this->xboxDeadareaSettings->setWindowState(this->xboxDeadareaSettings->windowState() & ~Qt::WindowMinimized);
