@@ -160,15 +160,18 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
         globalControlsFilePath = QDir::homePath() + "/Documents/American Truck Simulator/global_controls.sii";
     }
     QFile file(globalControlsFilePath);
+    QString errorMsg = "\n\n全局配置文件路径:\n" + globalControlsFilePath + "\n\n请返回第一步，确定已禁用Steam输入";
 
     if(!file.exists()){
-        QMessageBox::critical(this, "错误", "游戏全局配置文件不存在!\n配置文件路径:" + globalControlsFilePath);
+        QMessageBox::critical(this, "错误", "游戏全局配置文件不存在!" + errorMsg);
+        setCurrentId(0);
         return QStringList();
     }
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件:" << file.fileName();
-        QMessageBox::critical(this, "错误", "打开游戏全局配置文件失败!\n配置文件路径:" + globalControlsFilePath);
+        QMessageBox::critical(this, "错误", "打开游戏全局配置文件失败!" + errorMsg);
+        setCurrentId(0);
         return QStringList();
     }
     QTextStream inGlobal(&file);
