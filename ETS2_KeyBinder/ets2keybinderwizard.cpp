@@ -510,9 +510,9 @@ void ETS2KeyBinderWizard::scanDevice() {
 bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect lighthorn) {
     // LightBinder.di_mappings_config 文件格式
     // [
-    //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"K", "keyboard_value":37,
+    //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "keyboard_name":"K", "keyboard_value":37,
     //     "remark":"远光灯", "rotateAxis":0, "btnTriggerType":5, "deviceName":"Generic   USB  Joystick  (00060079)"},
-    //     {"dev_btn_name":"按键4+按键7", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"J", "keyboard_value":36,
+    //     {"dev_btn_name":"按键4+按键7", "dev_btn_type":"wheel_button", "keyboard_name":"J", "keyboard_value":36,
     //     "remark":"灯光喇叭", "rotateAxis":0, "btnTriggerType":0, "deviceName":"Generic   USB  Joystick  (00060079)"}
     // ]
 
@@ -538,12 +538,12 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
 
     QTextStream in(&lightBindingFile);
     in << "[\n{\"dev_btn_name\":\"" << hblightKeyStr;
-    in << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"K\", \"keyboard_value\":37, "
+    in << "\", \"dev_btn_type\":\"wheel_button\", \"keyboard_name\":\"K\", \"keyboard_value\":37, "
           "\"remark\":\"远光灯\", \"rotateAxis\":0, \"btnTriggerType\":5, \"deviceName\":\"";
     in << joyName << "\"},\n";
 
     in << "{\"dev_btn_name\":\"" << lighthornKeyStr;
-    in << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"J\", \"keyboard_value\":36,"
+    in << "\", \"dev_btn_type\":\"wheel_button\", \"keyboard_name\":\"J\", \"keyboard_value\":36,"
           "\"remark\":\"灯光喇叭\", \"rotateAxis\":0, \"btnTriggerType\":0, \"deviceName\":\"";
     in << joyName << "\"}\n]";
     return true;
