@@ -406,7 +406,9 @@ QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
 QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
     if(!res.isEmpty()){
         for(auto &currentBtn : res){
+            // 按键名称补上设备名称
             auto btnStr = currentBtn->deviceName.toStdString() + "-" + currentBtn->dev_btn_name;
+          
             // 轴映射键盘
             if((keyMappingTypeMap[btnStr] == MappingType::Keyboard) && btnStr.find("轴") != std::string::npos){
                 // 当前轴的值范围
@@ -415,7 +417,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
                 int mid = (currentMax + currentMin)/2;
 
                 // 配置了盘面轴左转映射
-                if(handleMap.find(btnStr + "左转")!= handleMap.end()){
+                if(handleMap.find(btnStr + "左转") != handleMap.end()){
                     // 设置了轴反转
                     if(isAxisRotate(btnStr + "左转")){
                         if(currentBtn->dev_btn_value >= static_cast<int>(mid + ((currentMax - mid) * getInnerDeadAreaPanti()))){
@@ -432,7 +434,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
 
                 }
                 // 配置了盘面轴右转映射
-                if(handleMap.find(btnStr + "右转")!= handleMap.end()){
+                if(handleMap.find(btnStr + "右转") != handleMap.end()){
                     // 设置了轴反转
                     if(isAxisRotate(btnStr + "右转")){
                         if(currentBtn->dev_btn_value <= (mid - ((currentMax - mid) * getInnerDeadAreaPanti()))){
@@ -448,7 +450,7 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
 
                 }
                 // 配置了踏板轴映射
-                if(handleMap.find(btnStr)!= handleMap.end()){
+                if(handleMap.find(btnStr) != handleMap.end()){
                     // 设置了轴反转
                     if(isAxisRotate(btnStr)){
                         // 值小于内部死区范围不生效
@@ -524,7 +526,7 @@ void SimulateTask::doWork(){
 
             // 该按键存在映射, 模拟映射的键盘按键操作
             if (item != handleMap.end()) {
-                //qDebug("按键存在映射, 正在模拟对应操作");
+                //qDebug() << "按键[" << btnStr.data() << "]存在映射, 正在模拟对应操作";
 
                 // 按下了配置的暂停按键
                 if(item->second == PAUSE_BTN_VAL){

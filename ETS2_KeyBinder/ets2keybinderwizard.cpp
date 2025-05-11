@@ -47,6 +47,12 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
         if (id == 2) {
             updateUserProfile();                                      // 更新用户配置文件
             QStringList gameJoyPosNameList = getDeviceNameGameList(); // 获取游戏配置文件中的设备名称列表
+
+            if(gameJoyPosNameList.isEmpty()){
+                // 禁止点击下一步
+                this->button(QWizard::NextButton)->setEnabled(false);
+            }
+
             // 更新到下拉框
             ui->comboBox_2->clear();
             for (auto item : gameJoyPosNameList) {
@@ -154,8 +160,15 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
         globalControlsFilePath = QDir::homePath() + "/Documents/American Truck Simulator/global_controls.sii";
     }
     QFile file(globalControlsFilePath);
+
+    if(!file.exists()){
+        QMessageBox::critical(this, "错误", "游戏全局配置文件不存在!\n配置文件路径:" + globalControlsFilePath);
+        return QStringList();
+    }
+
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件:" << file.fileName();
+        QMessageBox::critical(this, "错误", "打开游戏全局配置文件失败!\n配置文件路径:" + globalControlsFilePath);
         return QStringList();
     }
     QTextStream inGlobal(&file);
@@ -178,8 +191,18 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
 
     // 读取配置文件列表
     QFile profileFile(selectedProfilePath);
+
+    if(!profileFile.exists()){
+        QMessageBox::critical(this, "错误", "游戏配置文件不存在!"
+                                            "\n配置文件参考路径如下:"
+                                            "\n欧卡2: " + QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles或者steam_profiles/xxxxxx/controls.sii"
+                                            "\n美卡: " + QDir::homePath() + "/Documents/American Truck Simulator/profiles或者steam_profiles/xxxxxx/controls.sii");
+        return QStringList();
+    }
+
     if (!profileFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件:" << profileFile.fileName();
+        QMessageBox::critical(this, "错误", "打开游戏配置文件失败!\n配置文件路径:" + selectedProfilePath);
         return QStringList();
     }
 
@@ -217,6 +240,10 @@ bool ETS2KeyBinderWizard::backupProfile() {
     QFile selectedProfileFile(selectedProfilePath);
     if (!selectedProfileFile.exists()) {
         qDebug() << "配置文件不存在:" << selectedProfilePath;
+        QMessageBox::critical(this, "错误", "备份配置文件失败: 游戏配置文件不存在!"
+                                            "\n配置文件参考路径如下:"
+                                            "\n欧卡2: " + QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles或者steam_profiles/xxxxxx/controls.sii"
+                                            "\n美卡: " + QDir::homePath() + "/Documents/American Truck Simulator/profiles或者steam_profiles/xxxxxx/controls.sii");
         return false;
     }
 
@@ -243,11 +270,15 @@ void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
 }
 
 // 修改 controls.sii 文件
-void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr) {
+void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr) {
     QFile controlsFile(controlsFilePath);
 
     // 检查文件是否存在
     if (!QFileInfo::exists(controlsFilePath)) {
+        QMessageBox::critical(this, "错误", "修改游戏配置文件失败: 游戏配置文件不存在!"
+                                            "\n配置文件参考路径如下:"
+                                            "\n欧卡2: " + QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles或者steam_profiles/xxxxxx/controls.sii"
+                                            "\n美卡: " + QDir::homePath() + "/Documents/American Truck Simulator/profiles或者steam_profiles/xxxxxx/controls.sii");
         qWarning() << "文件未找到:" << controlsFilePath;
         return;
     }
@@ -291,6 +322,7 @@ void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType,
     // 打开文件并读取内容
     if (!controlsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qWarning() << "无法打开文件:" << controlsFilePath;
+        QMessageBox::critical(this, "错误", "打开游戏配置文件失败!\n配置文件路径:\n" + controlsFilePath);
         return;
     }
 
@@ -314,6 +346,7 @@ void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType,
     if (modified) {
         if (!controlsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
             qWarning() << "无法写入文件:" << controlsFilePath;
+            QMessageBox::critical(this, "错误", "写入游戏配置文件失败!\n配置文件路径:\n" + controlsFilePath);
             return;
         }
 
@@ -379,6 +412,11 @@ void ETS2KeyBinderWizard::updateUserProfile() {
     ui->comboBox_3->clear();
     if (allProfileFolders.isEmpty()) {
         qDebug() << "没有找到任何配置文件！";
+        QMessageBox::critical(this, "错误", "没有找到任何游戏配置文件夹");
+
+        // 没有找到配置文件就禁止点击下一步
+        this->button(QWizard::NextButton)->setEnabled(false);
+
         return;
     }
 
@@ -437,9 +475,10 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
         return false;
     }
 
-    if (FAILED(pDevice->SetCooperativeLevel(hWnd, DISCL_EXCLUSIVE | DISCL_BACKGROUND))) {
-        qDebug() << "设置独占模式失败！";
-        QMessageBox::critical(this, "错误", "初始化设备: 设置独占模式失败！");
+    // 设置非独占模式(只有在施加力反馈时需要设置独占模式)
+    if (FAILED(pDevice->SetCooperativeLevel(GetForegroundWindow(), DISCL_BACKGROUND | DISCL_NONEXCLUSIVE))) {
+        qDebug() << "设置非独占模式失败！";
+        QMessageBox::critical(this, "错误", "初始化设备: 设置非独占模式失败！");
         return false;
     }
 
@@ -575,10 +614,15 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
     int ret = box.exec();
     if (ret == QMessageBox::Ok) {
         backupProfile(); // 备份配置文件
-        QString gameJoyPosStr = gameJoyPosNameList[ui->comboBox_2->currentIndex()];
-        for (auto item : actionEffectMap) {
-            QString ets2BtnStr = convertToETS2_String(gameJoyPosStr, item.second);
-            modifyControlsSii(selectedProfilePath, item.first, ets2BtnStr);
+        // 防止下标越界
+        if(ui->comboBox_2->currentIndex() >= 0 && ui->comboBox_2->currentIndex() < gameJoyPosNameList.size()){
+            QString gameJoyPosStr = gameJoyPosNameList[ui->comboBox_2->currentIndex()];
+            for (auto item : actionEffectMap) {
+                QString ets2BtnStr = convertToETS2_String(gameJoyPosStr, item.second);
+                modifyControlsSii(selectedProfilePath, item.first, ets2BtnStr);
+            }
+        }else{
+            QMessageBox::critical(this, "错误", "还未选择游戏输入设备, 请返回第三步选择");
         }
     }
 }

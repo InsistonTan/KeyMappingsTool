@@ -154,6 +154,8 @@ private:
     bool backupProfile();
 
     bool generateMappingFile(ActionEffect hblight, ActionEffect lighthorn);
+
+    void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr);
 };
 
 #endif // ETS2KEYBINDERWIZARD_H
