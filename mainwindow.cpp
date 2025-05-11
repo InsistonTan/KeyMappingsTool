@@ -293,7 +293,8 @@ void MainWindow::on_pushButton_2_clicked()
         }
 
         // xbox模式, 但驱动未安装, 无法启动
-        if(getIsXboxMode() && !checkDriverInstalled()){
+        // if(getIsXboxMode() && !checkDriverInstalled()){
+        if(!checkDriverInstalled()){
             qDebug("驱动未安装, 无法启动!");
             return;
         }
