@@ -1628,20 +1628,6 @@ void MainWindow::on_pushButton_8_clicked()
     }
     this->deadareaSettings->show();
     this->deadareaSettings->activateWindow();
-
-
-    // // 如果是映射xbox模式, 打开xbox死区设置窗口
-    // if(getDefaultMappingType() == MappingType::Xbox){
-
-    // }else{
-    //     // 如果是映射键盘模式, 打开设置
-    //     // 如果窗口是最小化状态, 清除最小化
-    //     if(this->settings->windowState() == Qt::WindowMinimized){
-    //         this->settings->setWindowState(this->settings->windowState() & ~Qt::WindowMinimized);
-    //     }
-    //     this->settings->show();
-    //     this->settings->activateWindow();
-    // }
 }
 
 
