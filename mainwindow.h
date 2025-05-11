@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QLabel>
+#include <QPushButton>
 #include <windows.h>
 #include <cstring>
 #include <QVBoxLayout>
@@ -77,14 +78,16 @@ protected:
 
     MappingRelation* getDevBtnData();
 
-    std::map<std::string, short> getConstKeyMap(std::string dev_btn_type);
+    std::map<std::string, short> getConstKeyMap(std::string dev_btn_type, MappingType mappingType);
 
     void scanMappingFile();
 
     // 上一次使用的设备是否在当前设备列表
     bool hasLastDevInCurrentDeviceList(std::string lastDeviceName);
 
-    QComboBox* createAKeyBoardComboBox(std::string dev_btn_type);
+    QComboBox* createAKeyBoardComboBox(std::string dev_btn_type, MappingType mappingType);
+    void updateAKeyBoardComboBox(QComboBox* comboBox, std::string dev_btn_type, MappingType mappingType);
+    void updateASwitchPushButton(QPushButton* btn, MappingType mappingType);
 
     void showErrorMessage(std::string *text);
 

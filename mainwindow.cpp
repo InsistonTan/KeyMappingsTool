@@ -442,14 +442,17 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         QLabel *h2 = new QLabel("映射成");
         h2->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
-        QLabel *h3 = new QLabel(getIsXboxMode() ? "Xbox按键" : "键盘按键");
+        QLabel *h3 = new QLabel("Xbox/键盘");
         h3->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
-        QLabel *h4 = new QLabel("按键触发模式");
+        QLabel *h4 = new QLabel("映射按键");
         h4->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
-        QLabel *h5 = new QLabel("备注");
+        QLabel *h5 = new QLabel("按键触发模式");
         h5->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
+
+        QLabel *h6 = new QLabel("备注");
+        h6->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
         int col = -1;
         layout->addWidget(h1, 0, ++col, Qt::AlignLeft);
@@ -457,6 +460,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         layout->addWidget(h3, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h4, 0, ++col, Qt::AlignLeft);
         layout->addWidget(h5, 0, ++col, Qt::AlignLeft);
+        layout->addWidget(h6, 0, ++col, Qt::AlignLeft);
     }
 
     QString label1Text = mapping->dev_btn_name.data();
@@ -477,7 +481,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label2->setObjectName(currentRowIndex);
 
     // 键盘按键下拉框
-    QComboBox *comboBox = createAKeyBoardComboBox(mapping->dev_btn_type);
+    QComboBox *comboBox = createAKeyBoardComboBox(mapping->dev_btn_type, mapping->mappingType); //// 重构代码优先处理
     // 设置一个序号, 为后续操作提供一个位置
     comboBox->setObjectName(currentRowIndex);
     // 历史配置展示
@@ -486,6 +490,20 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     }
     // 连接信号和槽
     connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);
+
+    QPushButton *btn = new QPushButton();
+    btn->setMaximumHeight(30);
+    btn->setMinimumHeight(30);
+    btn->setMaximumWidth(80);
+    btn->setMinimumWidth(80);
+    updateASwitchPushButton(btn, mapping->mappingType);
+    btn->setObjectName(currentRowIndex);
+    // 绑定信号和槽
+    connect(btn, &QPushButton::clicked, this, [=](){
+        mapping->setMappingType(mapping->mappingType == MappingType::Xbox ? MappingType::Keyboard : MappingType::Xbox);
+        updateASwitchPushButton(btn, mapping->mappingType);
+        updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
+    });
 
 
     // 按键触发模式下拉框
@@ -539,6 +557,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     int row = (index < 0 ? mappingList.size() : index) + 1;
     layout->addWidget(label1, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(label2, row, ++columnIndex, Qt::AlignLeft);
+    layout->addWidget(btn, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(comboBox, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(triggerTypeComboBox, row, ++columnIndex, Qt::AlignLeft); // triggerTypeComboBox
     layout->addWidget(lineEdit, row, ++columnIndex, Qt::AlignLeft);
@@ -663,6 +682,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
             text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
             text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType)).append(", ");
+            text.append("\"mappingType\":" + QString::number(item->mappingType == MappingType::Xbox ? 1 : 0)).append(", ");
             text.append("\"deviceName\":\"" + item->deviceName + "\"");// 最后一个, 后面不用加逗号
           
             text.append("},\n\t");
@@ -927,6 +947,7 @@ void MainWindow::loadMappingsFile(std::string filename){
                     (jsonObj.contains("btnTriggerType") && jsonObj["btnTriggerType"].toInt() > 0 && jsonObj["btnTriggerType"].toInt() < TriggerTypeEnum::End)
                                               ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
                                               : TriggerTypeEnum::Normal;
+                mapping->mappingType = ((MappingType)(jsonObj.contains("mappingType") && jsonObj["mappingType"].toInt()) == MappingType::Xbox) ? MappingType::Xbox : MappingType::Keyboard;
                 mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
 
                 mappingList.push_back(mapping);
@@ -1135,8 +1156,8 @@ void MainWindow::onLineEditTextChanged(const QString &text){
     mappingList[rowIndex]->remark = text.toStdString();
 }
 
-std::map<std::string, short> MainWindow::getConstKeyMap(std::string dev_btn_type){
-    if(getIsXboxMode()){
+std::map<std::string, short> MainWindow::getConstKeyMap(std::string dev_btn_type, MappingType mappingType){
+    if(mappingType == MappingType::Xbox){
         if(dev_btn_type == (std::string)WHEEL_BUTTON){
             return VK_XBOX_BTN_MAP;
         }
@@ -1148,11 +1169,21 @@ std::map<std::string, short> MainWindow::getConstKeyMap(std::string dev_btn_type
 
 }
 
-// 创建一个键盘按键下拉选择框
-QComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type){
-    QComboBox *comboBox = new QComboBox();
+void MainWindow::updateASwitchPushButton(QPushButton *btn, MappingType mappingType){
+        if(mappingType == MappingType::Keyboard){
+            btn->setText("> 键盘 <");
+            btn->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);margin-left:7;color: black;}");
+        }else if (mappingType == MappingType::Xbox){
+            btn->setText("> Xbox <");
+            btn->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);margin-left:7;color: black;}");
+        }
+}
+    
+void MainWindow::updateAKeyBoardComboBox(QComboBox *comboBox, std::string dev_btn_type, MappingType mappingType){
+    // 清空下拉框
+    comboBox->clear();
 
-    std::map<std::string, short> map = getConstKeyMap(dev_btn_type);
+    std::map<std::string, short> map = getConstKeyMap(dev_btn_type, mappingType);
 
     // 手动置顶 暂停按键选项
     if(map.find(PAUSE_BTN_STR) != map.end()){
@@ -1167,15 +1198,20 @@ QComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type){
         }
         comboBox->addItem(item->first.data());
     }
+}
 
-
-
+// 创建一个键盘按键下拉选择框
+QComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type, MappingType mappingType){
+    QComboBox *comboBox = new QComboBox();
     comboBox->setCurrentIndex(-1);
     comboBox->setMaximumHeight(36);
     comboBox->setMinimumHeight(36);
     comboBox->setMinimumWidth(150);
     comboBox->setMaximumWidth(150);
     comboBox->setStyleSheet("QComboBox{padding-left:10px;}");
+
+    // 添加下拉框选择项
+    updateAKeyBoardComboBox(comboBox, dev_btn_type, mappingType);
 
     return comboBox;
 }
