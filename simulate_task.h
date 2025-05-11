@@ -30,14 +30,16 @@ class SimulateTask : public QObject {
 private:
     //hid_device *handle;// 当前设备的连接句柄
     std::vector<MappingRelation*> *mappingList;// 已配置的按键映射列表
-    std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map
+    std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
     static std::vector<MappingRelation> handleMultiBtnVector;// 当前在使用的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorSorted;// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
 
-    std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map
+    std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map; key: 设备-按键名称, value: 键盘扫描码
 
-    std::map<std::string, TriggerTypeEnum> keyTriggerTypeMap;// 记录按键触发模式的map
+    std::map<std::string, TriggerTypeEnum> keyTriggerTypeMap;// 记录按键触发模式的map; key: 设备-按键名称, value: 键盘扫描码
+
+    std::map<std::string, MappingType> keyMappingTypeMap;// 记录按键映射类型的map; key: 设备-按键名称, value: 键盘扫描码
 
     //std::map<int, short> keyPosMap;// 记录按键位置对应键盘扫描码map
 

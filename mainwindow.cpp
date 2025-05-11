@@ -540,6 +540,9 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         }
         updateASwitchPushButton(btn, mapping->mappingType);
         updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
+        /* ## 还需要处理 轴映射
+         * 待处理
+         */
     });
 
 
