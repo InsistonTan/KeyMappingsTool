@@ -277,27 +277,27 @@ QComboBox QAbstractItemView {
    <widget class="QRadioButton" name="radioButton">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>90</x>
       <y>80</y>
       <width>91</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>映射键盘</string>
+     <string>键盘</string>
     </property>
    </widget>
    <widget class="QRadioButton" name="radioButton_2">
     <property name="geometry">
      <rect>
-      <x>120</x>
+      <x>150</x>
       <y>80</y>
       <width>121</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>映射Xbox手柄</string>
+     <string>Xbox手柄</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_6">
@@ -411,6 +411,19 @@ QComboBox QAbstractItemView {
     </property>
     <property name="text">
      <string>清空已选择设备</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>53</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>默认映射：</string>
     </property>
    </widget>
   </widget>
