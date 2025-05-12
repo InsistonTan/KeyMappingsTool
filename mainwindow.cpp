@@ -352,7 +352,7 @@ void MainWindow::pauseClickSlot(){
             ui->label_4->setStyleSheet("QLabel{color: rgb(248, 201, 19);}");
         }else{
             ui->label_4->setText("已启动");
-            ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
+            ui->label_4->setStyleSheet("QLabel{color: rgb(0, 160, 0);}");
         }
     }
 }
@@ -1680,7 +1680,7 @@ void MainWindow::simulateMsgboxSlot(bool isError, QString text){
 
 void MainWindow::simulateStartedSlot(){
     ui->label_4->setText("已启动");
-    ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
+    ui->label_4->setStyleSheet("QLabel{color: rgb(0, 160, 0);}");
 
     //disableUiAfterStartMapping();
 }
@@ -1990,7 +1990,7 @@ void MainWindow::updateSelectedDeviceLabel(){
             labelText = labelText.left(index);
         }
 
-        ui->label_2->setText(QString("已选择设备(<b style='color:green;'>") + std::to_string(currentSelectedDeviceList.size()).data() + "</b>):");
+        ui->label_2->setText(QString("已选择设备(<b style='color: rgb(0, 160, 0);'>") + std::to_string(currentSelectedDeviceList.size()).data() + "</b>):");
 
         // 获取 QFontMetrics 对象
         QFontMetrics metrics(ui->label_5->font());
@@ -2001,7 +2001,7 @@ void MainWindow::updateSelectedDeviceLabel(){
         ui->label_5->setText(metrics.elidedText(labelText, Qt::ElideLeft,
                                           ui->label_5->width() * maxLines));
 
-        ui->label_5->setStyleSheet("QLabel{color:green;}");
+        ui->label_5->setStyleSheet("QLabel{color: rgb(0, 160, 0);}");
         ui->label_5->setToolTip(labelText.replace(", ", "<br>"));
     }
 }
