@@ -1979,7 +1979,7 @@ void MainWindow::updateSelectedDeviceLabel(){
     if(currentSelectedDeviceList.size() == 0){
         ui->label_2->setText("已选择设备(<b style='color:red;'>0</b>):");
         ui->label_5->setText("暂无");
-        ui->label_5->setStyleSheet("QLabel{color:black;}");
+        ui->label_5->setStyleSheet("");
         ui->label_5->setToolTip("");
     }else{
         for(auto str : currentSelectedDeviceList){
