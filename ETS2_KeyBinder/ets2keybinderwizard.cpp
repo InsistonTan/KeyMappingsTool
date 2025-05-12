@@ -544,7 +544,7 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
     return true;
 }
 
-bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox() {
+bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox(BindingType bindingType) {
     if (deviceName.empty() || isDeviceReady == false) {
         QMessageBox box(QMessageBox::Warning, "设备连接异常",
                         "请返回第3步，将设备连接到电脑，\n在“硬件控制设备”下拉框选择设备\n" + MEG_BOX_LINE + "\n或者进行手动绑定？");
@@ -552,7 +552,7 @@ bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox() {
         box.setDefaultButton(QMessageBox::Ok);
         box.exec();
         if (box.clickedButton() == box.button(QMessageBox::Ok)) {
-            on_pushButton_16_clicked();
+            showManuallyBinder(bindingType);
         } else {
             // 返回第三步(不使用setCurrentId()跳转)
             this->restart();
@@ -565,7 +565,7 @@ bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox() {
 }
 
 void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& message) {
-    if (checkHardwareDeviceAndMsgBox() == false) {
+    if (checkHardwareDeviceAndMsgBox(bindingType) == false) {
         return; // 设备未连接，取消操作
     }
 
@@ -633,6 +633,8 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
 
 std::vector<BigKey> ETS2KeyBinderWizard::getMultiKeyState(const QString& title, const QStringList& messages) {
     if (checkHardwareDeviceAndMsgBox() == false) {
+        ui->checkBox_3->setChecked(true); 
+        on_checkBox_3_clicked(true);
         return {}; // 设备未连接，取消操作
     }
 
@@ -975,18 +977,23 @@ void ETS2KeyBinderWizard::on_checkBox_3_clicked(bool checked) {
     ui->stackedWidget->setCurrentIndex(checked);
 }
 
-// 手动绑定
-void ETS2KeyBinderWizard::on_pushButton_16_clicked() {
+void ETS2KeyBinderWizard::showManuallyBinder(BindingType bindingType) {
     ManuallyBinder* manuallyBinder = new ManuallyBinder(this);
     manuallyBinder->setAttribute(Qt::WA_DeleteOnClose); // 关闭时自动删除
     // 当manuallyBinder没关闭时，不允许操作其他窗口
     manuallyBinder->setWindowModality(Qt::ApplicationModal); // 设置窗口模式为应用程序模态
 
     manuallyBinder->setKeyCount(128); // 设置按键数量
+    manuallyBinder->setBindingType(bindingType); // 设置绑定类型
 
     // 连接信号槽
     connect(manuallyBinder, &ManuallyBinder::keyBound, this, &ETS2KeyBinderWizard::modifyControlsSii_Slot, Qt::DirectConnection);
     manuallyBinder->show();
+}
+
+// 手动绑定
+void ETS2KeyBinderWizard::on_pushButton_16_clicked() {
+    showManuallyBinder(BindingType::lightpark);
 }
 
 void ETS2KeyBinderWizard::modifyControlsSii_Slot(BindingType bindingType, ActionEffect actionEffect) {
