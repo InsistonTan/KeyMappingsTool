@@ -326,7 +326,7 @@ void MainWindow::on_pushButton_2_clicked()
         saveLastDeviceToFile();
 
         ui->pushButton_2->setText("停止全局映射");
-        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);}");
+        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);color: rgb(0, 0, 0);}");
     }
     else{
         // 如果处于暂停状态, 将其重置
@@ -337,7 +337,7 @@ void MainWindow::on_pushButton_2_clicked()
         ui->label_4->setText("未启动");
         ui->label_4->setStyleSheet("QLabel{color: rgb(255, 85, 0);}");
         ui->pushButton_2->setText("启动全局映射");
-        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);}");
+        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);color: rgb(0, 0, 0);}");
         setIsRuning(false);
 
         //enableUiAfterStopMapping();
