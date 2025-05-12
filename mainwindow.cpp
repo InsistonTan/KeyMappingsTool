@@ -588,7 +588,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     deleteBtn->setMaximumHeight(30);
     deleteBtn->setMaximumWidth(80);
     deleteBtn->setMinimumWidth(80);
-    deleteBtn->setStyleSheet("QPushButton{background-color:rgb(255, 157, 157);margin-left:7;}");
+    deleteBtn->setStyleSheet("QPushButton{background-color:rgb(255, 157, 157);margin-left:7;color: rgb(0, 0, 0);}");
     deleteBtn->setObjectName(currentRowIndex);
     // 绑定信号和槽
     connect(deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteBtnClicked);
