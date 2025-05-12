@@ -33,6 +33,7 @@
 #include<QDate>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QStyleHints>
 
 QList<QString> MainWindow::currentSelectedDeviceList = {}; // 当前选择的设备列表
 
@@ -483,7 +484,13 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label1->setMaximumHeight(30);
     label1->setMinimumHeight(30);
     label1->setMaximumWidth(160);
-    label1->setStyleSheet("QLabel{color:blue;padding-right:10px;}");
+    // 根据系统主题设置背景色
+    QStyleHints *styleHints = qApp->styleHints();
+    if (styleHints->colorScheme() == Qt::ColorScheme::Dark) {
+        label1->setStyleSheet("QLabel{color:rgb(170,255,255);padding-right:10px;}");
+    } else {
+        label1->setStyleSheet("QLabel{color:blue;padding-right:10px;}");
+    }
     label1->setObjectName(currentRowIndex);
     label1->setToolTip(mapping->deviceName.isEmpty() ? label1Text : mapping->deviceName + ": " +label1Text);
 
