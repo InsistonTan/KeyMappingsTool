@@ -92,9 +92,9 @@ QComboBox QAbstractItemView {
     <property name="geometry">
      <rect>
       <x>19</x>
-      <y>110</y>
+      <y>80</y>
       <width>931</width>
-      <height>401</height>
+      <height>431</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -109,7 +109,7 @@ QComboBox QAbstractItemView {
        <x>0</x>
        <y>0</y>
        <width>929</width>
-       <height>399</height>
+       <height>429</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -121,7 +121,7 @@ QComboBox QAbstractItemView {
         <x>-1</x>
         <y>0</y>
         <width>931</width>
-        <height>401</height>
+        <height>431</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout" rowstretch="0">
@@ -274,32 +274,6 @@ QComboBox QAbstractItemView {
 }</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="radioButton">
-    <property name="geometry">
-     <rect>
-      <x>90</x>
-      <y>80</y>
-      <width>91</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>键盘</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radioButton_2">
-    <property name="geometry">
-     <rect>
-      <x>150</x>
-      <y>80</y>
-      <width>121</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Xbox手柄</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="pushButton_6">
     <property name="geometry">
      <rect>
@@ -317,7 +291,7 @@ QComboBox QAbstractItemView {
     <property name="geometry">
      <rect>
       <x>888</x>
-      <y>80</y>
+      <y>50</y>
       <width>61</width>
       <height>28</height>
      </rect>
@@ -330,7 +304,7 @@ QComboBox QAbstractItemView {
     <property name="geometry">
      <rect>
       <x>710</x>
-      <y>80</y>
+      <y>50</y>
       <width>81</width>
       <height>28</height>
      </rect>
@@ -356,7 +330,7 @@ QComboBox QAbstractItemView {
     <property name="geometry">
      <rect>
       <x>800</x>
-      <y>80</y>
+      <y>50</y>
       <width>81</width>
       <height>28</height>
      </rect>
@@ -385,9 +359,9 @@ QComboBox QAbstractItemView {
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>40</y>
-      <width>821</width>
-      <height>41</height>
+      <y>50</y>
+      <width>591</width>
+      <height>21</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -411,19 +385,6 @@ QComboBox QAbstractItemView {
     </property>
     <property name="text">
      <string>清空已选择设备</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_6">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>80</y>
-      <width>53</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>默认映射：</string>
     </property>
    </widget>
   </widget>

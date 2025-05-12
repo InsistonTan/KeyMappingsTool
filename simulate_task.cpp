@@ -42,10 +42,13 @@ bool SimulateTask::isAxisRotate(std::string btnName){
     return false;
 }
 
-SimulateTask::SimulateTask(std::vector<MappingRelation*> *mappingList){
+SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
     this->mappingList = mappingList;
 
-    for(MappingRelation* mapping : *mappingList){
+    // 如果映射列表里有映射xbox的记录, 才需要初始化虚拟xbox手柄
+    this->needStartVirtualXbox = hasXboxMappingInMappingList(mappingList);
+
+    for(MappingRelation* mapping : mappingList){
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
 
@@ -476,17 +479,18 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
 void SimulateTask::doWork(){
     qDebug("全局映射启动!");
 
-    // 模拟xbox手柄, 需要初始化
-    // if(getDefaultMappingType() == MappingType::Xbox){
-    if(!initXboxController()){
-        // 关闭虚拟xbox设备
-        closeXboxController();
+    // 需要启动虚拟手柄
+    if(this->needStartVirtualXbox){
+        // 初始化失败
+        if(!initXboxController()){
+            // 关闭虚拟xbox设备
+            closeXboxController();
 
-        // 提交工作结束信号
-        emit workFinished();
-        return;
+            // 提交工作结束信号
+            emit workFinished();
+            return;
+        }
     }
-    // }
 
     setIsRuning(true);
     emit startedSignal();

@@ -170,9 +170,9 @@ private slots:
 
     void on_comboBox_2_activated(int index);
 
-    void on_radioButton_clicked();
+    //void on_radioButton_clicked();
 
-    void on_radioButton_2_clicked();
+    //void on_radioButton_2_clicked();
 
     void on_pushButton_6_clicked();
     void on_pushButton_7_clicked();

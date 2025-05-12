@@ -18,9 +18,6 @@ extern QWidget* g_mainWindow;
 // 全局映射是否开启
 extern bool isRuning;
 
-// 当前默认的映射类型
-extern MappingType defaultMappingType;
-
 // 是否暂停全局映射
 extern bool isPause;
 void clickPauseBtn();
@@ -93,10 +90,6 @@ void setIsRuning(bool val);
 
 bool getIsRunning();
 
-void setDefaultMappingType(MappingType val);
-
-MappingType getDefaultMappingType();
-
 extern double xboxJoystickInnerDeadAreaValue;
 extern double xboxTriggerInnerDeadAreaValue;
 double getXboxJoystickInnerDeadAreaValue();
@@ -105,5 +98,8 @@ double getXboxTriggerInnerDeadAreaValue();
 void setXboxTriggerInnerDeadAreaValue(double value);
 
 QString getAppDataDirStr();
+
+// 映射列表含有映射xbox的记录
+bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList);
 
 #endif // GLOBAL_H

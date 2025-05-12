@@ -29,7 +29,7 @@ class SimulateTask : public QObject {
     Q_OBJECT
 private:
     //hid_device *handle;// 当前设备的连接句柄
-    std::vector<MappingRelation*> *mappingList;// 已配置的按键映射列表
+    std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
     std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
     static std::vector<MappingRelation> handleMultiBtnVector;// 当前在使用的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
@@ -41,8 +41,6 @@ private:
 
     std::map<std::string, MappingType> keyMappingTypeMap;// 记录按键映射类型的map; key: 设备-按键名称, value: 键盘扫描码
 
-    //std::map<int, short> keyPosMap;// 记录按键位置对应键盘扫描码map
-
     std::vector<std::string> rotateAxisList;// 记录需要反转的轴
 
     bool isMouseLeftHolding = false;// 鼠标左键一直按着
@@ -52,13 +50,10 @@ private:
     PVIGEM_TARGET vigemTarget = nullptr;// 虚拟手柄对象
     XUSB_REPORT report;// 手柄模拟报告
 
-
-    //unsigned char buf[MAX_BUF];
-    //wchar_t wstr[MAX_STR];
-    //int res;
+    bool needStartVirtualXbox = false;// 是否需要启动虚拟xbox手柄
 
 public:
-    SimulateTask(std::vector<MappingRelation*> *mappingList);
+    SimulateTask(std::vector<MappingRelation*> mappingList);
     // 辅助功能-最长组合键优先模式发生改动
     static void changeEnableOnlyLongestMapping();
 public slots:

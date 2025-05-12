@@ -11,7 +11,6 @@
 QWidget* g_mainWindow = nullptr;
 
 bool isRuning = false;
-MappingType defaultMappingType = MappingType::Keyboard;
 LPDIRECTINPUT8 g_pDirectInput = nullptr;
 QList<LPDIRECTINPUTDEVICE8> initedDeviceList; // 已初始化的设备列表
 QList<DiDeviceInfo> diDeviceList;
@@ -123,14 +122,6 @@ void setIsRuning(bool val){
 
 bool getIsRunning(){
     return isRuning;
-}
-
-void setDefaultMappingType(MappingType val){
-    defaultMappingType = val;
-}
-
-MappingType getDefaultMappingType(){
-    return defaultMappingType;
 }
 
 std::string guidToString(const GUID& guid)
@@ -654,4 +645,18 @@ QString getAppDataDirStr(){
     return QDir::homePath() + "/AppData/Local/KeyMappingToolData/";
 }
 
+// 映射列表含有映射xbox的记录
+bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList){
+    if(mappingList.empty()){
+        return false;
+    }
+
+    for(auto mapping : mappingList){
+        if(mapping->mappingType == MappingType::Xbox){
+            return true;
+        }
+    }
+
+    return false;
+}
 

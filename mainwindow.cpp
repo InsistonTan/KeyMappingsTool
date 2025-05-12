@@ -121,7 +121,7 @@ void MainWindow::init(){
     ui->scrollAreaContents->setLayout(ui->gridLayout);
 
     // 默认映射键盘
-    ui->radioButton->setChecked(true);
+    //ui->radioButton->setChecked(true);
 
     // 加载上一次使用的设备
     loadLastDeviceFile();
@@ -292,9 +292,8 @@ void MainWindow::on_pushButton_2_clicked()
             return;
         }
 
-        // xbox模式, 但驱动未安装, 无法启动
-        // if(getDefaultMappingType() == MappingType::Xbox && !checkDriverInstalled()){
-        if(!checkDriverInstalled()){
+        // 映射列表有映射xbox的配置, 但虚拟xbox驱动未安装, 无法启动
+        if(hasXboxMappingInMappingList(this->mappingList) && !checkDriverInstalled()){
             qDebug("驱动未安装, 无法启动!");
             return;
         }
@@ -318,7 +317,7 @@ void MainWindow::on_pushButton_2_clicked()
         }
 
         // 创建监听设备输入数据的任务
-        SimulateTask *task = new SimulateTask(&mappingList);
+        SimulateTask *task = new SimulateTask(mappingList);
         QThread *thread = new QThread();
 
         // 将 worker 移到新线程
@@ -432,13 +431,6 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
         // 获取设备按下的按键位置和值
         mapping = getDevBtnData();
-
-        // 根据用户配置的默认映射方式配置
-        if (ui->radioButton->isChecked()) {
-            mapping->setMappingType(MappingType::Keyboard);
-        } else if (ui->radioButton_2->isChecked()) {
-            mapping->setMappingType(MappingType::Xbox);
-        } 
 
         if(mapping == nullptr){
             showErrorMessage(new std::string("未检测到按键被按下!"));
@@ -679,12 +671,12 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::saveLastDeviceToFile(bool isOnlySaveLastDevice){
     // 映射模式
-    QString mappingMode;
-    if(isOnlySaveLastDevice){
-        mappingMode = getMappingModeFromFile();
-    }else{
-        mappingMode = ui->radioButton->isChecked() ? KEYBOARD : XBOX;
-    }
+    // QString mappingMode;
+    // if(isOnlySaveLastDevice){
+    //     mappingMode = getMappingModeFromFile();
+    // }else{
+    //     mappingMode = ui->radioButton->isChecked() ? KEYBOARD : XBOX;
+    // }
 
     QString lastDeviceName = "";
     for(auto deviceName : currentSelectedDeviceList){
@@ -699,7 +691,7 @@ void MainWindow::saveLastDeviceToFile(bool isOnlySaveLastDevice){
     QFile file2(appDataDirPath + LAST_DEVICE_FILENAME);
     QString text2;
     text2.append(lastDeviceName + "\n");
-    text2.append(mappingMode);
+    //text2.append(mappingMode);
 
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file2);  // 创建一个文本流对象
@@ -901,13 +893,13 @@ void MainWindow::loadLastDeviceFile(){
                 updateSelectedDeviceLabel();
             }
 
-            if(!in.atEnd()) {
-                if(in.readLine().toStdString() == XBOX){
-                    ui->radioButton_2->setChecked(true);
-                    //ui->label_7->setText("Xbox按键");
-                    setDefaultMappingType(MappingType::Xbox);
-                }
-            }
+            // if(!in.atEnd()) {
+            //     if(in.readLine().toStdString() == XBOX){
+            //         ui->radioButton_2->setChecked(true);
+            //         //ui->label_7->setText("Xbox按键");
+            //         setDefaultMappingType(MappingType::Xbox);
+            //     }
+            // }
 
         }
 
@@ -1134,16 +1126,28 @@ MappingRelation* MainWindow::getDevBtnData(){
                     }else{
                         // 不是第一次读到该轴的值, 与第一次的值比较, 大于一定量才能确定是该轴要新建映射
                         if(std::abs(item->dev_btn_value - tmpAxis->second) > AXIS_CHANGE_VALUE){
-                            // 映射xbox模式
-                            if(getDefaultMappingType() == MappingType::Xbox){
-                                return item;
-                            }else{
-                                // 映射键盘模式
+                            // 确定该轴是映射键盘还是xbox
+                            // 创建一个 QMessageBox
+                            QMessageBox confirm1;
+                            confirm1.setWindowTitle("请确认");
+                            confirm1.setText("检测到设备[" + item->deviceName + "]的轴\n\n请确认该轴是 映射键盘按键 还是 映射xbox手柄");
+                            // 设置图标
+                            confirm1.setIcon(QMessageBox::Information);
+                            // 创建并添加自定义按钮
+                            QPushButton* mappingToKeyBoard = confirm1.addButton("映射键盘按键", QMessageBox::ActionRole);
+                            QPushButton* mappingToXbox = confirm1.addButton("映射xbox手柄", QMessageBox::ActionRole);
+                            QPushButton* cancel1 = confirm1.addButton("取消", QMessageBox::RejectRole);
+                            // 设置默认按钮
+                            confirm1.setDefaultButton(cancel1);
+                            confirm1.exec();
+
+                            // 映射键盘按键
+                            if(confirm1.clickedButton() == mappingToKeyBoard){
                                 // 确定是方向盘转向轴还是踏板轴
                                 // 创建一个 QMessageBox
                                 QMessageBox msgBox;
                                 msgBox.setWindowTitle("请确认");
-                                msgBox.setText("检测到设备[" + item->deviceName + "]的轴\n\n请确认是转向轴, 还是踏板轴");
+                                msgBox.setText("轴映射键盘按键需要区分转向轴和踏板轴\n\n请确认是转向轴, 还是踏板轴");
                                 // 设置图标
                                 msgBox.setIcon(QMessageBox::Information);
                                 // 创建并添加自定义按钮
@@ -1154,6 +1158,9 @@ MappingRelation* MainWindow::getDevBtnData(){
                                 msgBox.setDefaultButton(cancel);
                                 // 显示消息框
                                 msgBox.exec();
+
+                                item->mappingType = MappingType::Keyboard;
+
                                 // 判断用户点击'是转向轴'按钮
                                 if (msgBox.clickedButton() == panti){
                                     // 值增大, 说明是转向轴右转
@@ -1172,6 +1179,13 @@ MappingRelation* MainWindow::getDevBtnData(){
                                     item->dev_btn_name = "";
                                     return item;
                                 }
+                            }else if(confirm1.clickedButton() == mappingToXbox){
+                                item->mappingType = MappingType::Xbox;
+                                return item;
+                            }else{
+                                // 点击取消, 清空按键名称
+                                item->dev_btn_name = "";
+                                return item;
                             }
                         }
                     }
@@ -1514,52 +1528,6 @@ bool MainWindow::checkDriverInstalled() {
     }
 }
 
-void MainWindow::on_radioButton_clicked()
-{
-    if(getDefaultMappingType() == MappingType::Keyboard){
-        return;
-    }
-
-    //ui->label_7->setText("键盘按键");
-
-    // 设置为键盘模式
-    setDefaultMappingType(MappingType::Keyboard);
-
-    // 重置配置文件下拉
-    ui->comboBox_2->clear();
-    ui->comboBox_2->addItem("空白配置");
-
-
-    // 重新寻找保存的配置文件(xbox)
-    scanMappingFile();
-
-    // 显示死区设置
-    this->ui->pushButton_8->show();
-}
-
-void MainWindow::on_radioButton_2_clicked()
-{
-    if(getDefaultMappingType() == MappingType::Xbox){
-        return;
-    }
-
-    //ui->label_7->setText("Xbox按键");
-
-    // 检查驱动
-    checkDriverInstalled();
-
-    // 设置为xbox模式
-    setDefaultMappingType(MappingType::Xbox);
-
-    // 重置配置文件下拉
-    ui->comboBox_2->clear();
-    ui->comboBox_2->addItem("空白配置");
-
-    // 重新寻找保存的配置文件(xbox)
-    scanMappingFile();
-}
-
-
 void MainWindow::on_pushButton_6_clicked()
 {
     // 清空设备列表
@@ -1890,8 +1858,8 @@ void MainWindow::on_pushButton_11_clicked()
 void MainWindow::disableUiAfterStartMapping(){
     ui->comboBox->setEnabled(false);
     ui->pushButton_11->setEnabled(false);
-    ui->radioButton->setEnabled(false);
-    ui->radioButton_2->setEnabled(false);
+    // ui->radioButton->setEnabled(false);
+    // ui->radioButton_2->setEnabled(false);
     ui->comboBox_2->setEnabled(false);
     ui->pushButton->setEnabled(false);
 }
@@ -1899,8 +1867,8 @@ void MainWindow::disableUiAfterStartMapping(){
 void MainWindow::enableUiAfterStopMapping(){
     ui->comboBox->setEnabled(true);
     ui->pushButton_11->setEnabled(true);
-    ui->radioButton->setEnabled(true);
-    ui->radioButton_2->setEnabled(true);
+    // ui->radioButton->setEnabled(true);
+    // ui->radioButton_2->setEnabled(true);
     ui->comboBox_2->setEnabled(true);
     ui->pushButton->setEnabled(true);
 }
