@@ -707,7 +707,7 @@ void MainWindow::saveLastDeviceToFile(bool isOnlySaveLastDevice){
     }
 }
 
-void MainWindow::saveMappingsToFile(std::string filename){
+QString MainWindow::saveMappingsToFile(std::string filename){
     // 要保存的文本内容
     QString text;
     text.append("[\n\t");
@@ -744,7 +744,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
         if (!dir.exists(USER_MAPPINGS_DIR)) {
             if (!dir.mkdir(USER_MAPPINGS_DIR)) {
                 showErrorMessage(new std::string("创建存放用户配置的文件夹失败"));
-                return;
+                return "";
             }
         }
     }
@@ -760,22 +760,42 @@ void MainWindow::saveMappingsToFile(std::string filename){
         }
     }
 
-    // 最终保存的文件名
-    QString finalFileName = appDataDirPath;
+    // 最终保存的绝对路径文件名
+    QString finalFileName = "";
+    // 最终保存的无后缀文件名
+    QString finalFileBaseName = "";
+
     // 如果filename不为空, 则使用USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX后缀为文件名
     if(filename.size() > 0){
-        finalFileName.append(USER_MAPPINGS_DIR + filename);
+        finalFileBaseName.append(filename);
 
+        QString multiDeviceName = "";
         // 当前为多设备
         if(currentSelectedDeviceList.size() > 1){
-            finalFileName.append("_[");
+            multiDeviceName.append("_[");
             for(auto deviceName : currentSelectedDeviceList){
-                finalFileName.append(deviceName).append(",");
+                multiDeviceName.append(deviceName).append(",");
             }
-            finalFileName.append("]");
+            multiDeviceName.append("]");
         }
 
-        finalFileName.append(MAPPING_FILE_SUFFIX);
+        QFile file(appDataDirPath + USER_MAPPINGS_DIR + finalFileBaseName + multiDeviceName + MAPPING_FILE_SUFFIX);
+        // 有重名文件
+        if(file.exists()){
+            // 当前文件名增加一个序号, 直到不重名
+            for(int i = 1; ;i++){
+                QString tempFileBaseName = finalFileBaseName + " (" + std::to_string(i).data() + ")";
+                QFile tempFile(appDataDirPath + USER_MAPPINGS_DIR + tempFileBaseName + multiDeviceName + MAPPING_FILE_SUFFIX);
+                // 该文件名不存在
+                if(!tempFile.exists()){
+                    finalFileBaseName = tempFileBaseName;
+                    break;
+                }
+            }
+        }
+
+        // 生成最终文件绝对路径名
+        finalFileName.append(appDataDirPath).append(USER_MAPPINGS_DIR).append(finalFileBaseName).append(multiDeviceName).append(MAPPING_FILE_SUFFIX);
     }else{
         finalFileName.append(MAPPINGS_FILENAME);
     }
@@ -789,10 +809,19 @@ void MainWindow::saveMappingsToFile(std::string filename){
 
         // 关闭文件
         file.close();
+
         qDebug() << "mappings saved successfully!";
+
+        if(!filename.empty()){
+            qDebug() << "fianlFileBaseName: " << finalFileBaseName;
+            return finalFileBaseName;
+        }
+
     } else {
         qDebug() << "Error opening file!";
     }
+
+    return "";
 }
 
 void MainWindow::loadSettings(){
@@ -1035,11 +1064,11 @@ void MainWindow::loadMappingsFile(std::string filename){
 
         // 重新保存一次配置
         if(needReSaveMappingsToFile && !filename.empty()){
-            saveMappingsToFile(filename);
+            QString saveFileShortName = saveMappingsToFile(filename);
 
             // 重新扫描一遍
             scanMappingFile();
-            ui->comboBox_2->setCurrentText(filename.data());
+            ui->comboBox_2->setCurrentText(saveFileShortName);
         }
 
         return;
@@ -1090,11 +1119,11 @@ void MainWindow::loadMappingsFile(std::string filename){
         }
 
         // 将旧版配置文件转为新版配置文件
-        saveMappingsToFile(filename);
+        QString saveFileShortName = saveMappingsToFile(filename);
 
         // 重新扫描一遍
         scanMappingFile();
-        ui->comboBox_2->setCurrentText(filename.data());
+        ui->comboBox_2->setCurrentText(saveFileShortName);
     }
 }
 
@@ -1460,13 +1489,12 @@ void MainWindow::on_pushButton_4_clicked()
     if (ok) {
         if(!text.isEmpty()){
             // 保存配置
-            saveMappingsToFile(text.toStdString());
-
+            QString saveFileShortName = saveMappingsToFile(text.toStdString());
 
             // 重新扫描一遍
             scanMappingFile();
 
-            ui->comboBox_2->setCurrentText(text);
+            ui->comboBox_2->setCurrentText(saveFileShortName);
 
             // 重置当前配置文件名
             //currentMappingFileName = "";

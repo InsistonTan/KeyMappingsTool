@@ -92,7 +92,7 @@ protected:
     bool hasAddToMappingList(MappingRelation* mapping);
     bool hasAddToMappingList(QString devBtnName, QString deviceName);
 
-    void saveMappingsToFile(std::string filename);
+    QString saveMappingsToFile(std::string filename);
     void saveLastDeviceToFile(bool isOnlySaveLastDevice = false);
 
     void loadMappingsFile(std::string filename);
