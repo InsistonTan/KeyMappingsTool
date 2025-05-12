@@ -24,7 +24,6 @@
 #define USER_MAPPINGS_DIR "userMappings/"
 #define MAPPING_FILE_SUFFIX ".di_mappings_config"
 #define MAPPING_FILE_SUFFIX_XBOX ".di_xbox_mappings_config"
-#define MAPPING_FILE_SUFFIX_MIXED ".di_mixed_mappings_config"
 #define KEYBOARD "keyboard"
 #define XBOX "xbox"
 #define AXIS_CHANGE_VALUE 2000 //识别轴需要变化的最小值
@@ -133,6 +132,8 @@ protected:
 
     // 获取省略模式的文本(文本超出组件显示范围将显示省略号...)
     QString getElidedText(QWidget* widget, QString srcText);
+
+    bool hasSameNameMappingFile(QString newFileName);
 
 public slots:
     // 模拟服务报错的slot

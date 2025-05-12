@@ -161,6 +161,10 @@ void MainWindow::init(){
 }
 
 void MainWindow::scanMappingFile(){
+    ui->comboBox_2->clear();
+    ui->comboBox_2->addItem("空白配置");
+    mappingFileNameMap.clear();
+
     QDir dir = appDataDirPath.isEmpty() ? QDir::current() : QDir(appDataDirPath);
 
     if(dir.exists(USER_MAPPINGS_DIR)){
@@ -168,33 +172,12 @@ void MainWindow::scanMappingFile(){
         // 获取文件列表，并筛选指定后缀的文件
         QFileInfoList list = dir.entryInfoList();
 
-        /* ## 这里最好需要处理同名文件，以下是临时方法
-         * 只处理和 mixed 文件同名的文件
-         * 最好不要弄同名文件
-         */
-        QFileInfoList listMixed;
-        for (const QFileInfo &fileInfo : list) {
-            if ("." + fileInfo.suffix() == MAPPING_FILE_SUFFIX_MIXED) {
-                listMixed.append(fileInfo);
-            }
-        }
-        for (int i = 0; i < list.size(); i++) {
-            if ("." +list[i].suffix() != MAPPING_FILE_SUFFIX_MIXED) {
-                for (auto item : listMixed) {
-                    if (list[i].baseName() == item.baseName()) {
-                        list.removeAt(i);
-                        i--;
-                        break;
-                    }
-                }
-            }
-        }
-
         for (const QFileInfo &fileInfo : list) {
             // 匹配指定后缀的文件，加入下拉列表
             if ("." + fileInfo.suffix() == MAPPING_FILE_SUFFIX ||
-                "." + fileInfo.suffix() == MAPPING_FILE_SUFFIX_XBOX ||
-                "." + fileInfo.suffix() == MAPPING_FILE_SUFFIX_MIXED) {
+                "." + fileInfo.suffix() == MAPPING_FILE_SUFFIX_XBOX) {
+
+                QString shortName = fileInfo.completeBaseName();
 
                 // 当前选择了多个设备, 配置文件名需要跟当前选择的设备匹配
                 if(currentSelectedDeviceList.size() > 1){
@@ -205,15 +188,10 @@ void MainWindow::scanMappingFile(){
                         }
                     }
                     if(isAccept){
-                        QString shortName = fileInfo.completeBaseName();
-
                         int lastUnderlinePos = shortName.lastIndexOf('_'); // 查找最后一个下划线的位置
                         if(lastUnderlinePos >= 0){
                             shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
                         }
-
-                        ui->comboBox_2->addItem(shortName);
-                        mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
                     }
                 }else if(currentSelectedDeviceList.size() == 1){
                     // 当前为单设备, 只显示单设备的配置
@@ -221,9 +199,6 @@ void MainWindow::scanMappingFile(){
                     if(fileInfo.completeBaseName().contains("_[") && fileInfo.completeBaseName().contains(",]")){
                         continue;
                     }
-
-                    ui->comboBox_2->addItem(fileInfo.completeBaseName());
-                    mappingFileNameMap[fileInfo.completeBaseName()] = fileInfo.absoluteFilePath();
                 }else if(currentSelectedDeviceList.size() == 0){
                     // 当前选择的设备为空, 显示所有配置
                     // 下拉框显示的配置名
@@ -233,10 +208,10 @@ void MainWindow::scanMappingFile(){
                     if(lastUnderlinePos >= 0){
                         shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
                     }
-
-                    ui->comboBox_2->addItem(shortName);
-                    mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
                 }
+
+                ui->comboBox_2->addItem(shortName);
+                mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
             }
         }
 
@@ -774,6 +749,17 @@ void MainWindow::saveMappingsToFile(std::string filename){
         }
     }
 
+
+    QString oldFileName;
+
+    // 删除旧文件
+    if(!filename.empty() && mappingFileNameMap.contains(ui->comboBox_2->currentText())){
+        QFile oldFile(mappingFileNameMap[ui->comboBox_2->currentText()]);
+        if(oldFile.exists()){
+            oldFile.remove();
+        }
+    }
+
     // 最终保存的文件名
     QString finalFileName = appDataDirPath;
     // 如果filename不为空, 则使用USER_MAPPINGS_DIR + filename + MAPPING_FILE_SUFFIX后缀为文件名
@@ -789,7 +775,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
             finalFileName.append("]");
         }
 
-        finalFileName.append(MAPPING_FILE_SUFFIX_MIXED);
+        finalFileName.append(MAPPING_FILE_SUFFIX);
     }else{
         finalFileName.append(MAPPINGS_FILENAME);
     }
@@ -986,6 +972,15 @@ void MainWindow::loadMappingsFile(std::string filename){
     }
 
     if (!doc.isNull() && doc.isArray()) {
+        // 需要重新保存一次映射, 将其转换成新版配置
+        bool needReSaveMappingsToFile = false;
+
+        // 配置文件统一使用 ".di_mappings_config", ".di_xbox_mappings_config"需要转换成这个
+        if (mappingFileNameMap[filename.data()].endsWith(MAPPING_FILE_SUFFIX_XBOX)) {
+            // 需要重新保存一次映射, 将其转换成新版配置
+            needReSaveMappingsToFile = true;
+        }
+
         // 获取 JSON 对象数组
         QJsonArray jsonArray = doc.array();
 
@@ -1009,20 +1004,23 @@ void MainWindow::loadMappingsFile(std::string filename){
                     (jsonObj.contains("btnTriggerType") && jsonObj["btnTriggerType"].toInt() > 0 && jsonObj["btnTriggerType"].toInt() < TriggerTypeEnum::End)
                                               ? static_cast<TriggerTypeEnum>(jsonObj["btnTriggerType"].toInt())
                                               : TriggerTypeEnum::Normal;
-                if (mappingFileNameMap[filename.data()].endsWith(MAPPING_FILE_SUFFIX_XBOX)) {
-                    mapping->mappingType = MappingType::Xbox;
-                } else if (mappingFileNameMap[filename.data()].endsWith(MAPPING_FILE_SUFFIX)) {
-                    mapping->mappingType = MappingType::Keyboard;
-                } else {
-                    if (jsonObj.contains("mappingType")) {
-                        // 读取映射类型
-                        if ((MappingType)jsonObj["mappingType"].toInt() == MappingType::Xbox) {
-                            mapping->mappingType = MappingType::Xbox;
-                        } else if ((MappingType)jsonObj["mappingType"].toInt() == MappingType::Keyboard) {
-                            mapping->mappingType = MappingType::Keyboard;
-                        }
-                    } 
+
+                if (jsonObj.contains("mappingType")) {
+                    // 读取映射类型
+                    if ((MappingType)jsonObj["mappingType"].toInt() == MappingType::Xbox) {
+                        mapping->mappingType = MappingType::Xbox;
+                    } else if ((MappingType)jsonObj["mappingType"].toInt() == MappingType::Keyboard) {
+                        mapping->mappingType = MappingType::Keyboard;
+                    }
+                }else{
+                    // 配置文件没有mappingType信息, 说明需要重新保存一次映射, 将其转换成新版配置
+                    needReSaveMappingsToFile = true;
+
+                    if (mappingFileNameMap[filename.data()].endsWith(MAPPING_FILE_SUFFIX_XBOX)) {
+                        mapping->mappingType = MappingType::Xbox;
+                    }
                 }
+
                 mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
 
                 // 按键名称不为空才添加进列表
@@ -1034,6 +1032,16 @@ void MainWindow::loadMappingsFile(std::string filename){
 
         // 关闭文件
         file.close();
+
+        // 重新保存一次配置
+        if(needReSaveMappingsToFile && !filename.empty()){
+            saveMappingsToFile(filename);
+
+            // 重新扫描一遍
+            scanMappingFile();
+            ui->comboBox_2->setCurrentText(filename.data());
+        }
+
         return;
     }else{
         // 读取旧版配置文件
@@ -1083,6 +1091,10 @@ void MainWindow::loadMappingsFile(std::string filename){
 
         // 将旧版配置文件转为新版配置文件
         saveMappingsToFile(filename);
+
+        // 重新扫描一遍
+        scanMappingFile();
+        ui->comboBox_2->setCurrentText(filename.data());
     }
 }
 
@@ -1429,38 +1441,42 @@ void MainWindow::on_pushButton_4_clicked()
         return;
     }
 
+    QString srcFileName = "";
+    auto selectedFileShortName = ui->comboBox_2->currentText();
+    if(!selectedFileShortName.isEmpty()){
+        auto filePath = mappingFileNameMap[selectedFileShortName];
+        QFile file(filePath);
+        if(file.exists()){
+            QFileInfo fileInfo(file);
+            srcFileName = fileInfo.completeBaseName();
+        }
+    }
+
     // 创建一个输入对话框
     bool ok;
-    QString text = QInputDialog::getText(nullptr, "保存配置", "请输入配置名称:", QLineEdit::Normal, currentMappingFileName.data(), &ok);
+    QString text = QInputDialog::getText(this, "保存配置", "请输入配置名称:", QLineEdit::Normal, srcFileName, &ok);
 
     // 如果用户点击了OK，并且输入有效
-    if (ok && !text.isEmpty()) {
-        // 保存配置
-        saveMappingsToFile(text.toStdString());
+    if (ok) {
+        if(!text.isEmpty()){
+            // 保存配置
+            saveMappingsToFile(text.toStdString());
 
-        // 清空映射列表配置页面
-        //clearMappingsArea();
 
-        // 清空映射列表
-        //mappingList.clear();
+            // 重新扫描一遍
+            scanMappingFile();
 
-        // 判断是否需要加进配置文件下拉列表
-        if(ui->comboBox_2->findText(text.toStdString().data()) == -1){
-            ui->comboBox_2->addItem(text);
+            ui->comboBox_2->setCurrentText(text);
+
+            // 重置当前配置文件名
+            //currentMappingFileName = "";
+            currentMappingFileName = text.toStdString();
+
+            QMessageBox::information(this, "提醒", "配置保存成功!");
+        }else {
+            showErrorMessage(new std::string("配置名称不能为空!"));
+            return;
         }
-
-        // 切换到空白配置
-        //ui->comboBox_2->setCurrentIndex(0);
-        ui->comboBox_2->setCurrentText(text);
-
-        // 重置当前配置文件名
-        //currentMappingFileName = "";
-        currentMappingFileName = text.toStdString();
-
-        QMessageBox::information(this, "提醒", "配置保存成功!");
-    } else {
-        showErrorMessage(new std::string("配置名称不能为空!"));
-        return;
     }
 }
 
@@ -1959,4 +1975,23 @@ void MainWindow::updateSelectedDeviceLabel(){
 // 获取省略模式的文本(文本超出组件显示范围将显示省略号...)
 QString MainWindow::getElidedText(QWidget* widget, QString srcText){
     return "";
+}
+
+
+bool MainWindow::hasSameNameMappingFile(QString newFileName){
+    QDir dir = appDataDirPath.isEmpty() ? QDir::current() : QDir(appDataDirPath);
+
+    if(dir.exists(USER_MAPPINGS_DIR)){
+        dir.cd(USER_MAPPINGS_DIR);
+        // 获取文件列表，并筛选指定后缀的文件
+        QFileInfoList list = dir.entryInfoList();
+
+        for(auto fileInfo : list){
+            if(fileInfo.fileName() == newFileName + MAPPING_FILE_SUFFIX){
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
