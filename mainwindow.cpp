@@ -491,7 +491,6 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label2->setMaximumHeight(30);
     label2->setMinimumHeight(30);
     label2->setMaximumWidth(50);
-    label2->setStyleSheet("QLabel{color:black;}");
     label2->setObjectName(currentRowIndex);
 
 
