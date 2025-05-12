@@ -633,7 +633,7 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
 
 std::vector<BigKey> ETS2KeyBinderWizard::getMultiKeyState(const QString& title, const QStringList& messages) {
     if (checkHardwareDeviceAndMsgBox() == false) {
-        ui->checkBox_3->setChecked(true); 
+        ui->checkBox_3->setChecked(true);
         on_checkBox_3_clicked(true);
         return {}; // 设备未连接，取消操作
     }
@@ -983,7 +983,7 @@ void ETS2KeyBinderWizard::showManuallyBinder(BindingType bindingType) {
     // 当manuallyBinder没关闭时，不允许操作其他窗口
     manuallyBinder->setWindowModality(Qt::ApplicationModal); // 设置窗口模式为应用程序模态
 
-    manuallyBinder->setKeyCount(128); // 设置按键数量
+    manuallyBinder->setKeyCount(128);            // 设置按键数量
     manuallyBinder->setBindingType(bindingType); // 设置绑定类型
 
     // 连接信号槽
@@ -1002,15 +1002,7 @@ void ETS2KeyBinderWizard::modifyControlsSii_Slot(BindingType bindingType, Action
         return;
     }
 
-    QString ets2BtnStr;
-    for (const auto& action : actionEffect) {
-        int keyIndex = action.first; // 获取按键索引
-        if (action.second == false) {
-            ets2BtnStr += "!";
-        }
-        ets2BtnStr += gameJoyPosNameList[ui->comboBox_2->currentIndex()].trimmed() + ".b" + QString::number(keyIndex + 1) + " & "; // 1基索引
-    }
-    ets2BtnStr.chop(3); // 去掉最后的 " & "
+    QString ets2BtnStr = convertToETS2_String(gameJoyPosNameList[ui->comboBox_2->currentIndex()], actionEffect); // 1基索引
 
     qDebug() << "修改的按键:" << ets2BtnStr;
     backupProfile(); // 备份配置文件
