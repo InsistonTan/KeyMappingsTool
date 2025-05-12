@@ -739,7 +739,7 @@ void MainWindow::saveMappingsToFile(std::string filename){
 
     // 生成内容
     for(auto item: mappingList){
-        if(item != nullptr){
+        if(item != nullptr && !item->dev_btn_name.empty()){
             text.append("{");
 
             text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
@@ -1025,7 +1025,10 @@ void MainWindow::loadMappingsFile(std::string filename){
                 }
                 mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
 
-                mappingList.push_back(mapping);
+                // 按键名称不为空才添加进列表
+                if(!mapping->dev_btn_name.empty()){
+                    mappingList.push_back(mapping);
+                }
             }
         }
 
