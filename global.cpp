@@ -652,7 +652,7 @@ bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList){
     }
 
     for(auto mapping : mappingList){
-        if(mapping->mappingType == MappingType::Xbox){
+        if(mapping != nullptr && mapping->mappingType == MappingType::Xbox){
             return true;
         }
     }

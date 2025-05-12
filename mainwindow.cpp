@@ -405,6 +405,15 @@ bool MainWindow::hasAddToMappingList(MappingRelation* mapping){
 
     return false;
 }
+bool MainWindow::hasAddToMappingList(QString devBtnName, QString deviceName){
+    for(int i=0; i < (int)mappingList.size(); i++){
+        if(mappingList[i] != nullptr && mappingList[i]->dev_btn_name == devBtnName.toStdString() && mappingList[i]->deviceName == deviceName){
+            return true;
+        }
+    }
+
+    return false;
+}
 
 bool isClickNewLineBtn(MappingRelation *mapping){
     return mapping == nullptr;
@@ -452,6 +461,11 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         mappingList.push_back(mapping);
     }
 
+    // 该映射无效
+    if(mapping == nullptr || mapping->dev_btn_name.empty()){
+        return;
+    }
+
     // 记录当前行的index值
     auto currentRowIndex = isAddNewMapping ? std::to_string(mappingList.size() - 1) : std::to_string(index);
 
@@ -467,7 +481,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         QLabel *h2 = new QLabel("映射成");
         h2->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
-        QLabel *h3 = new QLabel("Xbox/键盘");
+        QLabel *h3 = new QLabel("映射模式");
         h3->setStyleSheet("font-weight: bold;"); // 设置样式表实现加粗
 
         QLabel *h4 = new QLabel("映射按键");
@@ -505,6 +519,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label2->setStyleSheet("QLabel{color:black;}");
     label2->setObjectName(currentRowIndex);
 
+
     // 键盘按键下拉框
     QComboBox *comboBox = createAKeyBoardComboBox(mapping->dev_btn_type, mapping->mappingType); //// 重构代码优先处理
     // 设置一个序号, 为后续操作提供一个位置
@@ -516,35 +531,47 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     // 连接信号和槽
     connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);
 
-    QPushButton *btn = new QPushButton();
-    btn->setMaximumHeight(30);
-    btn->setMinimumHeight(30);
-    btn->setMaximumWidth(80);
-    btn->setMinimumWidth(80);
-    updateASwitchPushButton(btn, mapping->mappingType);
-    btn->setObjectName(currentRowIndex);
-    /* ## 转向轴映射 的处理可以再优化一下
-    * 待处理
-    */
-    QString btnText = QString::fromStdString(mapping->dev_btn_name);
-    if (!btnText.contains("右转") && !btnText.contains("左转")) {
-        // 绑定信号和槽
-        connect(btn, &QPushButton::clicked, this, [=](){
-            if (mapping->mappingType == MappingType::Keyboard){
-                mapping->setMappingType(MappingType::Xbox);
-            }else if (mapping->mappingType == MappingType::Xbox){
-                mapping->setMappingType(MappingType::Keyboard);
-            }
-            updateASwitchPushButton(btn, mapping->mappingType);
-            updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
-            mapping->keyboard_name = comboBox->currentText().toStdString();
-            mapping->keyboard_value = 0;
-        });
-        btn->setEnabled(true);
-    } else {
-        // 转向轴映射, 暂不支持混合映射切换
-        btn->setEnabled(false);
+
+    // 映射模式下拉框
+    QComboBox *mappingTypeComboBox = new QComboBox();
+    mappingTypeComboBox->setMaximumHeight(36);
+    mappingTypeComboBox->setMinimumHeight(36);
+    mappingTypeComboBox->setMinimumWidth(90);
+    mappingTypeComboBox->setMaximumWidth(90);
+    mappingTypeComboBox->setStyleSheet("QComboBox{padding-left:10px;}"
+                                       "QComboBox:disabled {"
+                                       "   background-color: #f0f0f0;"
+                                       "   color: #888888;"
+                                       "}"
+                                       );
+    // 设置一个序号, 为后续操作提供一个位置
+    mappingTypeComboBox->setObjectName(currentRowIndex);
+    mappingTypeComboBox->addItem("映射键盘");
+    mappingTypeComboBox->addItem("映射Xbox");
+
+    if (QString(mapping->dev_btn_name.data()).contains("右转") || QString(mapping->dev_btn_name.data()).contains("左转")) {
+        mappingTypeComboBox->setEnabled(false);
     }
+
+    if(mapping->mappingType == MappingType::Keyboard){
+        mappingTypeComboBox->setCurrentIndex(0);
+    }else if(mapping->mappingType == MappingType::Xbox){
+        mappingTypeComboBox->setCurrentIndex(1);
+    }
+
+    // 连接信号和槽
+    connect(mappingTypeComboBox, &QComboBox::activated, this, [=]{
+        if (mappingTypeComboBox->currentIndex() == 1){
+            mapping->setMappingType(MappingType::Xbox);
+        }else if (mappingTypeComboBox->currentIndex() == 0){
+            mapping->setMappingType(MappingType::Keyboard);
+        }
+        //updateASwitchPushButton(btn, mapping->mappingType);
+        updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
+        mapping->keyboard_name = comboBox->currentText().toStdString();
+        mapping->keyboard_value = 0;
+    });
+
 
     // 按键触发模式下拉框
     QComboBox *triggerTypeComboBox = new QComboBox();
@@ -597,7 +624,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     int row = (index < 0 ? mappingList.size() : index) + 1;
     layout->addWidget(label1, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(label2, row, ++columnIndex, Qt::AlignLeft);
-    layout->addWidget(btn, row, ++columnIndex, Qt::AlignLeft);
+    layout->addWidget(mappingTypeComboBox, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(comboBox, row, ++columnIndex, Qt::AlignLeft);
     layout->addWidget(triggerTypeComboBox, row, ++columnIndex, Qt::AlignLeft); // triggerTypeComboBox
     layout->addWidget(lineEdit, row, ++columnIndex, Qt::AlignLeft);
@@ -1068,9 +1095,13 @@ void MainWindow::onDeleteBtnClicked(){
     }
 
     // 释放该位置的指针
-    delete mappingList[rowIndex];
+    //delete mappingList[rowIndex];
     // 替换为空指针
-    mappingList[rowIndex] = nullptr;
+    //mappingList[rowIndex] = nullptr;
+
+    // 将该映射的按键名称置空
+    mappingList[rowIndex]->dev_btn_name = "";
+    mappingList[rowIndex]->keyboard_value = 0;
 
     // 删除该行所有组件
     QList<QWidget*> widgets = this->findChildren<QWidget*>(deleteBtn->objectName());
@@ -1078,11 +1109,6 @@ void MainWindow::onDeleteBtnClicked(){
         //widget->hide();
         widget->deleteLater();
     }
-
-    // for(auto item : mappingList){
-    //     if(item!=nullptr)
-    //         qDebug(to_string(item->dev_btn_pos).data());
-    // }
 }
 
 MappingRelation* MainWindow::getDevBtnData(){
@@ -1143,6 +1169,14 @@ MappingRelation* MainWindow::getDevBtnData(){
 
                             // 映射键盘按键
                             if(confirm1.clickedButton() == mappingToKeyBoard){
+                                // 如果已经存在该轴的映射, 直接返回
+                                if(hasAddToMappingList(QString(item->dev_btn_name.data()), item->deviceName)){
+                                    showErrorMessage(new std::string("设备[" + item->deviceName.toStdString() + "]的 \"" + item->dev_btn_name + "\" 已经配置了映射!"));
+                                    // 点击取消, 清空按键名称
+                                    item->dev_btn_name = "";
+                                    return item;
+                                }
+
                                 // 确定是方向盘转向轴还是踏板轴
                                 // 创建一个 QMessageBox
                                 QMessageBox msgBox;
@@ -1172,6 +1206,17 @@ MappingRelation* MainWindow::getDevBtnData(){
                                         return item;
                                     }
                                 }else if(msgBox.clickedButton() == taban){
+                                    // 如果已经存在该轴的左转或右转映射, 直接返回
+                                    if(hasAddToMappingList(QString(item->dev_btn_name.data()) + "左转", item->deviceName)
+                                        || hasAddToMappingList(QString(item->dev_btn_name.data()) + "右转", item->deviceName)){
+                                        showErrorMessage(new std::string("设备[" + item->deviceName.toStdString() + "]的 \""
+                                                                         + item->dev_btn_name + "左转\" 或 "
+                                                                         + item->dev_btn_name + "右转\"" + " 已经配置了映射! \n\n 不能再重复配置!"));
+                                        // 点击取消, 清空按键名称
+                                        item->dev_btn_name = "";
+                                        return item;
+                                    }
+
                                     // 踏板
                                     return item;
                                 }else{
@@ -1180,6 +1225,17 @@ MappingRelation* MainWindow::getDevBtnData(){
                                     return item;
                                 }
                             }else if(confirm1.clickedButton() == mappingToXbox){
+                                // 如果已经存在该轴的左转或右转映射, 直接返回
+                                if(hasAddToMappingList(QString(item->dev_btn_name.data()) + "左转", item->deviceName)
+                                   || hasAddToMappingList(QString(item->dev_btn_name.data()) + "右转", item->deviceName)){
+                                    showErrorMessage(new std::string("设备[" + item->deviceName.toStdString() + "]的 \""
+                                                                     + item->dev_btn_name + "左转\" 或 "
+                                                                     + item->dev_btn_name + "右转\"" + " 已经配置了映射! \n\n 不能再重复配置!"));
+                                    // 点击取消, 清空按键名称
+                                    item->dev_btn_name = "";
+                                    return item;
+                                }
+
                                 item->mappingType = MappingType::Xbox;
                                 return item;
                             }else{
@@ -1243,10 +1299,10 @@ std::map<std::string, short> MainWindow::getConstKeyMap(std::string dev_btn_type
 void MainWindow::updateASwitchPushButton(QPushButton *btn, MappingType mappingType){
     if(mappingType == MappingType::Keyboard){
         btn->setText("> 键盘 <");
-        btn->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);margin-left:7;color: black;}");
+        btn->setStyleSheet("QPushButton{background-color:rgb(251, 251, 251);margin-left:7;color: black;}");
     }else if (mappingType == MappingType::Xbox){
         btn->setText("> Xbox <");
-        btn->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);margin-left:7;color: black;}");
+        btn->setStyleSheet("QPushButton{background-color:rgb(116, 224, 116);margin-left:7;color: black;}");
     }
 }
     
@@ -1408,16 +1464,6 @@ void MainWindow::on_pushButton_4_clicked()
 
 void MainWindow::on_comboBox_2_activated(int index)
 {
-    // // 未选择设备
-    // if(vid == 0 || pid == 0){
-    //     showErrorMessage(nullptr);
-    //     return;
-    // }
-
-    // if(getIsRunning()){
-    //     setIsRuning(false);
-    // }
-
     if(getIsRunning()){
         if(currentMappingFileName.empty()){
             ui->comboBox_2->setCurrentIndex(-1);
@@ -1429,13 +1475,13 @@ void MainWindow::on_comboBox_2_activated(int index)
         return;
     }
 
+    // 清空一切
+    mappingList.clear();
+    clearMappingsArea();
+    currentMappingFileName = "";
+
     // 选择了空白配置
     if(index == 0){
-        // 清空一切
-        mappingList.clear();
-        clearMappingsArea();
-        currentMappingFileName = "";
-
         return;
     }
 
