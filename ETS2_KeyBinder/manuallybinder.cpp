@@ -1,35 +1,17 @@
 #include "manuallybinder.h"
 #include "ui_manuallybinder.h"
 #include <QMessageBox>
-#include <map>
 
 using namespace std;
 
 ManuallyBinder::ManuallyBinder(QWidget* parent) : QDialog(parent), ui(new Ui::ManuallyBinder) {
     ui->setupUi(this);
 
-    const map<BindingType, QString> bindingTypeComboxString = {
-        {BindingType::lightoff, "关闭灯光"},
-        {BindingType::lightpark, "示廓灯"},
-        {BindingType::lighton, "近光灯"},
-        {BindingType::lblinkerh, "左转向灯"},
-        {BindingType::rblinkerh, "右转向灯"},
-        {BindingType::hblight, "远光灯"},
-        {BindingType::lighthorn, "灯光喇叭"},
-        {BindingType::wipers0, "雨刷器关闭"},
-        {BindingType::wipers1, "雨刷器1档"},
-        {BindingType::wipers2, "雨刷器2档"},
-        {BindingType::wipers3, "雨刷器3档"},
-        {BindingType::gearsel1off, "档位开关1低档位"},
-        {BindingType::gearsel1on, "档位开关1高档位"},
-        {BindingType::gearsel2off, "档位开关2低档位"},
-        {BindingType::gearsel2on, "档位开关2高档位"},
-    };
     // 往下拉框添加绑定类型
     for (auto item : bindingTypeComboxString) {
         ui->comboBox->addItem(item.second);
     }
-    ui->comboBox->setCurrentIndex(1); // 默认选择第2个绑定类型
+    setBindingType(BindingType::lightpark); // 默认选择第2个绑定类型
 }
 
 ManuallyBinder::~ManuallyBinder() {
@@ -48,6 +30,14 @@ void ManuallyBinder::setKeyCount(size_t count) {
         ui->comboBox_2->addItem(QString::number(i + 1)); // 往下拉框添加按键
     }
     ui->comboBox_2->setCurrentIndex(0); // 重置下拉框选中项
+}
+
+void ManuallyBinder::setBindingType(BindingType bindingType) {
+    // 设置当前选中的绑定类型
+    if (bindingType < BindingType::lightoff || bindingType > BindingType::gearsel2on) {
+        bindingType = BindingType::lightpark; // 默认选择第2个绑定类型
+    }
+    ui->comboBox->setCurrentText(bindingTypeComboxString.at(bindingType)); // 设置当前选中的绑定类型
 }
 
 // 清空

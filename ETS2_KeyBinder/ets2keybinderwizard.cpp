@@ -24,7 +24,7 @@ using namespace std;
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
-    this->setWindowTitle("欧卡2/美卡-原生按键绑定向导 v1.0-beta.6");
+    this->setWindowTitle("欧卡2/美卡-原生按键绑定向导 v1.0-beta.7");
 #if defined(INDEPENDENT_MODE)
     this->setWindowTitle(this->windowTitle() + " " + QString(__DATE__) + " " + QString(__TIME__));
 #endif
@@ -48,9 +48,8 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             updateUserProfile();                                      // 更新用户配置文件
             QStringList gameJoyPosNameList = getDeviceNameGameList(); // 获取游戏配置文件中的设备名称列表
 
-            if(gameJoyPosNameList.isEmpty()){
-                // 禁止点击下一步
-                this->button(QWizard::NextButton)->setEnabled(false);
+            if (gameJoyPosNameList.isEmpty()) {
+                return;
             }
 
             // 更新到下拉框
@@ -159,21 +158,24 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
     } else {
         globalControlsFilePath = QDir::homePath() + "/Documents/American Truck Simulator/global_controls.sii";
     }
+
     QFile file(globalControlsFilePath);
-
-    if(!file.exists()){
-        QMessageBox::critical(this, "错误", "游戏全局配置文件不存在!\n配置文件路径:" + globalControlsFilePath);
+    QString errorMsg = "\n\n文件路径：\n" + globalControlsFilePath + "\n\n请返回第一步，确定已禁用Steam输入";
+    if (!file.exists()) {
+        qDebug() << "全局配置文件不存在：" << file.fileName();
+        QMessageBox::critical(this, "错误", "游戏全局配置文件不存在！" + errorMsg);
+        this->restart(); // 返回第一步
         return QStringList();
     }
-
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "无法打开文件:" << file.fileName();
-        QMessageBox::critical(this, "错误", "打开游戏全局配置文件失败!\n配置文件路径:" + globalControlsFilePath);
+        qDebug() << "无法打开文件：" << file.fileName();
+        QMessageBox::critical(this, "错误", "打开游戏全局配置文件失败！" + errorMsg);
+        this->restart(); // 返回第一步
         return QStringList();
     }
-    QTextStream inGlobal(&file);
-    map<QString, QString> deviceNameList;
 
+    QTextStream inGlobal(&file);
+    map<QString, QString> globalDeviceNameList; // 全局配置文件中的设备名称列表
     QRegularExpression regex1(R"(`di8\.'{(.*?)}\|{(.*?)}'`.*?\|(.+)\s*")");
     while (!inGlobal.atEnd()) {
         QString line = inGlobal.readLine();
@@ -183,7 +185,7 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
             if (match.hasMatch()) {
                 QString guid = "{" + match.captured(1) + "}|{" + match.captured(2) + "}";
                 QString name = match.captured(3);
-                deviceNameList.insert_or_assign(guid, name);
+                globalDeviceNameList.insert_or_assign(guid, name);
             }
         }
     }
@@ -191,23 +193,19 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
 
     // 读取配置文件列表
     QFile profileFile(selectedProfilePath);
-
-    if(!profileFile.exists()){
-        QMessageBox::critical(this, "错误", "游戏配置文件不存在!"
-                                            "\n配置文件参考路径如下:"
-                                            "\n欧卡2: " + QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles或者steam_profiles/xxxxxx/controls.sii"
-                                            "\n美卡: " + QDir::homePath() + "/Documents/American Truck Simulator/profiles或者steam_profiles/xxxxxx/controls.sii");
+    if (!profileFile.exists()) {
+        QMessageBox::critical(this, "错误", "游戏配置文件不存在！文件路径：\n" + selectedProfilePath);
         return QStringList();
     }
 
     if (!profileFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件:" << profileFile.fileName();
-        QMessageBox::critical(this, "错误", "打开游戏配置文件失败!\n配置文件路径:" + selectedProfilePath);
+        QMessageBox::critical(this, "错误", "打开游戏配置文件失败！文件路径：\n" + selectedProfilePath);
         return QStringList();
     }
 
     QTextStream inProfile(&profileFile);
-    QStringList profileList = gameJoyPosNameList;
+    QStringList profilesGameJoyList = gameJoyPosNameList; // 游戏配置文件中的设备名称列表
     QRegularExpression regex2(R"(`di8\.'{(.*?)}\|{(.*?)}'`)");
     while (!inProfile.atEnd()) {
         QString line = inProfile.readLine();
@@ -216,14 +214,14 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
                 QRegularExpressionMatch match = regex2.match(line);
                 if (match.hasMatch()) {
                     QString guid = "{" + match.captured(1) + "}|{" + match.captured(2) + "}";
-                    QString name = deviceNameList[guid];
-                    profileList[i] = name + "(" + match.captured(2).left(8) + ")";
+                    QString name = globalDeviceNameList[guid];
+                    profilesGameJoyList[i] = name + "(" + match.captured(2).left(8) + ")";
                 }
             }
         }
     }
     profileFile.close();
-    return profileList;
+    return profilesGameJoyList;
 }
 
 bool ETS2KeyBinderWizard::hasLastDevInCurrentDeviceList(std::string lastDeviceName) {
@@ -239,11 +237,10 @@ bool ETS2KeyBinderWizard::hasLastDevInCurrentDeviceList(std::string lastDeviceNa
 bool ETS2KeyBinderWizard::backupProfile() {
     QFile selectedProfileFile(selectedProfilePath);
     if (!selectedProfileFile.exists()) {
-        qDebug() << "配置文件不存在:" << selectedProfilePath;
-        QMessageBox::critical(this, "错误", "备份配置文件失败: 游戏配置文件不存在!"
-                                            "\n配置文件参考路径如下:"
-                                            "\n欧卡2: " + QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles或者steam_profiles/xxxxxx/controls.sii"
-                                            "\n美卡: " + QDir::homePath() + "/Documents/American Truck Simulator/profiles或者steam_profiles/xxxxxx/controls.sii");
+        qDebug() << "配置文件不存在：" << selectedProfilePath;
+        QMessageBox::critical(this, "错误",
+                              "备份游戏配置文件失败：该文件不存在！参考路径：\n\n" + steamProfiles[ui->comboBox_4->currentIndex()]
+                                  + "/xxxxxx/controls.sii\n" + profiles[ui->comboBox_4->currentIndex()] + "/xxxxxx/controls.sii\n");
         return false;
     }
 
@@ -275,11 +272,17 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
 
     // 检查文件是否存在
     if (!QFileInfo::exists(controlsFilePath)) {
-        QMessageBox::critical(this, "错误", "修改游戏配置文件失败: 游戏配置文件不存在!"
-                                            "\n配置文件参考路径如下:"
-                                            "\n欧卡2: " + QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles或者steam_profiles/xxxxxx/controls.sii"
-                                            "\n美卡: " + QDir::homePath() + "/Documents/American Truck Simulator/profiles或者steam_profiles/xxxxxx/controls.sii");
-        qWarning() << "文件未找到:" << controlsFilePath;
+        qDebug() << "配置文件不存在：" << controlsFilePath;
+        QMessageBox::critical(this, "错误",
+                              "修改游戏配置文件失败：该文件不存在！参考路径：\n" + steamProfiles[ui->comboBox_4->currentIndex()]
+                                  + "/xxxxxx/controls.sii\n" + profiles[ui->comboBox_4->currentIndex()] + "/xxxxxx/controls.sii\n");
+        return;
+    }
+
+    // 打开文件并读取内容
+    if (!controlsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "无法打开文件：" << controlsFilePath;
+        QMessageBox::critical(this, "错误", "打开游戏配置文件失败！文件路径：\n" + controlsFilePath);
         return;
     }
 
@@ -311,7 +314,7 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     };
 
     if (replaceRules.find(bindingType) == replaceRules.end()) {
-        qWarning() << "无效的绑定类型";
+        qDebug() << "无效的绑定类型";
         return;
     }
 
@@ -319,22 +322,14 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     QString pattern = replaceRules[bindingType];
     QString replacement = QString("mix %1 `%2 | semantical.%1?0`").arg(bindingTypeString[bindingType], ets2BtnStr);
 
-    // 打开文件并读取内容
-    if (!controlsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "无法打开文件:" << controlsFilePath;
-        QMessageBox::critical(this, "错误", "打开游戏配置文件失败!\n配置文件路径:\n" + controlsFilePath);
-        return;
-    }
-
     QTextStream in(&controlsFile);
     QStringList lines;
     bool modified = false;
-
     while (!in.atEnd()) {
         QString line = in.readLine();
         QRegularExpression regex(pattern);
         if (line.contains(regex)) {
-            qDebug() << "匹配到:" << line.trimmed();
+            qDebug() << "匹配到：" << line.trimmed();
             line.replace(regex, replacement);
             modified = true;
         }
@@ -345,8 +340,8 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     // 如果有修改，写回文件
     if (modified) {
         if (!controlsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-            qWarning() << "无法写入文件:" << controlsFilePath;
-            QMessageBox::critical(this, "错误", "写入游戏配置文件失败!\n配置文件路径:\n" + controlsFilePath);
+            qDebug() << "无法写入文件：" << controlsFilePath;
+            QMessageBox::critical(this, "错误", "无法写入游戏配置文件！文件路径：\n" + controlsFilePath);
             return;
         }
 
@@ -355,7 +350,7 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
             out << line << "\n";
         }
         controlsFile.close();
-        qDebug() << "成功修改文件:" << controlsFilePath;
+        qDebug() << "成功修改文件：" << controlsFilePath;
     } else {
         qDebug() << "未检测到需要修改的内容";
     }
@@ -375,7 +370,7 @@ QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& a
         ets2BtnStr += gameJoyPosStr.trimmed() + ".b" + QString::number(item.first + 1) + "?0 & ";
     }
     ets2BtnStr.chop(3); // 去掉最后的 &
-    qDebug() << "转换后的 ETS2 按键字符串:" << ets2BtnStr;
+    qDebug() << "转换后的 ETS2 按键字符串：" << ets2BtnStr;
     return ets2BtnStr;
 }
 
@@ -384,7 +379,7 @@ QList<QPair<QString, QDateTime>> listFoldersWithModificationDates(const QDir& di
     QList<QPair<QString, QDateTime>> folderInfo;
 
     if (!directory.exists()) {
-        qWarning() << "路径" << directory.absolutePath() << "不存在!";
+        qDebug() << "路径" << directory.absolutePath() << "不存在！";
         return folderInfo;
     }
 
@@ -410,13 +405,13 @@ void ETS2KeyBinderWizard::updateUserProfile() {
     QList<QPair<QString, QDateTime>> allProfileFolders = steamProfileFolders + profileFolders;
 
     ui->comboBox_3->clear();
+    this->button(QWizard::NextButton)->setEnabled(true); // 允许点击下一步
     if (allProfileFolders.isEmpty()) {
         qDebug() << "没有找到任何配置文件！";
         QMessageBox::critical(this, "错误", "没有找到任何游戏配置文件夹");
 
         // 没有找到配置文件就禁止点击下一步
         this->button(QWizard::NextButton)->setEnabled(false);
-
         return;
     }
 
@@ -436,7 +431,7 @@ bool ETS2KeyBinderWizard::initDirectInput() {
     HINSTANCE hInstance = GetModuleHandle(NULL);
     if (FAILED(DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&pDirectInput, NULL))) {
         qDebug() << "DirectInput 初始化失败！";
-        QMessageBox::critical(nullptr, "错误", "初始化DirectInput: 初始化失败！");
+        QMessageBox::critical(nullptr, "错误", "初始化DirectInput： 初始化失败！");
         return false;
     }
 
@@ -465,20 +460,20 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
     // 创建设备实例
     if (FAILED(pDirectInput->CreateDevice(diDeviceList[deviceIndex].guidInstance, &pDevice, NULL))) {
         qDebug() << "设备创建失败！";
-        QMessageBox::critical(this, "错误", "初始化设备: 设备创建失败！");
+        QMessageBox::warning(this, "警告", "初始化设备： 设备创建失败！");
         return false;
     }
 
     if (FAILED(pDevice->SetDataFormat(&c_dfDIJoystick2))) {
         qDebug() << "设置数据格式失败！";
-        QMessageBox::critical(this, "错误", "初始化设备: 设置数据格式失败！");
+        QMessageBox::warning(this, "警告", "初始化设备： 设置数据格式失败！");
         return false;
     }
 
     // 设置非独占模式(只有在施加力反馈时需要设置独占模式)
     if (FAILED(pDevice->SetCooperativeLevel(GetForegroundWindow(), DISCL_BACKGROUND | DISCL_NONEXCLUSIVE))) {
         qDebug() << "设置非独占模式失败！";
-        QMessageBox::critical(this, "错误", "初始化设备: 设置非独占模式失败！");
+        QMessageBox::warning(this, "警告", "初始化设备： 设置非独占模式失败！");
         return false;
     }
 
@@ -486,11 +481,11 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
     capabilities.dwSize = sizeof(DIDEVCAPS);
     if (FAILED(pDevice->GetCapabilities(&capabilities))) {
         qDebug() << "获取设备能力失败！";
-        QMessageBox::critical(this, "错误", "初始化设备: 获取设备能力失败！");
+        QMessageBox::warning(this, "警告", "初始化设备： 获取设备能力失败！");
         return false;
     }
     // 获取按钮数量
-    qDebug() << "按钮数量:" << capabilities.dwButtons;
+    qDebug() << "按钮数量：" << capabilities.dwButtons;
 
     return true;
 }
@@ -501,7 +496,7 @@ void ETS2KeyBinderWizard::scanDevice() {
     }
 
     if (FAILED(pDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY))) {
-        QMessageBox::critical(nullptr, "错误", "扫描设备列表失败！");
+        QMessageBox::warning(nullptr, "警告", "扫描硬件设备列表失败！");
         return;
     }
 }
@@ -510,9 +505,9 @@ void ETS2KeyBinderWizard::scanDevice() {
 bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect lighthorn) {
     // LightBinder.di_mappings_config 文件格式
     // [
-    //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"K", "keyboard_value":37,
+    //     {"dev_btn_name":"按键4", "dev_btn_type":"wheel_button", "keyboard_name":"K", "keyboard_value":37,
     //     "remark":"远光灯", "rotateAxis":0, "btnTriggerType":5, "deviceName":"Generic   USB  Joystick  (00060079)"},
-    //     {"dev_btn_name":"按键4+按键7", "dev_btn_type":"wheel_button", "dev_btn_value":"0", "keyboard_name":"J", "keyboard_value":36,
+    //     {"dev_btn_name":"按键4+按键7", "dev_btn_type":"wheel_button", "keyboard_name":"J", "keyboard_value":36,
     //     "remark":"灯光喇叭", "rotateAxis":0, "btnTriggerType":0, "deviceName":"Generic   USB  Joystick  (00060079)"}
     // ]
 
@@ -538,26 +533,31 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
 
     QTextStream in(&lightBindingFile);
     in << "[\n{\"dev_btn_name\":\"" << hblightKeyStr;
-    in << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"K\", \"keyboard_value\":37, "
+    in << "\", \"dev_btn_type\":\"wheel_button\", \"keyboard_name\":\"K\", \"keyboard_value\":37, "
           "\"remark\":\"远光灯\", \"rotateAxis\":0, \"btnTriggerType\":5, \"deviceName\":\"";
     in << joyName << "\"},\n";
 
     in << "{\"dev_btn_name\":\"" << lighthornKeyStr;
-    in << "\", \"dev_btn_type\":\"wheel_button\", \"dev_btn_value\":\"0\", \"keyboard_name\":\"J\", \"keyboard_value\":36,"
+    in << "\", \"dev_btn_type\":\"wheel_button\", \"keyboard_name\":\"J\", \"keyboard_value\":36,"
           "\"remark\":\"灯光喇叭\", \"rotateAxis\":0, \"btnTriggerType\":0, \"deviceName\":\"";
     in << joyName << "\"}\n]";
     return true;
 }
 
-bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox() {
+bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox(BindingType bindingType) {
     if (deviceName.empty() || isDeviceReady == false) {
-        QMessageBox box(QMessageBox::Critical, "错误",
+        QMessageBox box(QMessageBox::Warning, "设备连接异常",
                         "请返回第3步，将设备连接到电脑，\n在“硬件控制设备”下拉框选择设备\n" + MEG_BOX_LINE + "\n或者进行手动绑定？");
         box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
         box.setDefaultButton(QMessageBox::Ok);
         box.exec();
         if (box.clickedButton() == box.button(QMessageBox::Ok)) {
-            on_pushButton_16_clicked();
+            showManuallyBinder(bindingType);
+        } else {
+            // 返回第三步(不使用setCurrentId()跳转)
+            this->restart();
+            this->next();
+            this->next();
         }
         return false;
     }
@@ -565,7 +565,7 @@ bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox() {
 }
 
 void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& message) {
-    if (checkHardwareDeviceAndMsgBox() == false) {
+    if (checkHardwareDeviceAndMsgBox(bindingType) == false) {
         return; // 设备未连接，取消操作
     }
 
@@ -615,20 +615,26 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
     if (ret == QMessageBox::Ok) {
         backupProfile(); // 备份配置文件
         // 防止下标越界
-        if(ui->comboBox_2->currentIndex() >= 0 && ui->comboBox_2->currentIndex() < gameJoyPosNameList.size()){
+        if (ui->comboBox_2->currentIndex() >= 0 && ui->comboBox_2->currentIndex() < gameJoyPosNameList.size()) {
             QString gameJoyPosStr = gameJoyPosNameList[ui->comboBox_2->currentIndex()];
             for (auto item : actionEffectMap) {
                 QString ets2BtnStr = convertToETS2_String(gameJoyPosStr, item.second);
                 modifyControlsSii(selectedProfilePath, item.first, ets2BtnStr);
             }
-        }else{
+        } else {
             QMessageBox::critical(this, "错误", "还未选择游戏输入设备, 请返回第三步选择");
+            // 返回第三步(不使用setCurrentId()跳转)
+            this->restart();
+            this->next();
+            this->next();
         }
     }
 }
 
 std::vector<BigKey> ETS2KeyBinderWizard::getMultiKeyState(const QString& title, const QStringList& messages) {
     if (checkHardwareDeviceAndMsgBox() == false) {
+        ui->checkBox_3->setChecked(true);
+        on_checkBox_3_clicked(true);
         return {}; // 设备未连接，取消操作
     }
 
@@ -945,7 +951,7 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
             isDeviceReady = true;
         }
     } else {
-        qDebug() << "获取设备状态信息失败!";
+        qDebug() << "获取设备状态信息失败！";
         qDebug() << "GetDeviceState failed with error:" << HRESULT_CODE(hr);
     }
 
@@ -959,7 +965,7 @@ void ETS2KeyBinderWizard::on_comboBox_3_activated(int index) {
         selectedProfilePath =
             profiles[ui->comboBox_4->currentIndex()] + "/" + profileFolders[index - steamProfileFolders.size()].first + "/controls.sii";
     } else {
-        qDebug() << "无效的配置文件索引:" << index;
+        qDebug() << "无效的配置文件索引：" << index;
     }
 }
 
@@ -971,18 +977,23 @@ void ETS2KeyBinderWizard::on_checkBox_3_clicked(bool checked) {
     ui->stackedWidget->setCurrentIndex(checked);
 }
 
-// 手动绑定
-void ETS2KeyBinderWizard::on_pushButton_16_clicked() {
+void ETS2KeyBinderWizard::showManuallyBinder(BindingType bindingType) {
     ManuallyBinder* manuallyBinder = new ManuallyBinder(this);
     manuallyBinder->setAttribute(Qt::WA_DeleteOnClose); // 关闭时自动删除
     // 当manuallyBinder没关闭时，不允许操作其他窗口
     manuallyBinder->setWindowModality(Qt::ApplicationModal); // 设置窗口模式为应用程序模态
 
-    manuallyBinder->setKeyCount(128); // 设置按键数量
+    manuallyBinder->setKeyCount(128);            // 设置按键数量
+    manuallyBinder->setBindingType(bindingType); // 设置绑定类型
 
     // 连接信号槽
     connect(manuallyBinder, &ManuallyBinder::keyBound, this, &ETS2KeyBinderWizard::modifyControlsSii_Slot, Qt::DirectConnection);
     manuallyBinder->show();
+}
+
+// 手动绑定
+void ETS2KeyBinderWizard::on_pushButton_16_clicked() {
+    showManuallyBinder(BindingType::lightpark);
 }
 
 void ETS2KeyBinderWizard::modifyControlsSii_Slot(BindingType bindingType, ActionEffect actionEffect) {
@@ -991,15 +1002,7 @@ void ETS2KeyBinderWizard::modifyControlsSii_Slot(BindingType bindingType, Action
         return;
     }
 
-    QString ets2BtnStr;
-    for (const auto& action : actionEffect) {
-        int keyIndex = action.first; // 获取按键索引
-        if (action.second == false) {
-            ets2BtnStr += "!";
-        }
-        ets2BtnStr += gameJoyPosNameList[ui->comboBox_2->currentIndex()].trimmed() + ".b" + QString::number(keyIndex + 1) + " & "; // 1基索引
-    }
-    ets2BtnStr.chop(3); // 去掉最后的 " & "
+    QString ets2BtnStr = convertToETS2_String(gameJoyPosNameList[ui->comboBox_2->currentIndex()], actionEffect); // 1基索引
 
     qDebug() << "修改的按键:" << ets2BtnStr;
     backupProfile(); // 备份配置文件
