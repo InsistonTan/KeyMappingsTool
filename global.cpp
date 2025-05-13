@@ -659,4 +659,16 @@ bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList){
 
     return false;
 }
-
+// BUTTONS_VALUE_TYPE 转换为字符串
+std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue){
+    std::string btnValueStr = "";
+    for (size_t i = 0; i < MAX_BUTTONS; i++) {
+        if (btnValue.getBit(i)) {
+            btnValueStr += "按键" + std::to_string(i) + "+";
+        }
+    }
+    if (btnValueStr.size() > 0) {
+        btnValueStr.pop_back();  // 去掉最后的 "+"
+    }
+    return btnValueStr;
+}
