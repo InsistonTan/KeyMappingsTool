@@ -421,7 +421,9 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                         }
                     }
                 }else{
-                    list.append(new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName));
+                    MappingRelation *mapping =new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName);
+                    mapping->setBtnBitValue(btnBitValue);  // 设置按键值
+                    list.append(mapping);
                 }
             }
             if(enableLog && getEnableBtnLog()){
