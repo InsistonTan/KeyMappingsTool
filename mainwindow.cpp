@@ -662,9 +662,6 @@ void MainWindow::on_pushButton_clicked()
     ui->pushButton->setEnabled(false); 
     ui->pushButton->setText("等待输入...");
 
-    // 下面的函数会导致界面卡死, 需要重绘一下
-    this->repaint();
-
     paintOneLineMapping(nullptr, -1);
 
     QTimer::singleShot(50, [=](){
@@ -1171,23 +1168,48 @@ MappingRelation* MainWindow::getDevBtnData(){
         return nullptr;
     }
 
-    std::map<std::string, int> tempRecord;
+    // 设置一个3s定时器，时间到后停止监听
+    bool isListening = true;
+    QTimer timer;
+    timer.setSingleShot(true);
+    timer.start(3000);
+    connect(&timer, &QTimer::timeout, [&isListening](){ isListening = false;});
+    
+    // 获取第一次数据
     bool isFirstData = true;
+    qint64 timeTick = QDateTime::currentMSecsSinceEpoch();
+    std::map<QString, BUTTONS_VALUE_TYPE> firstKeyStateMap;
+    std::map<std::string, int> tempRecord;
 
     bool enableLogs = getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog();
 
     // 监听设备按键状态
-    for(int i=0; i<60; i++){
+    while(isListening){
+        QApplication::processEvents(); // 处理事件队列，防止界面卡死
         // 获取设备状态数据
         auto res = getInputState(enableLogs);
 
-        // 跳过第一次数据获取(第一次res有可能为空, 会影响后面记录第一次数据)
-        if(i == 0){
-            // 释放res内存
-            qDeleteAll(res);  // 删除所有指针指向的对象
-            res.clear();      // 清空列表
-            Sleep(50);
-            continue;
+        // 获取初始按键状态
+        if (isFirstData) {
+            // 跳过前50ms的数据，第一次采集的数据为空，可能是BUG
+            if (QDateTime::currentMSecsSinceEpoch() - timeTick > 50) {
+                isFirstData = false;
+                auto firstKeyRes = getInputState(enableLogs); // 获取按键状态，第一次获取为0，应该是BUG
+                for (auto item : firstKeyRes) {
+                    if (item->dev_btn_type == WHEEL_BUTTON) {
+                        QString deviceName = item->deviceName;
+                        if (firstKeyStateMap.find(deviceName) == firstKeyStateMap.end()) {
+                            // 记录第一次数据
+                            firstKeyStateMap.insert_or_assign(deviceName, item->dev_btn_bit_value);
+                        } else {
+                            // 不是第一次读到该按键的值, 叠加
+                            firstKeyStateMap[deviceName] |= item->dev_btn_bit_value;
+                        }
+                    }
+                }
+            } else {
+                continue;
+            }
         }
 
         if(res.size() > 0){
@@ -1297,26 +1319,28 @@ MappingRelation* MainWindow::getDevBtnData(){
                     }
                 }else{
                     // 方向盘按键
-                    // 记录第一次数据
-                    if(isFirstData){
-                        tempRecord.insert_or_assign(btnOrAxisStr, item->dev_btn_value);
-                    }else{
-                        // 当前按键是新按下的
-                        if(tempRecord.find(btnOrAxisStr) == tempRecord.end()){
-                            return item;
+                    if(firstKeyStateMap.size() > 0){
+                        QString deviceName = item->deviceName;
+                        BUTTONS_VALUE_TYPE nowValue = item->dev_btn_bit_value;
+                        for (auto firstKey : firstKeyStateMap) {
+                            if (firstKey.first == deviceName && (firstKey.second != nowValue)) {
+                                // 找出不同的按键
+                                BUTTONS_VALUE_TYPE btnValue = nowValue ^ firstKey.second;
+                                item->dev_btn_name = ButtonsValueTypeToString(btnValue);
+                                item->dev_btn_bit_value = btnValue;
+                                return item;
+                            }
                         }
+                    } else {
+                        return item;
                     }
                 }
             }
-
-            isFirstData = false;
         }
 
         // 释放res内存
         qDeleteAll(res);  // 删除所有指针指向的对象
         res.clear();      // 清空列表
-
-        Sleep(50);
     }
 
     return nullptr;
