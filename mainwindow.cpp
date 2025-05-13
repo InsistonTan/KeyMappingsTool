@@ -33,6 +33,7 @@
 #include<QDate>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QStyleHints>
 
 QList<QString> MainWindow::currentSelectedDeviceList = {}; // 当前选择的设备列表
 
@@ -326,7 +327,7 @@ void MainWindow::on_pushButton_2_clicked()
         saveLastDeviceToFile();
 
         ui->pushButton_2->setText("停止全局映射");
-        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);}");
+        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(255, 170, 127);color: rgb(0, 0, 0);}");
     }
     else{
         // 如果处于暂停状态, 将其重置
@@ -337,7 +338,7 @@ void MainWindow::on_pushButton_2_clicked()
         ui->label_4->setText("未启动");
         ui->label_4->setStyleSheet("QLabel{color: rgb(255, 85, 0);}");
         ui->pushButton_2->setText("启动全局映射");
-        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);}");
+        ui->pushButton_2->setStyleSheet("QPushButton{background-color:rgb(170, 255, 255);color: rgb(0, 0, 0);}");
         setIsRuning(false);
 
         //enableUiAfterStopMapping();
@@ -351,7 +352,7 @@ void MainWindow::pauseClickSlot(){
             ui->label_4->setStyleSheet("QLabel{color: rgb(248, 201, 19);}");
         }else{
             ui->label_4->setText("已启动");
-            ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
+            ui->label_4->setStyleSheet("QLabel{color: rgb(0, 160, 0);}");
         }
     }
 }
@@ -483,7 +484,13 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label1->setMaximumHeight(30);
     label1->setMinimumHeight(30);
     label1->setMaximumWidth(160);
-    label1->setStyleSheet("QLabel{color:blue;padding-right:10px;}");
+    // 根据系统主题设置背景色
+    QStyleHints *styleHints = qApp->styleHints();
+    if (styleHints->colorScheme() == Qt::ColorScheme::Dark) {
+        label1->setStyleSheet("QLabel{color:rgb(170,255,255);padding-right:10px;}");
+    } else {
+        label1->setStyleSheet("QLabel{color:blue;padding-right:10px;}");
+    }
     label1->setObjectName(currentRowIndex);
     label1->setToolTip(mapping->deviceName.isEmpty() ? label1Text : mapping->deviceName + ": " +label1Text);
 
@@ -491,7 +498,6 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     label2->setMaximumHeight(30);
     label2->setMinimumHeight(30);
     label2->setMaximumWidth(50);
-    label2->setStyleSheet("QLabel{color:black;}");
     label2->setObjectName(currentRowIndex);
 
 
@@ -589,7 +595,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     deleteBtn->setMaximumHeight(30);
     deleteBtn->setMaximumWidth(80);
     deleteBtn->setMinimumWidth(80);
-    deleteBtn->setStyleSheet("QPushButton{background-color:rgb(255, 157, 157);margin-left:7;}");
+    deleteBtn->setStyleSheet("QPushButton{background-color:rgb(255, 157, 157);margin-left:7;color: rgb(0, 0, 0);}");
     deleteBtn->setObjectName(currentRowIndex);
     // 绑定信号和槽
     connect(deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteBtnClicked);
@@ -1674,7 +1680,7 @@ void MainWindow::simulateMsgboxSlot(bool isError, QString text){
 
 void MainWindow::simulateStartedSlot(){
     ui->label_4->setText("已启动");
-    ui->label_4->setStyleSheet("QLabel{color: rgb(0, 170, 0);}");
+    ui->label_4->setStyleSheet("QLabel{color: rgb(0, 160, 0);}");
 
     //disableUiAfterStartMapping();
 }
@@ -1973,7 +1979,7 @@ void MainWindow::updateSelectedDeviceLabel(){
     if(currentSelectedDeviceList.size() == 0){
         ui->label_2->setText("已选择设备(<b style='color:red;'>0</b>):");
         ui->label_5->setText("暂无");
-        ui->label_5->setStyleSheet("QLabel{color:black;}");
+        ui->label_5->setStyleSheet("");
         ui->label_5->setToolTip("");
     }else{
         for(auto str : currentSelectedDeviceList){
@@ -1984,7 +1990,7 @@ void MainWindow::updateSelectedDeviceLabel(){
             labelText = labelText.left(index);
         }
 
-        ui->label_2->setText(QString("已选择设备(<b style='color:green;'>") + std::to_string(currentSelectedDeviceList.size()).data() + "</b>):");
+        ui->label_2->setText(QString("已选择设备(<b style='color: rgb(0, 160, 0);'>") + std::to_string(currentSelectedDeviceList.size()).data() + "</b>):");
 
         // 获取 QFontMetrics 对象
         QFontMetrics metrics(ui->label_5->font());
@@ -1995,7 +2001,7 @@ void MainWindow::updateSelectedDeviceLabel(){
         ui->label_5->setText(metrics.elidedText(labelText, Qt::ElideLeft,
                                           ui->label_5->width() * maxLines));
 
-        ui->label_5->setStyleSheet("QLabel{color:green;}");
+        ui->label_5->setStyleSheet("QLabel{color: rgb(0, 160, 0);}");
         ui->label_5->setToolTip(labelText.replace(", ", "<br>"));
     }
 }

@@ -50,7 +50,7 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     if(ETS2InstallPath.isEmpty()){
         ui->label_2->setStyleSheet("QLabel{color:red;}");
     }else{
-        ui->label_2->setStyleSheet("QLabel{color:black;}");
+        ui->label_2->setStyleSheet("");
         ui->label_2->setToolTip(ETS2InstallPath);
         ui->label_2->setText(ETS2InstallPath.size() > 40 ? ETS2InstallPath.left(40) + "..." : ETS2InstallPath);
     }
