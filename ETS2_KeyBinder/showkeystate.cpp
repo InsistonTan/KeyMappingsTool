@@ -35,7 +35,7 @@ void ShowKeyState::initUi() {
         label->setAlignment(Qt::AlignCenter);
         // ui->gridLayout->addWidget(label);
         // 设置为2列布局
-        if (i  < keyCount / 2) {
+        if (i < keyCount / 2) {
             ui->gridLayout->addWidget(label, i, 0); // 第一列
         } else {
             ui->gridLayout->addWidget(label, i - keyCount / 2, 1); // 第二列
@@ -55,5 +55,13 @@ void ShowKeyState::setKeyState(BigKey& keyState) {
             }
         }
     }
-    
+}
+
+// 设置十字键状态
+void ShowKeyState::setPovState(QString povState) {
+    if (povState.isEmpty()) {
+        povState = "无"; // 默认值
+    }
+    povState = "十字键：" + povState; // 设置十字键状态
+    ui->labelPov->setText(povState);
 }
