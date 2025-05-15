@@ -16,6 +16,13 @@
 const QString MEG_BOX_LINE = "------------------------";
 const QString MAPPING_FILE_NAME = "LightBinder";
 
+#define POV_MAX (4 * 4)
+std::map<int, size_t> povStandMap = {{0, 0}, {90, 1}, {180, 2}, {270, 3}}; // POV方向映射
+std::map<size_t, QString> povUiMap = {{0, "0度"}, {1, "90度"}, {2, "180度"}, {3, "270度"}};
+std::map<size_t, QString> povStringMap = {{0, "pov1_up"},  {1, "pov1_right"},  {2, "pov1_down"},  {3, "pov1_left"},
+                                          {4, "pov2_up"},  {5, "pov2_right"},  {6, "pov2_down"},  {7, "pov2_left"},
+                                          {8, "pov3_up"},  {9, "pov3_right"},  {10, "pov3_down"}, {11, "pov3_left"},
+                                          {12, "pov4_up"}, {13, "pov4_right"}, {14, "pov4_down"}, {15, "pov4_left"}};
 using namespace std;
 
 // 欧卡2 设置    “摇杆 Button0” 0基索引
@@ -24,7 +31,7 @@ using namespace std;
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
-    this->setWindowTitle("欧卡2/美卡-原生按键绑定向导 v1.0-beta.7");
+    this->setWindowTitle("欧卡2/美卡-原生按键绑定向导 v1.0-beta.8");
 #if defined(INDEPENDENT_MODE)
     this->setWindowTitle(this->windowTitle() + " " + QString(__DATE__) + " " + QString(__TIME__));
 #endif
@@ -130,9 +137,18 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                     if (pDevice && showKeyState) {
                         BigKey keyState = getKeyState();     // 获取按键状态
                         showKeyState->setKeyState(keyState); // 更新按键状态窗口
+                        QString povState;
+                        for (size_t i = capabilities.dwButtons; i < capabilities.dwButtons + POV_MAX; i++) {
+                            size_t povIndex = i - capabilities.dwButtons;
+                            if (keyState.getBit(i)) {
+                                povState += povUiMap[povIndex % 4] + ",";
+                            }
+                        }
+                        povState.chop(1);                    // 去掉最后一个逗号
+                        showKeyState->setPovState(povState); // 更新十字键状态
                     }
                 });
-                timer->start(100); // 每100毫秒更新一次
+                timer->start(50); // 每50毫秒更新一次
             }
         }
     });
@@ -294,6 +310,7 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
         {BindingType::wipers1, R"(mix wipers1 `.*?semantical\.wipers1\?0`)"},
         {BindingType::wipers2, R"(mix wipers2 `.*?semantical\.wipers2\?0`)"},
         {BindingType::wipers3, R"(mix wipers3 `.*?semantical\.wipers3\?0`)"},
+        {BindingType::wipers4, R"(mix wipers4 `.*?semantical\.wipers4\?0`)"},
         {BindingType::lightpark, R"(mix lightpark `.*?semantical\.lightpark\?0`)"},
         {BindingType::lighton, R"(mix lighton `.*?semantical\.lighton\?0`)"},
         {BindingType::hblight, R"(mix hblight `.*?semantical\.hblight\?0`)"},
@@ -306,11 +323,12 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     };
 
     map<BindingType, QString> bindingTypeString = {
-        {BindingType::lightoff, "lightoff"},     {BindingType::lighthorn, "lighthorn"},     {BindingType::wipers0, "wipers0"},
-        {BindingType::wipers1, "wipers1"},       {BindingType::wipers2, "wipers2"},         {BindingType::wipers3, "wipers3"},
-        {BindingType::lightpark, "lightpark"},   {BindingType::lighton, "lighton"},         {BindingType::hblight, "hblight"},
-        {BindingType::lblinkerh, "lblinkerh"},   {BindingType::rblinkerh, "rblinkerh"},     {BindingType::gearsel1off, "gearsel1off"},
-        {BindingType::gearsel1on, "gearsel1on"}, {BindingType::gearsel2off, "gearsel2off"}, {BindingType::gearsel2on, "gearsel2on"},
+        {BindingType::lightoff, "lightoff"},       {BindingType::lighthorn, "lighthorn"},   {BindingType::wipers0, "wipers0"},
+        {BindingType::wipers1, "wipers1"},         {BindingType::wipers2, "wipers2"},       {BindingType::wipers3, "wipers3"},
+        {BindingType::wipers4, "wipers4"},         {BindingType::lightpark, "lightpark"},   {BindingType::lighton, "lighton"},
+        {BindingType::hblight, "hblight"},         {BindingType::lblinkerh, "lblinkerh"},   {BindingType::rblinkerh, "rblinkerh"},
+        {BindingType::gearsel1off, "gearsel1off"}, {BindingType::gearsel1on, "gearsel1on"}, {BindingType::gearsel2off, "gearsel2off"},
+        {BindingType::gearsel2on, "gearsel2on"},
     };
 
     if (replaceRules.find(bindingType) == replaceRules.end()) {
@@ -357,9 +375,10 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
 }
 
 // 将字符串转换为 ETS2 格式
-QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect) {
+QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = 128) {
     QString ets2BtnStr;
-    if (gameJoyPosStr.isEmpty() || actionEffect.empty()) {
+    QString gameJoyStr = gameJoyPosStr.trimmed();
+    if (gameJoyStr.isEmpty() || actionEffect.empty()) {
         return ets2BtnStr;
     }
     // 格式：joy3.b10?0 & !joy3.b11?0
@@ -367,7 +386,12 @@ QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& a
         if (item.second == false) {
             ets2BtnStr += "!";
         }
-        ets2BtnStr += gameJoyPosStr.trimmed() + ".b" + QString::number(item.first + 1) + "?0 & ";
+        if (item.first < maxButtonCount) {
+            ets2BtnStr += gameJoyStr + ".b" + QString::number(item.first + 1) + "?0 & ";
+        } else if (item.first < maxButtonCount + POV_MAX) { // POV
+            size_t povIndex = item.first - maxButtonCount;
+            ets2BtnStr += gameJoyStr + "." + povStringMap[povIndex] + "?0 & ";
+        }
     }
     ets2BtnStr.chop(3); // 去掉最后的 &
     qDebug() << "转换后的 ETS2 按键字符串：" << ets2BtnStr;
@@ -581,19 +605,17 @@ void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& mes
         return; // 取消操作
     }
     keyState[0] = getKeyState(); // 获取按键状态
-    size_t keyPressCount = 0;
-    size_t keyPos = 0;
-    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+    ActionEffect keyStateEffect;
+    for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
         if (keyState[0].getBit(i)) {
-            keyPressCount++;
-            keyPos = i;
+            keyStateEffect.insert_or_assign(i, true);
         }
     }
-    if (keyPressCount < 1) {
+    if (keyStateEffect.size() < 1) {
         QMessageBox::critical(this, "错误", "没有找到变化的按键！");
         return;
     }
-    if (keyPressCount > 1) {
+    if (keyStateEffect.size() > 1) {
         QMessageBox::critical(this, "错误", "找到多个按键按下！请重新操作！");
         return;
     }
@@ -603,7 +625,8 @@ void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& mes
     if (ret == QMessageBox::Ok) {
         backupProfile(); // 备份配置文件
         int gameJoyPosIndex = ui->comboBox_2->currentIndex();
-        QString ets2BtnStr = gameJoyPosNameList[gameJoyPosIndex].trimmed() + ".b" + QString::number(keyPos + 1) + "?0";
+
+        QString ets2BtnStr = convertToETS2_String(gameJoyPosNameList[gameJoyPosIndex], keyStateEffect, capabilities.dwButtons);
         modifyControlsSii(selectedProfilePath, bindingType, ets2BtnStr);
     }
 }
@@ -618,7 +641,7 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
         if (ui->comboBox_2->currentIndex() >= 0 && ui->comboBox_2->currentIndex() < gameJoyPosNameList.size()) {
             QString gameJoyPosStr = gameJoyPosNameList[ui->comboBox_2->currentIndex()];
             for (auto item : actionEffectMap) {
-                QString ets2BtnStr = convertToETS2_String(gameJoyPosStr, item.second);
+                QString ets2BtnStr = convertToETS2_String(gameJoyPosStr, item.second, capabilities.dwButtons);
                 modifyControlsSii(selectedProfilePath, item.first, ets2BtnStr);
             }
         } else {
@@ -693,7 +716,7 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
         {BindingType::lightpark, ActionEffect()},
         {BindingType::lighton, ActionEffect()},
     };
-    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+    for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
         if (keyStates[2].getBit(i) != keyStates[0].getBit(i) || keyStates[2].getBit(i) != keyStates[1].getBit(i)) {
             actionEffectMap[BindingType::lightoff].insert_or_assign(i, keyStates[0].getBit(i));
             actionEffectMap[BindingType::lightpark].insert_or_assign(i, keyStates[1].getBit(i));
@@ -722,7 +745,7 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
         {BindingType::hblight, ActionEffect()},
         {BindingType::lighthorn, ActionEffect()},
     };
-    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+    for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
         if (keyStates[1].getBit(i) != keyStates[0].getBit(i) || keyStates[2].getBit(i) != keyStates[0].getBit(i)) {
             actionEffectMap[BindingType::hblight].insert_or_assign(i, keyStates[1].getBit(i));
             actionEffectMap[BindingType::lighthorn].insert_or_assign(i, keyStates[2].getBit(i));
@@ -807,7 +830,7 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
         {BindingType::lblinkerh, ActionEffect()},
         {BindingType::rblinkerh, ActionEffect()},
     };
-    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+    for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
         if (keyStates[1].getBit(i) != keyStates[0].getBit(i)) {
             actionEffectMap[BindingType::lblinkerh].insert_or_assign(i, keyStates[1].getBit(i));
         }
@@ -822,13 +845,27 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
 // 4、雨刮器
 void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
     QString messageTitle = "雨刮器";
+    QString messageTitle1 = "3档雨刮器";
+    QString messageTitle2 = "4档雨刮器(3档+点动)";
     QStringList messages = {
         "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置",
         "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器1档",
         "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器2档",
         "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器3档",
     };
-    std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
+    QMessageBox box(QMessageBox::Information, messageTitle, "您要绑定 " + messageTitle1 + " 还是 " + messageTitle2);
+    QPushButton* threeWipersButton = box.addButton("3档", QMessageBox::YesRole);
+    QPushButton* fourWipersButton = box.addButton("4档", QMessageBox::NoRole);
+    QPushButton* cancelButton = box.addButton("取消", QMessageBox::RejectRole);
+    box.exec();
+    if (box.clickedButton() == cancelButton) {
+        return; // 取消操作
+    } else if (box.clickedButton() == fourWipersButton) {
+        messages.append("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器4档（点动）");
+        messageTitle1 = messageTitle2;
+    }
+
+    std::vector<BigKey> keyStates = getMultiKeyState(messageTitle1, messages);
     if (keyStates.empty()) {
         return; // 取消操作
     }
@@ -840,13 +877,20 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
     }
 
     std::map<BindingType, ActionEffect> actionEffectMap = {
-        {BindingType::wipers0, ActionEffect()},
-        {BindingType::wipers1, ActionEffect()},
-        {BindingType::wipers2, ActionEffect()},
-        {BindingType::wipers3, ActionEffect()},
+        {BindingType::wipers0, ActionEffect()}, {BindingType::wipers1, ActionEffect()}, {BindingType::wipers2, ActionEffect()},
+        {BindingType::wipers3, ActionEffect()}, {BindingType::wipers4, ActionEffect()},
     };
+    // 临时方法，待优化
+    if (box.clickedButton() == fourWipersButton) {
+        BigKey tempKeyState;
+        for (size_t i = 1; i < 4; i++) {
+            tempKeyState |= keyStates[0] ^ keyStates[i]; // 3档雨刮器
+        }
+        keyStates[4] = keyStates[4] & (~tempKeyState);
+        qDebug() << "keyStates[4]:" << keyStates[4];
+    }
 
-    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+    for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
         if (keyStates[1].getBit(i) != keyStates[0].getBit(i)) {
             actionEffectMap[BindingType::wipers0].insert_or_assign(i, keyStates[0].getBit(i));
             actionEffectMap[BindingType::wipers1].insert_or_assign(i, keyStates[1].getBit(i));
@@ -859,6 +903,13 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
             actionEffectMap[BindingType::wipers0].insert_or_assign(i, keyStates[0].getBit(i));
             actionEffectMap[BindingType::wipers3].insert_or_assign(i, keyStates[3].getBit(i));
         }
+        if (box.clickedButton() == fourWipersButton && keyStates[4].getBit(i) != keyStates[0].getBit(i)) {
+            actionEffectMap[BindingType::wipers0].insert_or_assign(i, keyStates[0].getBit(i));
+            actionEffectMap[BindingType::wipers4].insert_or_assign(i, keyStates[4].getBit(i));
+        }
+    }
+    if (box.clickedButton() == threeWipersButton) {
+        actionEffectMap.erase(BindingType::wipers4); // 删除4档雨刮
     }
 
     multiKeyBind(actionEffectMap); // 多按键绑定
@@ -880,7 +931,7 @@ void ETS2KeyBinderWizard::on_pushButton_18_clicked() {
         {BindingType::gearsel1off, ActionEffect()},
         {BindingType::gearsel1on, ActionEffect()},
     };
-    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+    for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
         if (keyStates[1].getBit(i) != keyStates[0].getBit(i)) {
             actionEffectMap[BindingType::gearsel1on].insert_or_assign(i, keyStates[1].getBit(i));
             actionEffectMap[BindingType::gearsel1off].insert_or_assign(i, keyStates[0].getBit(i));
@@ -909,7 +960,7 @@ void ETS2KeyBinderWizard::on_pushButton_19_clicked() {
         {BindingType::gearsel2off, ActionEffect()},
         {BindingType::gearsel2on, ActionEffect()},
     };
-    for (size_t i = 0; i < capabilities.dwButtons; i++) {
+    for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
         if (keyStates[1].getBit(i) != keyStates[0].getBit(i)) {
             actionEffectMap[BindingType::gearsel2on].insert_or_assign(i, keyStates[1].getBit(i));
             actionEffectMap[BindingType::gearsel2off].insert_or_assign(i, keyStates[0].getBit(i));
@@ -920,6 +971,38 @@ void ETS2KeyBinderWizard::on_pushButton_19_clicked() {
         return;
     }
     multiKeyBind(actionEffectMap); // 多按键绑定
+}
+
+// 获取设备状态信息
+DIJOYSTATE2 ETS2KeyBinderWizard::getInputState() {
+    DIJOYSTATE2 js;
+    isDeviceReady = false;
+    if (pDevice == nullptr) {
+        return js; // 设备未打开
+    }
+
+    pDevice->Acquire();
+    HRESULT hr = pDevice->Poll();
+
+    // 检查连接状态
+    if (FAILED(hr)) {
+        hr = pDevice->Acquire();
+    }
+
+    // 检查是否成功获取
+    if (FAILED(hr)) {
+        qDebug() << "设备poll()失败，错误代码：" << HRESULT_CODE(hr);
+        return js;
+    }
+
+    // 获取按键状态
+    if (SUCCEEDED(pDevice->GetDeviceState(sizeof(DIJOYSTATE2), &js))) {
+        return js;
+    }
+
+    qDebug() << "获取设备状态信息失败!";
+    qDebug() << "GetDeviceState failed with error:" << HRESULT_CODE(hr);
+    return js;
 }
 
 BigKey ETS2KeyBinderWizard::getKeyState() {
@@ -946,15 +1029,30 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
 
     if (SUCCEEDED(pDevice->GetDeviceState(sizeof(DIJOYSTATE2), &js))) {
         // 获取按键状态
-        for (size_t i = 0; i < capabilities.dwButtons; i++) {
+        for (size_t i = 0; i < capabilities.dwButtons + POV_MAX; i++) {
             keyState.setBit(i, (js.rgbButtons[i] & 0x80));
             isDeviceReady = true;
+        }
+        // 获取十字键状态
+        for (size_t i = 0; i < 4; i++) {
+
+            auto val = static_cast<int>(js.rgdwPOV[i]);
+
+            if (val > -1) {
+                // 格式化
+                for (;;) {
+                    if (val < 361) {
+                        break;
+                    }
+                    val /= 10;
+                }
+                keyState.setBit(povStandMap[val] + capabilities.dwButtons + i * 4, true);
+            }
         }
     } else {
         qDebug() << "获取设备状态信息失败！";
         qDebug() << "GetDeviceState failed with error:" << HRESULT_CODE(hr);
     }
-
     return keyState;
 }
 
@@ -1052,6 +1150,11 @@ void ETS2KeyBinderWizard::on_pushButton_12_clicked() {
 // 雨刷3档
 void ETS2KeyBinderWizard::on_pushButton_13_clicked() {
     oneKeyBind(BindingType::wipers3, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷3档");
+}
+
+// 雨刮4档（点动）
+void ETS2KeyBinderWizard::on_pushButton_24_clicked() {
+    oneKeyBind(BindingType::wipers4, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷4档（点动）");
 }
 
 // 远光灯
