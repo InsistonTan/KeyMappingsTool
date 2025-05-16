@@ -662,19 +662,16 @@ void MainWindow::on_pushButton_clicked()
     ui->pushButton->setEnabled(false); 
     ui->pushButton->setText("等待输入...");
 
-    // 下面的函数会导致界面卡死, 需要重绘一下
-    this->repaint();
-
+    // 新增一条映射
     paintOneLineMapping(nullptr, -1);
 
-    QTimer::singleShot(50, [=](){
-        QScrollBar *sbar = ui->scrollArea->verticalScrollBar();
-        sbar->setValue(sbar->maximum());
+    // 滑动条滑到最底部
+    QScrollBar *sbar = ui->scrollArea->verticalScrollBar();
+    sbar->setValue(sbar->maximum());
 
-        // 恢复按钮状态
-        ui->pushButton->setText("新增按键映射");
-        ui->pushButton->setEnabled(true);
-    });
+    // 恢复按钮状态
+    ui->pushButton->setText("新增按键映射");
+    ui->pushButton->setEnabled(true);
 }
 
 void MainWindow::saveLastDeviceToFile(bool isOnlySaveLastDevice){
@@ -1173,11 +1170,12 @@ MappingRelation* MainWindow::getDevBtnData(){
 
     std::map<std::string, int> tempRecord;
     bool isFirstData = true;
+    QMap<QString, int> firstBtnRecord;
 
     bool enableLogs = getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog();
 
     // 监听设备按键状态
-    for(int i=0; i<60; i++){
+    for(int i=0; i<300; i++){
         // 获取设备状态数据
         auto res = getInputState(enableLogs);
 
@@ -1189,6 +1187,38 @@ MappingRelation* MainWindow::getDevBtnData(){
             Sleep(50);
             continue;
         }
+
+        // 从firstBtnRecord中移除已经松开的按键
+        if(!firstBtnRecord.isEmpty()){
+            // 第一次按下的按键列表
+            auto firstBtnStrList = firstBtnRecord.keys();
+
+            // 当前按下的按键列表
+            QList<QString> currentPressingBtnStrList;
+
+            if(res.size() > 0){
+                // 生成 当前按下的按键列表
+                for(auto item : res){
+                    if(item->dev_btn_type == (std::string)WHEEL_BUTTON){
+                        auto strList = QString(item->dev_btn_name.data()).split("+");
+                        for(auto str : strList){
+                            currentPressingBtnStrList.append(item->deviceName + "-" + str);
+                        }
+                    }
+                }
+
+                // 遍历 第一次按下的按键列表, 释放已经松开的按键
+                for(auto firstBtnStr : firstBtnStrList){
+                    // 当前按下的按键列表为空, 或者 当前按下的按键列表不包含 firstBtnStr
+                    if(currentPressingBtnStrList.isEmpty() || !currentPressingBtnStrList.contains(firstBtnStr)){
+                        firstBtnRecord.remove(firstBtnStr);
+                    }
+                }
+            }else{
+                firstBtnRecord.clear();
+            }
+        }
+
 
         if(res.size() > 0){
             for(auto item : res){
@@ -1296,16 +1326,24 @@ MappingRelation* MainWindow::getDevBtnData(){
                         }
                     }
                 }else{
+                    // 将组合键拆散记录
+                    auto btnStrList = QString(item->dev_btn_name.data()).split("+");
+
                     // 方向盘按键
                     // 记录第一次数据
                     if(isFirstData){
-                        tempRecord.insert_or_assign(btnOrAxisStr, item->dev_btn_value);
+                        for(auto btnStr : btnStrList){
+                            firstBtnRecord.insert(item->deviceName + "-" + btnStr, 0);
+                        }
                     }else{
-                        // 当前按键是新按下的
-                        if(tempRecord.find(btnOrAxisStr) == tempRecord.end()){
-                            return item;
+                        for(auto btnStr : btnStrList){
+                            // 第一次按键 不包含当前按键, 说明当前按键为新按下的
+                            if(!firstBtnRecord.contains(item->deviceName + "-" + btnStr)){
+                                return item;
+                            }
                         }
                     }
+
                 }
             }
 
@@ -1316,7 +1354,11 @@ MappingRelation* MainWindow::getDevBtnData(){
         qDeleteAll(res);  // 删除所有指针指向的对象
         res.clear();      // 清空列表
 
-        Sleep(50);
+        // 处理事件队列
+        QCoreApplication::processEvents();
+
+        // sleep
+        Sleep(10);
     }
 
     return nullptr;
