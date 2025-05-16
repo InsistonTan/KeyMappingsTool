@@ -801,7 +801,7 @@ QString MainWindow::saveMappingsToFile(std::string filename){
         // 生成最终文件绝对路径名
         finalFileName.append(appDataDirPath).append(USER_MAPPINGS_DIR).append(finalFileBaseName).append(multiDeviceName).append(MAPPING_FILE_SUFFIX);
     }else{
-        finalFileName.append(MAPPINGS_FILENAME);
+        finalFileName.append(appDataDirPath).append(MAPPINGS_FILENAME);
     }
 
     // 创建一个 QFile 对象，并打开文件进行写入
