@@ -622,8 +622,9 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         checkBox->setMinimumHeight(30);
         checkBox->setMaximumWidth(80);
         checkBox->setObjectName(currentRowIndex);
-        // 保存的配置, 恢复
-        if(!isAddNewMapping && mapping->rotateAxis == 1){
+        checkBox->setToolTip("踏板轴将自动识别是否需要反转该轴");
+
+        if(mapping->rotateAxis == 1){
             checkBox->setChecked(true);
         }
 
@@ -1223,8 +1224,10 @@ MappingRelation* MainWindow::getDevBtnData(){
 
         if(res.size() > 0){
             for(auto item : res){
-                // 方向盘的轴
+                // 补全设备名称之后的按键名称
                 auto btnOrAxisStr = item->deviceName.toStdString() + "-" + item->dev_btn_name;
+
+                // 方向盘的轴
                 if(item->dev_btn_type == (std::string)WHEEL_AXIS){
                     auto tmpAxis = tempRecord.find(btnOrAxisStr);
                     // 记录第一次数据
@@ -1293,9 +1296,14 @@ MappingRelation* MainWindow::getDevBtnData(){
                                         showErrorMessage(new std::string("设备[" + item->deviceName.toStdString() + "]的 \""
                                                                          + item->dev_btn_name + "左转\" 或 "
                                                                          + item->dev_btn_name + "右转\"" + " 已经配置了映射! \n\n 不能再重复配置!"));
-                                        // 点击取消, 清空按键名称
+                                        // 清空按键名称
                                         item->dev_btn_name = "";
                                         return item;
+                                    }
+
+                                    // 对踏板轴 自动识别是否需要反转该轴, 值减小, 设置反转该轴
+                                    if(item->dev_btn_value < tmpAxis->second){
+                                        item->rotateAxis = 1;
                                     }
 
                                     // 踏板
@@ -1315,6 +1323,11 @@ MappingRelation* MainWindow::getDevBtnData(){
                                     // 点击取消, 清空按键名称
                                     item->dev_btn_name = "";
                                     return item;
+                                }
+
+                                // 对除了"X轴"之外的轴(因为通常"X轴"是转向轴), 自动识别是否需要反转该轴, 值减小, 设置反转该轴
+                                if(item->dev_btn_name != "X轴" && item->dev_btn_value < tmpAxis->second){
+                                    item->rotateAxis = 1;
                                 }
 
                                 item->mappingType = MappingType::Xbox;
