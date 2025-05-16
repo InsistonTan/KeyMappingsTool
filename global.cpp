@@ -465,7 +465,8 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
             // 映射xbox
             // if(getDefaultMappingType() == MappingType::Xbox){
             if(true){
-                if(js.lX == js.lY && js.lY == js.lRx && js.lZ == js.lRx && js.lRx == js.lRy && js.lRy == js.lRz){
+                // 过滤无效数据
+                if(js.lX == js.lY && js.lY == js.lRx && js.lRx == js.lRy && js.lRy == js.lRz){
                     return list;
                 }else{
                     // LONG lX;                  // X轴位置
