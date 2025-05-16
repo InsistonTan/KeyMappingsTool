@@ -193,6 +193,8 @@ void MainWindow::scanMappingFile(){
                         if(lastUnderlinePos >= 0){
                             shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
                         }
+                    }else{
+                        shortName = "";
                     }
                 }else if(currentSelectedDeviceList.size() == 1){
                     // 当前为单设备, 只显示单设备的配置
@@ -202,17 +204,16 @@ void MainWindow::scanMappingFile(){
                     }
                 }else if(currentSelectedDeviceList.size() == 0){
                     // 当前选择的设备为空, 显示所有配置
-                    // 下拉框显示的配置名
-                    QString shortName = fileInfo.completeBaseName();
-
                     int lastUnderlinePos = shortName.lastIndexOf('_'); // 查找最后一个下划线的位置
                     if(lastUnderlinePos >= 0){
                         shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
                     }
                 }
 
-                ui->comboBox_2->addItem(shortName);
-                mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
+                if(!shortName.isEmpty()){
+                    ui->comboBox_2->addItem(shortName);
+                    mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
+                }
             }
         }
 
