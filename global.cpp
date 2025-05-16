@@ -341,10 +341,6 @@ bool openDiDevice(QList<QString> deviceList) {
 QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelation> multiBtnVector) {
     QList<MappingRelation*> list;
 
-    // if(!MainWindow::getCurrentSelectedDeviceList().isEmpty() && initedDeviceList.size() < MainWindow::getCurrentSelectedDeviceList().size()){
-    //     openDiDevice(MainWindow::getCurrentSelectedDeviceList());
-    // }
-
     // 方向盘按键状态
     DIJOYSTATE2 js;
 
@@ -373,7 +369,6 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
         // 获取按键状态
         if (SUCCEEDED(g_pDevice->GetDeviceState(sizeof(DIJOYSTATE2), &js))) {
-
             QString btnLog = "";
             if(enableLog && getEnableBtnLog()){
                 btnLog.append("按键数据: { ");
@@ -383,7 +378,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
             // 遍历按键，查看按键是否按下
             std::string btnStr = "";
             BUTTONS_VALUE_TYPE btnBitValue;
-            for (size_t i = 0; i < MAX_BUTTONS; i++) {
+            for (size_t i = 0; i < std::size(js.rgbButtons); i++) {
                 if (js.rgbButtons[i] & 0x80) {
                     btnStr += "按键" + std::to_string(i) + "+";
                     btnBitValue.setBit(i, true);
