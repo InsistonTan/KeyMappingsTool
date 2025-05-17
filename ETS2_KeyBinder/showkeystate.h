@@ -4,7 +4,6 @@
 #include "BigKey.hpp"
 #include <QWidget>
 
-
 namespace Ui {
 class ShowKeyState;
 }
@@ -20,6 +19,7 @@ public:
 
 public slots:
     void setKeyState(BigKey& keyState); // 设置按键状态
+    void setPovState(QString povState); // 设置十字键状态
 
 private:
     Ui::ShowKeyState* ui;

@@ -25,6 +25,7 @@ public:
         {BindingType::wipers1, "雨刷器1档"},
         {BindingType::wipers2, "雨刷器2档"},
         {BindingType::wipers3, "雨刷器3档"},
+        {BindingType::wipers4, "雨刷器4档（点动）"},
         {BindingType::gearsel1off, "档位开关1低档位"},
         {BindingType::gearsel1on, "档位开关1高档位"},
         {BindingType::gearsel2off, "档位开关2低档位"},

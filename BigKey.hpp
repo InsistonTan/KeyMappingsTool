@@ -74,7 +74,7 @@ public:
 #define BIGKEY_ZERO BigKey::ZERO()
 
 private:
-#define BIGKEY_NUMBER 2  // 128位按键值，使用数组存储
+#define BIGKEY_NUMBER 3  // 128位按键值，使用数组存储
 #define BIGKEY_TYPE_INTERNAL uint64_t  // 内部存储类型
 
 #define MAX_BUTTONS (BIGKEY_NUMBER * (sizeof(BIGKEY_TYPE_INTERNAL) * 8))

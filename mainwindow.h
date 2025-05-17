@@ -14,7 +14,7 @@
 #include "AssistFuncWindow.h"
 #include "DeadAreaSettings.h"
 
-#define CURRENT_VERSION "1.2.2" // 当前版本号
+#define CURRENT_VERSION "1.2.3" // 当前版本号
 
 #define MAX_STR 255
 #define MAX_BUF 2048

@@ -193,6 +193,8 @@ void MainWindow::scanMappingFile(){
                         if(lastUnderlinePos >= 0){
                             shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
                         }
+                    }else{
+                        shortName = "";
                     }
                 }else if(currentSelectedDeviceList.size() == 1){
                     // 当前为单设备, 只显示单设备的配置
@@ -202,17 +204,16 @@ void MainWindow::scanMappingFile(){
                     }
                 }else if(currentSelectedDeviceList.size() == 0){
                     // 当前选择的设备为空, 显示所有配置
-                    // 下拉框显示的配置名
-                    QString shortName = fileInfo.completeBaseName();
-
                     int lastUnderlinePos = shortName.lastIndexOf('_'); // 查找最后一个下划线的位置
                     if(lastUnderlinePos >= 0){
                         shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
                     }
                 }
 
-                ui->comboBox_2->addItem(shortName);
-                mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
+                if(!shortName.isEmpty()){
+                    ui->comboBox_2->addItem(shortName);
+                    mappingFileNameMap[shortName] = fileInfo.absoluteFilePath();
+                }
             }
         }
 
@@ -621,8 +622,9 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
         checkBox->setMinimumHeight(30);
         checkBox->setMaximumWidth(80);
         checkBox->setObjectName(currentRowIndex);
-        // 保存的配置, 恢复
-        if(!isAddNewMapping && mapping->rotateAxis == 1){
+        checkBox->setToolTip("踏板轴将自动识别是否需要反转该轴");
+
+        if(mapping->rotateAxis == 1){
             checkBox->setChecked(true);
         }
 
@@ -662,16 +664,16 @@ void MainWindow::on_pushButton_clicked()
     ui->pushButton->setEnabled(false); 
     ui->pushButton->setText("等待输入...");
 
+    // 新增一条映射
     paintOneLineMapping(nullptr, -1);
 
-    QTimer::singleShot(50, [=](){
-        QScrollBar *sbar = ui->scrollArea->verticalScrollBar();
-        sbar->setValue(sbar->maximum());
+    // 滑动条滑到最底部
+    QScrollBar *sbar = ui->scrollArea->verticalScrollBar();
+    sbar->setValue(sbar->maximum());
 
-        // 恢复按钮状态
-        ui->pushButton->setText("新增按键映射");
-        ui->pushButton->setEnabled(true);
-    });
+    // 恢复按钮状态
+    ui->pushButton->setText("新增按键映射");
+    ui->pushButton->setEnabled(true);
 }
 
 void MainWindow::saveLastDeviceToFile(bool isOnlySaveLastDevice){
@@ -800,7 +802,7 @@ QString MainWindow::saveMappingsToFile(std::string filename){
         // 生成最终文件绝对路径名
         finalFileName.append(appDataDirPath).append(USER_MAPPINGS_DIR).append(finalFileBaseName).append(multiDeviceName).append(MAPPING_FILE_SUFFIX);
     }else{
-        finalFileName.append(MAPPINGS_FILENAME);
+        finalFileName.append(appDataDirPath).append(MAPPINGS_FILENAME);
     }
 
     // 创建一个 QFile 对象，并打开文件进行写入
@@ -1214,8 +1216,10 @@ MappingRelation* MainWindow::getDevBtnData(){
 
         if(res.size() > 0){
             for(auto item : res){
-                // 方向盘的轴
+                // 补全设备名称之后的按键名称
                 auto btnOrAxisStr = item->deviceName.toStdString() + "-" + item->dev_btn_name;
+
+                // 方向盘的轴
                 if(item->dev_btn_type == (std::string)WHEEL_AXIS){
                     auto tmpAxis = tempRecord.find(btnOrAxisStr);
                     // 记录第一次数据
@@ -1284,9 +1288,14 @@ MappingRelation* MainWindow::getDevBtnData(){
                                         showErrorMessage(new std::string("设备[" + item->deviceName.toStdString() + "]的 \""
                                                                          + item->dev_btn_name + "左转\" 或 "
                                                                          + item->dev_btn_name + "右转\"" + " 已经配置了映射! \n\n 不能再重复配置!"));
-                                        // 点击取消, 清空按键名称
+                                        // 清空按键名称
                                         item->dev_btn_name = "";
                                         return item;
+                                    }
+
+                                    // 对踏板轴 自动识别是否需要反转该轴, 值减小, 设置反转该轴
+                                    if(item->dev_btn_value < tmpAxis->second){
+                                        item->rotateAxis = 1;
                                     }
 
                                     // 踏板
@@ -1308,6 +1317,11 @@ MappingRelation* MainWindow::getDevBtnData(){
                                     return item;
                                 }
 
+                                // 对除了"X轴"之外的轴(因为通常"X轴"是转向轴), 自动识别是否需要反转该轴, 值减小, 设置反转该轴
+                                if(item->dev_btn_name != "X轴" && item->dev_btn_value < tmpAxis->second){
+                                    item->rotateAxis = 1;
+                                }
+
                                 item->mappingType = MappingType::Xbox;
                                 return item;
                             }else{
@@ -1318,6 +1332,9 @@ MappingRelation* MainWindow::getDevBtnData(){
                         }
                     }
                 }else{
+                    // 将组合键拆散记录
+                    auto btnStrList = QString(item->dev_btn_name.data()).split("+");
+
                     // 方向盘按键
                     if(firstKeyStateMap.size() > 0){
                         QString deviceName = item->deviceName;
@@ -1334,6 +1351,7 @@ MappingRelation* MainWindow::getDevBtnData(){
                     } else {
                         return item;
                     }
+
                 }
             }
         }

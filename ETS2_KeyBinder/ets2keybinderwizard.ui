@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>426</width>
-    <height>421</height>
+    <height>431</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -56,7 +56,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../resource.qrc">:/ETS2_KeyBinder/1_DisableSteamInput.jpg</pixmap>
+       <pixmap resource="resource.qrc">:/ETS2_KeyBinder/1_DisableSteamInput.jpg</pixmap>
       </property>
      </widget>
     </item>
@@ -180,7 +180,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../resource.qrc">:/ETS2_KeyBinder/2_SelectInputDevice.jpg</pixmap>
+       <pixmap resource="resource.qrc">:/ETS2_KeyBinder/2_SelectInputDevice.jpg</pixmap>
       </property>
      </widget>
     </item>
@@ -567,9 +567,9 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
-             <width>212</width>
-             <height>435</height>
+             <y>-226</y>
+             <width>374</width>
+             <height>480</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_8">
@@ -582,114 +582,24 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
-            <item row="8" column="0">
-             <widget class="QLabel" name="label_18">
-              <property name="text">
-               <string>9、雨刷3档</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_13">
-              <property name="text">
-               <string>4、左转向灯</string>
-              </property>
-             </widget>
-            </item>
-            <item row="12" column="1">
-             <widget class="QPushButton" name="pushButton_21">
+            <item row="1" column="1">
+             <widget class="QPushButton" name="pushButton_6">
               <property name="text">
                <string>自动绑定</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="0">
-             <widget class="QLabel" name="label_17">
-              <property name="text">
-               <string>8、雨刷2档</string>
-              </property>
-             </widget>
-            </item>
-            <item row="16" column="0" colspan="2">
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Orientation::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="12" column="0">
-             <widget class="QLabel" name="label_27">
-              <property name="text">
-               <string>13、档位开关1高档位</string>
-              </property>
-             </widget>
-            </item>
-            <item row="9" column="1">
+            <item row="10" column="1">
              <widget class="QPushButton" name="pushButton_14">
               <property name="text">
                <string>自动绑定</string>
               </property>
              </widget>
             </item>
-            <item row="9" column="0">
-             <widget class="QLabel" name="label_20">
+            <item row="14" column="0">
+             <widget class="QLabel" name="label_28">
               <property name="text">
-               <string>10、远光灯</string>
-              </property>
-             </widget>
-            </item>
-            <item row="11" column="0">
-             <widget class="QLabel" name="label_26">
-              <property name="text">
-               <string>12、档位开关1低档位</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_11">
-              <property name="text">
-               <string>2、示廓灯</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0">
-             <widget class="QLabel" name="label_14">
-              <property name="text">
-               <string>5、右转向灯</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_19">
-              <property name="text">
-               <string>1、关闭灯光</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="1">
-             <widget class="QPushButton" name="pushButton_12">
-              <property name="text">
-               <string>自动绑定</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QPushButton" name="pushButton_7">
-              <property name="text">
-               <string>自动绑定</string>
-              </property>
-             </widget>
-            </item>
-            <item row="10" column="0">
-             <widget class="QLabel" name="label_21">
-              <property name="text">
-               <string>11、灯光喇叭</string>
+               <string>15、档位开关2低档位</string>
               </property>
              </widget>
             </item>
@@ -700,10 +610,10 @@
               </property>
              </widget>
             </item>
-            <item row="5" column="0">
-             <widget class="QLabel" name="label_15">
+            <item row="6" column="1">
+             <widget class="QPushButton" name="pushButton_11">
               <property name="text">
-               <string>6、关闭雨刷</string>
+               <string>自动绑定</string>
               </property>
              </widget>
             </item>
@@ -714,6 +624,76 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>2、示廓灯</string>
+              </property>
+             </widget>
+            </item>
+            <item row="13" column="1">
+             <widget class="QPushButton" name="pushButton_21">
+              <property name="text">
+               <string>自动绑定</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_15">
+              <property name="text">
+               <string>6、关闭雨刷</string>
+              </property>
+             </widget>
+            </item>
+            <item row="11" column="0">
+             <widget class="QLabel" name="label_21">
+              <property name="text">
+               <string>12、灯光喇叭</string>
+              </property>
+             </widget>
+            </item>
+            <item row="15" column="1">
+             <widget class="QPushButton" name="pushButton_23">
+              <property name="text">
+               <string>自动绑定</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_13">
+              <property name="text">
+               <string>4、左转向灯</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>8、雨刷2档</string>
+              </property>
+             </widget>
+            </item>
+            <item row="13" column="0">
+             <widget class="QLabel" name="label_27">
+              <property name="text">
+               <string>14、档位开关1高档位</string>
+              </property>
+             </widget>
+            </item>
+            <item row="14" column="1">
+             <widget class="QPushButton" name="pushButton_22">
+              <property name="text">
+               <string>自动绑定</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_14">
+              <property name="text">
+               <string>5、右转向灯</string>
+              </property>
+             </widget>
+            </item>
             <item row="4" column="1">
              <widget class="QPushButton" name="pushButton_9">
               <property name="text">
@@ -721,8 +701,15 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QPushButton" name="pushButton_6">
+            <item row="12" column="0">
+             <widget class="QLabel" name="label_26">
+              <property name="text">
+               <string>13、档位开关1低档位</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="pushButton_5">
               <property name="text">
                <string>自动绑定</string>
               </property>
@@ -742,24 +729,51 @@
               </property>
              </widget>
             </item>
+            <item row="17" column="0" colspan="2">
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item row="11" column="1">
-             <widget class="QPushButton" name="pushButton_20">
+             <widget class="QPushButton" name="pushButton_15">
               <property name="text">
                <string>自动绑定</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="pushButton_5">
+            <item row="2" column="1">
+             <widget class="QPushButton" name="pushButton_7">
               <property name="text">
                <string>自动绑定</string>
               </property>
              </widget>
             </item>
-            <item row="6" column="1">
-             <widget class="QPushButton" name="pushButton_11">
+            <item row="10" column="0">
+             <widget class="QLabel" name="label_20">
+              <property name="text">
+               <string>11、远光灯</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="1">
+             <widget class="QPushButton" name="pushButton_12">
               <property name="text">
                <string>自动绑定</string>
+              </property>
+             </widget>
+            </item>
+            <item row="15" column="0">
+             <widget class="QLabel" name="label_29">
+              <property name="text">
+               <string>16、档位开关2高档位</string>
               </property>
              </widget>
             </item>
@@ -770,38 +784,38 @@
               </property>
              </widget>
             </item>
-            <item row="10" column="1">
-             <widget class="QPushButton" name="pushButton_15">
+            <item row="8" column="0">
+             <widget class="QLabel" name="label_18">
+              <property name="text">
+               <string>9、雨刷3档</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_19">
+              <property name="text">
+               <string>1、关闭灯光</string>
+              </property>
+             </widget>
+            </item>
+            <item row="12" column="1">
+             <widget class="QPushButton" name="pushButton_20">
               <property name="text">
                <string>自动绑定</string>
               </property>
              </widget>
             </item>
-            <item row="13" column="1">
-             <widget class="QPushButton" name="pushButton_22">
+            <item row="9" column="0">
+             <widget class="QLabel" name="label_30">
+              <property name="text">
+               <string>10、雨刷4档（点动）</string>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="1">
+             <widget class="QPushButton" name="pushButton_24">
               <property name="text">
                <string>自动绑定</string>
-              </property>
-             </widget>
-            </item>
-            <item row="13" column="0">
-             <widget class="QLabel" name="label_28">
-              <property name="text">
-               <string>14、档位开关2低档位</string>
-              </property>
-             </widget>
-            </item>
-            <item row="14" column="1">
-             <widget class="QPushButton" name="pushButton_23">
-              <property name="text">
-               <string>自动绑定</string>
-              </property>
-             </widget>
-            </item>
-            <item row="14" column="0">
-             <widget class="QLabel" name="label_29">
-              <property name="text">
-               <string>15、档位开关2高档位</string>
               </property>
              </widget>
             </item>
@@ -838,7 +852,7 @@
   </widget>
  </widget>
  <resources>
-  <include location="../resource.qrc"/>
+  <include location="resource.qrc"/>
  </resources>
  <connections/>
 </ui>
