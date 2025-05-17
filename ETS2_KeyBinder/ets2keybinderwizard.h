@@ -27,6 +27,7 @@ enum class BindingType
     wipers1,     // 雨刷器1档
     wipers2,     // 雨刷器2档
     wipers3,     // 雨刷器3档
+    wipers4,     // 雨刷器点动
     gearsel1off, // 档位开关1关闭
     gearsel1on,  // 档位开关1打开
     gearsel2off, // 档位开关2关闭
@@ -115,6 +116,8 @@ private slots:
 
     void on_pushButton_23_clicked();
 
+    void on_pushButton_24_clicked();
+
 private:
     Ui::ETS2KeyBinderWizard* ui;
 
@@ -142,6 +145,7 @@ private:
     ShowKeyState* showKeyState = nullptr; // 显示按键状态窗口
     QTimer* timer = nullptr;              // 定时器
 
+    DIJOYSTATE2 getInputState();
     BigKey getKeyState();
 
     bool hasLastDevInCurrentDeviceList(std::string lastDeviceName);

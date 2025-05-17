@@ -84,6 +84,10 @@ void ManuallyBinder::on_pushButton_clicked() {
 }
 
 void ManuallyBinder::on_pushButton_3_clicked() {
+    if (ui->lineEdit->text().isEmpty()) {
+        QMessageBox::critical(this, "错误", "请输入按键！");
+        return;
+    }
     QMessageBox box(QMessageBox::Information, "提示", "是否绑定？");
     box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     box.setDefaultButton(QMessageBox::Yes);
