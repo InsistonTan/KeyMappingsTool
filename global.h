@@ -102,4 +102,7 @@ QString getAppDataDirStr();
 // 映射列表含有映射xbox的记录
 bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList);
 
+// BUTTONS_VALUE_TYPE 转换为字符串
+std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue);
+
 #endif // GLOBAL_H
