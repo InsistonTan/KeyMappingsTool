@@ -15,6 +15,7 @@ LPDIRECTINPUT8 g_pDirectInput = nullptr;
 QList<LPDIRECTINPUTDEVICE8> initedDeviceList; // 已初始化的设备列表
 QList<DiDeviceInfo> diDeviceList;
 std::map<std::string, DIPROPRANGE> axisValueRangeMap;
+std::map<QString, BUTTONS_VALUE_TYPE> g_btnBitValueMap;
 
 // 清空已选择的设备列表
 void clearInitedDeviceList(){
@@ -28,6 +29,7 @@ void clearInitedDeviceList(){
     }
 
     initedDeviceList.clear();
+    g_btnBitValueMap.clear();
 }
 
 // 是否暂停全局映射
@@ -330,6 +332,7 @@ bool openDiDevice(QList<QString> deviceList) {
                 pushToQueue(parseSuccessLog(QString("连接设备[").append(deviceInfo.name.data()).append("]成功！")));
 
                 initedDeviceList.append(g_pDevice);
+                g_btnBitValueMap.insert_or_assign(deviceName, BUTTONS_VALUE_TYPE()); // 初始化按键值
             }
         }
     }
@@ -395,6 +398,8 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
                 }
             }
+            g_btnBitValueMap.insert_or_assign(deviceName, btnBitValue); // 更新按键值
+
 
             if (!btnStr.empty()) {
                 // 去掉最后的 "+"
@@ -416,7 +421,9 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                         }
                     }
                 }else{
-                    list.append(new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName));
+                    MappingRelation *mapping =new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName);
+                    mapping->setBtnBitValue(btnBitValue);  // 设置按键值
+                    list.append(mapping);
                 }
             }
             if(enableLog && getEnableBtnLog()){
@@ -655,4 +662,16 @@ bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList){
 
     return false;
 }
-
+// BUTTONS_VALUE_TYPE 转换为字符串
+std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue){
+    std::string btnValueStr = "";
+    for (size_t i = 0; i < MAX_BUTTONS; i++) {
+        if (btnValue.getBit(i)) {
+            btnValueStr += "按键" + std::to_string(i) + "+";
+        }
+    }
+    if (btnValueStr.size() > 0) {
+        btnValueStr.pop_back();  // 去掉最后的 "+"
+    }
+    return btnValueStr;
+}

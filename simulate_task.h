@@ -6,6 +6,7 @@
 #include<windows.h>
 #include <ViGEm/Client.h>
 #include<key_map.h>
+#include"scs-telemetry-common.hpp"
 
 #define MAX_STR 255
 #define MAX_BUF 2048
@@ -31,6 +32,7 @@ private:
     //hid_device *handle;// 当前设备的连接句柄
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
     std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
+    std::vector<MappingRelation> syncETS2Map;// 设备按键对应键盘扫描码map(用于同步ETS2/ATS游戏的按键映射)
     static std::vector<MappingRelation> handleMultiBtnVector;// 当前在使用的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorSorted;// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
@@ -69,6 +71,8 @@ signals:
     void pauseClickSignal();
 
 protected:
+    void handleETS2SyncMap(std::map<QString, BUTTONS_VALUE_TYPE>, scsTelemetryMap_t* pScsTelemtry);
+
     QList<MappingRelation*> handleResult(QList<MappingRelation*> res);
 
     bool isAxisRotate(std::string btnName);
