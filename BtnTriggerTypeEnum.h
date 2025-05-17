@@ -13,8 +13,20 @@ enum TriggerTypeEnum {
     Release = 4,// 按键松开时触发
     PressAndRelease = 5,// 按下触发并且松开时再次触发
 
+    ETS2_SyncBlinkerLeft,     // ETS2左转向灯同步
+    ETS2_SyncBlinkerRight,    // ETS2右转向灯同步
+    ETS2_SyncLightsParking,   // ETS2示廓灯同步
+    ETS2_SyncLightsBeamLow,   // ETS2近光灯同步
+    ETS2_SyncLightsBeamHigh,  // ETS2远光灯同步
+    ETS2_SyncParkBrake,       // ETS2手刹同步
+    ETS2_SyncElectricEnabled, // ETS2通电同步
+    ETS2_SyncEngineEnabled,   // ETS2点火同步
+
     End //结束标识, 用于遍历枚举
 };
+
+#define TRIGGER_TYPE_ENUM_ETS2_SYNC_START TriggerTypeEnum::ETS2_SyncBlinkerLeft // ETS2同步开始标识
+#define TRIGGER_TYPE_ENUM_ETS2_SYNC_END TriggerTypeEnum::ETS2_SyncEngineEnabled // ETS2同步结束标识
 
 // 枚举对应信息map
 extern std::map<TriggerTypeEnum, std::string> TRIGGER_TYPE_ENUM_MAP;
