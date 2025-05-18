@@ -375,7 +375,7 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
 }
 
 // 将字符串转换为 ETS2 格式
-QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = 128) {
+QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = DINPUT_MAX_BUTTONS) {
     QString ets2BtnStr;
     QString gameJoyStr = gameJoyPosStr.trimmed();
     if (gameJoyStr.isEmpty() || actionEffect.empty()) {
@@ -1081,7 +1081,7 @@ void ETS2KeyBinderWizard::showManuallyBinder(BindingType bindingType) {
     // 当manuallyBinder没关闭时，不允许操作其他窗口
     manuallyBinder->setWindowModality(Qt::ApplicationModal); // 设置窗口模式为应用程序模态
 
-    manuallyBinder->setKeyCount(128);            // 设置按键数量
+    manuallyBinder->setKeyCount(DINPUT_MAX_BUTTONS);            // 设置按键数量
     manuallyBinder->setBindingType(bindingType); // 设置绑定类型
 
     // 连接信号槽

@@ -13,6 +13,8 @@
 
 #define DEFAULT_INNER_DEADAREA_VALUE 0.03
 
+#define DINPUT_MAX_BUTTONS 128 // DirectInput 最大按键数
+
 extern QWidget* g_mainWindow;
 
 // 全局映射是否开启

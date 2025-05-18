@@ -67,7 +67,7 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
                         uint16_t angle = btn.mid(6).toUInt(); // 获取角度值
                         // 这里用反码操作, 因为摇杆的值是0-360度, 而没有操作时返回的也是0, 所以需要反码操作来表示操作
                         BUTTONS_VALUE_TYPE povBitValue = (uint16_t)~angle;
-                        mapping->dev_btn_bit_value |= povBitValue << ((index - 1)* 16 + 128);
+                        mapping->dev_btn_bit_value |= povBitValue << ((index - 1)* 16 + DINPUT_MAX_BUTTONS);
                     }
                 }
 

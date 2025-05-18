@@ -92,7 +92,7 @@ private:
 #define BIGKEY_NUMBER 3  // 128位按键值，使用数组存储
 #define BIGKEY_TYPE_INTERNAL uint64_t  // 内部存储类型
 
-#define MAX_BUTTONS (BIGKEY_NUMBER * (sizeof(BIGKEY_TYPE_INTERNAL) * 8))
+#define BIGKEY_MAX_BUTTONS (BIGKEY_NUMBER * (sizeof(BIGKEY_TYPE_INTERNAL) * 8))
 
     BIGKEY_TYPE_INTERNAL key[BIGKEY_NUMBER];  // 128位按键值，使用数组存储
 };
@@ -280,7 +280,7 @@ inline const BigKey operator~(BigKey& num1) {
 }
 
 inline void BigKey::setBit(size_t pos, bool value) {
-    if (pos > MAX_BUTTONS) {
+    if (pos > BIGKEY_MAX_BUTTONS) {
         throw std::out_of_range("Position out of range");
     }
     // 设置按键值
@@ -292,7 +292,7 @@ inline void BigKey::setBit(size_t pos, bool value) {
 }
 
 inline bool BigKey::getBit(size_t pos) const {
-    if (pos > MAX_BUTTONS) {
+    if (pos > BIGKEY_MAX_BUTTONS) {
         throw std::out_of_range("Position out of range");
     }
     // 获取按键值
@@ -350,7 +350,7 @@ inline string BigKey::toString() const {
 
 // 用字符串初始化
 inline BigKey::BigKey(const string& num) {
-    if (num.size() > MAX_BUTTONS) {
+    if (num.size() > BIGKEY_MAX_BUTTONS) {
         std::string errMsg = "String size exceeds maximum buttons " + std::to_string(num.size());
         throw std::out_of_range(errMsg);
     }

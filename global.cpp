@@ -378,7 +378,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
             // 遍历按键，查看按键是否按下
             std::string btnStr = "";
             BUTTONS_VALUE_TYPE btnBitValue;
-            for (size_t i = 0; i < sizeof(js.rgbButtons); i++) {
+            for (size_t i = 0; i < DINPUT_MAX_BUTTONS; i++) {
                 if (js.rgbButtons[i] & 0x80) {
                     btnStr += "按键" + std::to_string(i) + "+";
                     btnBitValue.setBit(i, true);
@@ -420,7 +420,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                     }
                     // 这里用反码操作, 因为摇杆的值是0-360度, 而没有操作时返回的也是0, 所以需要反码操作来表示操作
                     BUTTONS_VALUE_TYPE povBitValue = (uint16_t)~formatVal;
-                    btnBitValue |= povBitValue << (j * 16 + sizeof(js.rgbButtons));
+                    btnBitValue |= povBitValue << (j * 16 + DINPUT_MAX_BUTTONS);
                     btnStr += "摇杆" + std::to_string(j+1) + "-角度" + std::to_string(formatVal) + "+";
                 }
 
@@ -446,7 +446,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                 if (multiBtnVector.size() > 0) {
                     // 多按键映射，需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
                     BUTTONS_VALUE_TYPE povClearFactor;
-                    povClearFactor = (BUTTONS_VALUE_TYPE)((uint64_t)-1) << 128; // 保留摇杆的值
+                    povClearFactor = (BUTTONS_VALUE_TYPE)((uint64_t)-1) << DINPUT_MAX_BUTTONS; // 保留摇杆的值
                     for (auto multiBtn : multiBtnVector) {
                         BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
                         if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue) &&
@@ -663,7 +663,7 @@ bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList){
 // BUTTONS_VALUE_TYPE 转换为字符串
 std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue){
     std::string btnValueStr = "";
-    for (size_t i = 0; i < 128; i++) {
+    for (size_t i = 0; i < DINPUT_MAX_BUTTONS; i++) {
         if (btnValue.getBit(i)) {
             btnValueStr += "按键" + std::to_string(i) + "+";
         }
