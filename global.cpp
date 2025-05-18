@@ -445,12 +445,10 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                 // multiBtnVector不为空, 需要进行多按键映射处理
                 if (multiBtnVector.size() > 0) {
                     // 多按键映射，需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
-                    BUTTONS_VALUE_TYPE povClearFactor;
-                    povClearFactor = (BUTTONS_VALUE_TYPE)((uint64_t)-1) << DINPUT_MAX_BUTTONS; // 保留摇杆的值
                     for (auto multiBtn : multiBtnVector) {
                         BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
                         if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue) &&
-                            ((multiBtnBitValue & povClearFactor) == (btnBitValue & povClearFactor))) {
+                            ((multiBtnBitValue >> DINPUT_MAX_BUTTONS) == (btnBitValue >> DINPUT_MAX_BUTTONS))) {
                             // 找到对应的按键, 进行映射
                             if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
                                 btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
@@ -666,6 +664,16 @@ std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue){
     for (size_t i = 0; i < DINPUT_MAX_BUTTONS; i++) {
         if (btnValue.getBit(i)) {
             btnValueStr += "按键" + std::to_string(i) + "+";
+        }
+    }
+    uint64_t povValue = (btnValue >> DINPUT_MAX_BUTTONS).toUint64_t();
+    if (povValue) {
+        for (int j = 0; j < 4; j++) {
+            uint16_t angle = (povValue >> (j * 16)) & (uint16_t)-1;
+            if (angle) {
+                angle = ~angle; // 角度得反码
+                btnValueStr += "摇杆" + std::to_string(j + 1) + "-角度" + std::to_string(angle) + "+";
+            }
         }
     }
     if (btnValueStr.size() > 0) {

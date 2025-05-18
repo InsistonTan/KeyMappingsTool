@@ -15,6 +15,9 @@
 
 #define DINPUT_MAX_BUTTONS 128 // DirectInput 最大按键数
 
+#define POV_ONLY_FACTOR ((BUTTONS_VALUE_TYPE)((uint64_t)-1) << DINPUT_MAX_BUTTONS)
+#define KEY_ONLY_FACTOR ((((BUTTONS_VALUE_TYPE)((uint64_t)-1)) << 64) | ((BUTTONS_VALUE_TYPE)((uint64_t)-1)))
+
 extern QWidget* g_mainWindow;
 
 // 全局映射是否开启

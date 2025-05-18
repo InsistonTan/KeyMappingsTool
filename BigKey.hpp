@@ -63,9 +63,6 @@ class BigKey {
 public:
     BigKey();
     BigKey(const BigKey&);                //
-    BigKey(const uint8_t&);               // 用一个uint8_t构造
-    BigKey(const uint16_t&);              // 用一个uint16_t构造
-    BigKey(const uint32_t&);              // 用一个uint32_t构造
     BigKey(const uint64_t&);              // 用一个uint64_t构造
     BigKey(const string&);                // 用一个字符串构造
     BigKey(BigKey&&) noexcept;            // 移动构造
@@ -74,9 +71,9 @@ public:
 
     // 类型转换
     operator bool() const;  // 转换为bool类型
-
-    // 转换为字符串
-    string toString() const;              // decimalNum 用于控制小数位数，赋值为0时小数部分全部输出
+    
+    uint64_t toUint64_t() const;          // 转换为uint64_t类型
+    string toString() const;              // 转换为字符串
     void setBit(size_t pos, bool value);  // 设置按键值
     bool getBit(size_t pos) const;        // 获取按键值
     void clear();                         // 清空按键值
@@ -108,21 +105,6 @@ inline BigKey::BigKey(const BigKey& num) {
     }
 }
 
-inline BigKey::BigKey(const uint8_t& num) {
-    this->clear();  // 清空按键值
-    key[0] = num;
-}
-
-inline BigKey::BigKey(const uint16_t& num) {
-    this->clear();  // 清空按键值
-    key[0] = num;
-}
-
-inline BigKey::BigKey(const uint32_t& num) {
-    this->clear();  // 清空按键值
-    key[0] = num;
-}
-
 inline BigKey::BigKey(const uint64_t& num) {
     this->clear();  // 清空按键值
     key[0] = num;
@@ -149,8 +131,8 @@ inline BigKey BigKey::operator=(BigKey&& num) noexcept {
     return *this;
 }
 
+// 转换为bool类型
 inline BigKey::operator bool() const {
-    // 转换为bool类型
     for (int i = 0; i < BIGKEY_NUMBER; i++) {
         if (key[i]) {
             return true;  // 有1
@@ -261,8 +243,8 @@ inline const BigKey operator|(const BigKey& num1, const BigKey& num2) {
     return temp;
 }
 
-inline const BigKey operator^(const BigKey& num1,
-                              const BigKey& num2) {  // 按位异或重载
+// 按位异或重载
+inline const BigKey operator^(const BigKey& num1, const BigKey& num2) {
     BigKey temp;
     for (int i = 0; i < BIGKEY_NUMBER; i++) {
         temp.key[i] = num1.key[i] ^ num2.key[i];  // 按位异或
@@ -272,7 +254,7 @@ inline const BigKey operator^(const BigKey& num1,
 
 inline const BigKey operator~(BigKey& num1) {
     // 取反重载
-    BigKey temp(num1);
+    BigKey temp;
     for (int i = 0; i < BIGKEY_NUMBER; i++) {
         temp.key[i] = ~num1.key[i];  // 取反
     }
@@ -335,6 +317,16 @@ inline bool operator&&(const BigKey& num1, const bool& num2) {
 
 inline bool operator&&(const bool& num1, const BigKey& num2) {
     return num2 && num1;  // 调用上面的重载函数
+}
+
+// 转换为uint64_t类型
+inline uint64_t BigKey::toUint64_t() const {
+    for (int i = BIGKEY_NUMBER - 1; i > 0; i--) {
+        if (key[i]) {
+            return (uint64_t)-1;
+        }
+    }
+    return key[0];  // 返回第一个元素
 }
 
 inline string BigKey::toString() const {

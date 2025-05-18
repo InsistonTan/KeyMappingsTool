@@ -1343,6 +1343,10 @@ MappingRelation* MainWindow::getDevBtnData(){
                             if (firstKey.first == deviceName && (firstKey.second != nowValue)) {
                                 // 找出不同的按键
                                 BUTTONS_VALUE_TYPE btnValue = nowValue ^ firstKey.second;
+                                btnValue &= KEY_ONLY_FACTOR; // 去掉POV按键的值
+                                if (firstKey.second >> DINPUT_MAX_BUTTONS != nowValue >> DINPUT_MAX_BUTTONS) {
+                                    btnValue |= (nowValue & POV_ONLY_FACTOR); // 添加变化的POV按键的值
+                                }
                                 item->dev_btn_name = ButtonsValueTypeToString(btnValue);
                                 item->dev_btn_bit_value = btnValue;
                                 return item;
