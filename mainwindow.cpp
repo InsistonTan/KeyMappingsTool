@@ -1170,31 +1170,34 @@ MappingRelation* MainWindow::getDevBtnData(){
         return nullptr;
     }
 
-    // 设置一个3s定时器，时间到后停止监听
-    bool isListening = true;
-    QTimer timer;
-    timer.setSingleShot(true);
-    timer.start(3000);
-    connect(&timer, &QTimer::timeout, [&isListening](){ isListening = false;});
+
+    bool enableLogs = getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog();
     
     // 获取第一次数据
     bool isFirstData = true;
-    qint64 timeTick = QDateTime::currentMSecsSinceEpoch();
+    qint64 timeTickFirst = QDateTime::currentMSecsSinceEpoch();
     std::map<QString, BUTTONS_VALUE_TYPE> firstKeyStateMap;
     std::map<std::string, int> tempRecord;
-
-    bool enableLogs = getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog();
+    
+    // 设置一个3s定时器，时间到后停止监听
+    qint64 listeningTime = QDateTime::currentMSecsSinceEpoch() + 3000; // 3秒后停止监听
+    qint64 timeTickRun = QDateTime::currentMSecsSinceEpoch();          // 记录当前时间戳
 
     // 监听设备按键状态
-    while(isListening){
-        QApplication::processEvents(); // 处理事件队列，防止界面卡死
+    while(QDateTime::currentMSecsSinceEpoch() < listeningTime){
+        if (QDateTime::currentMSecsSinceEpoch() - timeTickRun < 50) {
+            QApplication::processEvents(); // 处理事件队列，防止界面卡死
+            continue; // 每50ms获取一次数据
+        }
+        timeTickRun = QDateTime::currentMSecsSinceEpoch();
+
         // 获取设备状态数据
         auto res = getInputState(enableLogs);
 
         // 获取初始按键状态
         if (isFirstData) {
             // 跳过前50ms的数据，第一次采集的数据为空，可能是BUG
-            if (QDateTime::currentMSecsSinceEpoch() - timeTick > 50) {
+            if (QDateTime::currentMSecsSinceEpoch() - timeTickFirst > 50) {
                 isFirstData = false;
                 auto firstKeyRes = getInputState(enableLogs); // 获取按键状态，第一次获取为0，应该是BUG
                 for (auto item : firstKeyRes) {
