@@ -514,6 +514,33 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);
 
 
+    // 按键触发模式下拉框
+    QComboBox *triggerTypeComboBox = new QComboBox();
+    triggerTypeComboBox->setMaximumHeight(36);
+    triggerTypeComboBox->setMinimumHeight(36);
+    triggerTypeComboBox->setMinimumWidth(160);
+    triggerTypeComboBox->setMaximumWidth(160);
+    triggerTypeComboBox->setStyleSheet("QComboBox{padding-left:10px;}"
+                                       "QComboBox:disabled {"
+                                       "   background-color: #f0f0f0;"
+                                       "   color: #888888;"
+                                       "}"
+                                       );
+    // 添加下拉框选择项
+    for(int i = 0; i < TriggerTypeEnum::End; i++){
+        TriggerTypeEnum enumItem = static_cast<TriggerTypeEnum>(i);
+        triggerTypeComboBox->addItem(TRIGGER_TYPE_ENUM_MAP[enumItem].data());
+    }
+    // 设置一个序号, 为后续操作提供一个位置
+    triggerTypeComboBox->setObjectName(currentRowIndex);
+    // 历史配置展示
+    if(!isAddNewMapping){
+        triggerTypeComboBox->setCurrentText(TRIGGER_TYPE_ENUM_MAP[mapping->btnTriggerType].data());
+    }
+    // 连接信号和槽
+    connect(triggerTypeComboBox, &QComboBox::activated, this, &MainWindow::onTriggerTypeComboBoxActivated);
+
+
     // 映射模式下拉框
     QComboBox *mappingTypeComboBox = new QComboBox();
     mappingTypeComboBox->setMaximumHeight(36);
@@ -545,41 +572,28 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     connect(mappingTypeComboBox, &QComboBox::activated, this, [=]{
         if (mappingTypeComboBox->currentIndex() == 1){
             mapping->setMappingType(MappingType::Xbox);
+
+            // 轴映射 xbox, 隐藏按键触发模式的下拉框
+            if(mapping->dev_btn_type == (std::string)WHEEL_AXIS && mapping->mappingType == MappingType::Xbox){
+                // 恢复默认选项
+                triggerTypeComboBox->setCurrentIndex(0);
+                mapping->btnTriggerType = TriggerTypeEnum::Normal;
+                // 设置为不可用
+                triggerTypeComboBox->setDisabled(true);
+            }
         }else if (mappingTypeComboBox->currentIndex() == 0){
             mapping->setMappingType(MappingType::Keyboard);
+
+            // 轴映射 键盘按键, 显示按键触发模式的下拉框
+            if(mapping->dev_btn_type == (std::string)WHEEL_AXIS && mapping->mappingType == MappingType::Keyboard){
+                triggerTypeComboBox->setDisabled(false);
+            }
         }
         //updateASwitchPushButton(btn, mapping->mappingType);
         updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
         mapping->keyboard_name = comboBox->currentText().toStdString();
         mapping->keyboard_value = 0;
     });
-
-
-    // 按键触发模式下拉框
-    QComboBox *triggerTypeComboBox = new QComboBox();
-    triggerTypeComboBox->setMaximumHeight(36);
-    triggerTypeComboBox->setMinimumHeight(36);
-    triggerTypeComboBox->setMinimumWidth(160);
-    triggerTypeComboBox->setMaximumWidth(160);
-    triggerTypeComboBox->setStyleSheet("QComboBox{padding-left:10px;}"
-                                       "QComboBox:disabled {"
-                                       "   background-color: #f0f0f0;"
-                                       "   color: #888888;"
-                                       "}"
-                                       );
-    // 添加下拉框选择项
-    for(int i = 0; i < TriggerTypeEnum::End; i++){
-        TriggerTypeEnum enumItem = static_cast<TriggerTypeEnum>(i);
-        triggerTypeComboBox->addItem(TRIGGER_TYPE_ENUM_MAP[enumItem].data());
-    }
-    // 设置一个序号, 为后续操作提供一个位置
-    triggerTypeComboBox->setObjectName(currentRowIndex);
-    // 历史配置展示
-    if(!isAddNewMapping){
-        triggerTypeComboBox->setCurrentText(TRIGGER_TYPE_ENUM_MAP[mapping->btnTriggerType].data());
-    }
-    // 连接信号和槽
-    connect(triggerTypeComboBox, &QComboBox::activated, this, &MainWindow::onTriggerTypeComboBoxActivated);
 
 
     QLineEdit *lineEdit = new QLineEdit(isAddNewMapping ? "" : mapping->remark.data());
@@ -613,8 +627,11 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     layout->addWidget(deleteBtn, row, ++columnIndex, Qt::AlignLeft);
 
     if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)){
-        // 轴隐藏按键触发模式的下拉框
-        triggerTypeComboBox->setDisabled(true);
+        // 轴映射 xbox
+        if(mapping->mappingType == MappingType::Xbox){
+            // 轴隐藏按键触发模式的下拉框
+            triggerTypeComboBox->setDisabled(true);
+        }
 
         // 反转轴的勾选
         QCheckBox *checkBox = new QCheckBox("反转该轴", this);
