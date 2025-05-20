@@ -575,6 +575,19 @@ void SimulateTask::doWork(){
                         // 延迟5s触发
                         simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 5000);
                         break;
+                    case TriggerTypeEnum::Delay8s:
+                        // 延迟8s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 8000);
+                        break;
+                    case TriggerTypeEnum::Delay10s:
+                        // 延迟10s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 10000);
+                        break;
+                    case TriggerTypeEnum::Delay15s:
+                        // 延迟15s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 15000);
+                        break;
+
                     case TriggerTypeEnum::Release:
                         // 松开按键才触发
                         break;
@@ -619,6 +632,19 @@ void SimulateTask::doWork(){
                             // 延迟5s触发
                             simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 5000);
                             break;
+                        case TriggerTypeEnum::Delay8s:
+                            // 延迟8s触发
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 8000);
+                            break;
+                        case TriggerTypeEnum::Delay10s:
+                            // 延迟10s触发
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 10000);
+                            break;
+                        case TriggerTypeEnum::Delay15s:
+                            // 延迟15s触发
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 15000);
+                            break;
+
                         case TriggerTypeEnum::Release:
                             // 松开按键才触发
                             break;
