@@ -12,8 +12,8 @@ ShowKeyState::~ShowKeyState() {
 }
 
 void ShowKeyState::setKeyCount(size_t count) {
-    if (count < 1 || count > 128) {
-        count = 128; // 最大支持128个按键
+    if (count < 1 || count > DINPUT_MAX_BUTTONS) {
+        count = DINPUT_MAX_BUTTONS; // 最大支持DINPUT_MAX_BUTTONS个按键
     }
     keyCount = count; // 按键数量
 

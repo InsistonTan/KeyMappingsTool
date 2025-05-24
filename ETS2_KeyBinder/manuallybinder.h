@@ -52,7 +52,7 @@ private slots:
 private:
     Ui::ManuallyBinder* ui;
 
-    size_t keyCount = 128;     // 按键数量
+    size_t keyCount = DINPUT_MAX_BUTTONS;     // 按键数量
     ActionEffect actionEffect; // 动作效果
 };
 

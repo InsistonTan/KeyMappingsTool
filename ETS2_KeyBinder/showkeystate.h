@@ -2,6 +2,7 @@
 #define SHOWKEYSTATE_H
 
 #include "BigKey.hpp"
+#include "global.h"
 #include <QWidget>
 
 namespace Ui {
@@ -23,7 +24,7 @@ public slots:
 
 private:
     Ui::ShowKeyState* ui;
-    size_t keyCount = 128; // 按键数量
+    size_t keyCount = DINPUT_MAX_BUTTONS; // 按键数量
 };
 
 #endif // SHOWKEYSTATE_H
