@@ -102,4 +102,7 @@ QString getAppDataDirStr();
 // 映射列表含有映射xbox的记录
 bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList);
 
+// 是否开启设备名称强唯一模式, 开启该模式, 设备名称将附带设备路径信息
+extern bool enableStrongUniqueDeviceNameMode;
+
 #endif // GLOBAL_H

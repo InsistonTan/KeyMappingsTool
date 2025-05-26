@@ -103,7 +103,10 @@ AssistFuncWindow::AssistFuncWindow(QWidget *parent)
         SYSTEM_enableForceFeedback = false;
     }
 
-
+    // 设备名称强唯一模式
+    if(enableStrongUniqueDeviceNameMode){
+        ui->checkBox_7->setChecked(true);
+    }
 }
 
 AssistFuncWindow::~AssistFuncWindow()
@@ -134,6 +137,7 @@ void AssistFuncWindow::saveSettings(){
     text2.append("\"SYSTEM_enableMappingAfterOpening\":").append(ui->checkBox_2->isChecked() ? "true" : "false").append(",\n\t");
     text2.append("\"SYSTEM_enableOnlyLongestMapping\":").append(ui->checkBox_3->isChecked() ? "true" : "false").append(",\n\t");
     text2.append("\"SYSTEM_enableForceFeedback\":").append(ui->checkBox_4->isChecked() ? "true" : "false").append(",\n\t");
+    text2.append("\"SYSTEM_enableStrongUniqueDeviceNameMode\":").append(ui->checkBox_7->isChecked() ? "true" : "false").append(",\n\t");
 
     text2.append("\"SYSTEM_forceFeedbackSettings\":{\n\t\t");
     text2.append("\"throttleAxis\":").append("\"" + forceFeedbackSettingsWindow->throttleAxis + "\"").append(",\n\t\t");
@@ -200,6 +204,8 @@ void AssistFuncWindow::loadSettings(){
     this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;// 最长组合键优先
     // 力反馈模拟
     this->SYSTEM_enableForceFeedback = (jsonObj.contains("SYSTEM_enableForceFeedback")) ? jsonObj["SYSTEM_enableForceFeedback"].toBool() : false;
+    // 设备名称强唯一模式
+    enableStrongUniqueDeviceNameMode = (jsonObj.contains("SYSTEM_enableStrongUniqueDeviceNameMode")) ? jsonObj["SYSTEM_enableStrongUniqueDeviceNameMode"].toBool() : false;
 
     // 欧卡2安装路径
     QString ets2Path = (jsonObj.contains("ETS2_installPath")) ? jsonObj["ETS2_installPath"].toString() : "";
@@ -430,6 +436,9 @@ void AssistFuncWindow::on_pushButton_clicked()
         }
     }
 
+    // 设备名称强唯一模式
+    enableStrongUniqueDeviceNameMode = ui->checkBox_7->isChecked();
+
     //this->hide();
 }
 
@@ -657,5 +666,11 @@ void AssistFuncWindow::on_pushButton_4_clicked(){
     ets2KeyBinderWizard->setAttribute(Qt::WA_DeleteOnClose, true); // 设置关闭时删除对象
     ets2KeyBinderWizard->setWindowModality(Qt::ApplicationModal);  // 设置模态
     ets2KeyBinderWizard->show();
+}
+
+
+void AssistFuncWindow::on_checkBox_7_clicked()
+{
+    unsave();
 }
 

@@ -82,6 +82,8 @@ void MainWindow::init(){
         appDataDirPath = "";
     }
 
+    // 初始化辅助功能窗口, 加载辅助功能设置
+    this->assistWindow = new AssistFuncWindow();
 
     // 初始化directInput并扫描设备
     initDirectInput();
@@ -146,12 +148,8 @@ void MainWindow::init(){
     // 日志窗口
     this->logWindow = new LogWindow();
 
-    //loadSettings();
-    //this->settings = new DeadAreaSettings();
-
-    this->assistWindow = new AssistFuncWindow();
+    // 辅助功能窗口连接信号与槽
     connect(this->assistWindow, &AssistFuncWindow::saveLastDeviceToFileSignal, this, &MainWindow::saveLastDeviceToFileSlot);
-
     if(AssistFuncWindow::getEnableMappingAfterOpening()){
         on_pushButton_2_clicked();
     }
@@ -180,6 +178,9 @@ void MainWindow::scanMappingFile(){
 
                 QString shortName = fileInfo.completeBaseName();
 
+                // 清除多设备配置的设备名称的正则
+                QRegularExpression replaceReg1("_\\[.*$");
+
                 // 当前选择了多个设备, 配置文件名需要跟当前选择的设备匹配
                 if(currentSelectedDeviceList.size() > 1){
                     bool isAccept = true;
@@ -189,10 +190,7 @@ void MainWindow::scanMappingFile(){
                         }
                     }
                     if(isAccept){
-                        int lastUnderlinePos = shortName.lastIndexOf('_'); // 查找最后一个下划线的位置
-                        if(lastUnderlinePos >= 0){
-                            shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
-                        }
+                        shortName.replace(replaceReg1, "");
                     }else{
                         shortName = "";
                     }
@@ -204,10 +202,7 @@ void MainWindow::scanMappingFile(){
                     }
                 }else if(currentSelectedDeviceList.size() == 0){
                     // 当前选择的设备为空, 显示所有配置
-                    int lastUnderlinePos = shortName.lastIndexOf('_'); // 查找最后一个下划线的位置
-                    if(lastUnderlinePos >= 0){
-                        shortName = shortName.left(lastUnderlinePos); // 获取从开始到最后一个下划线之前的部分
-                    }
+                    shortName.replace(replaceReg1, "");
                 }
 
                 if(!shortName.isEmpty()){

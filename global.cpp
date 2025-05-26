@@ -7,6 +7,7 @@
 #include "AssistFuncWindow.h"
 #include<QDir>
 #include<QCoreApplication>
+#include<QRegularExpression>
 
 QWidget* g_mainWindow = nullptr;
 
@@ -124,12 +125,15 @@ bool getIsRunning(){
     return isRuning;
 }
 
+// 是否开启设备名称强唯一模式, 开启该模式, 设备名称将附带设备路径信息
+bool enableStrongUniqueDeviceNameMode = false;
+
 std::string guidToString(const GUID& guid)
 {
     char buffer[39]; // GUID字符串固定为38个字符 + 终止符
 
     // snprintf(buffer, sizeof(buffer),
-    //          "{%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}",
+    //          "(%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX)",
     //          guid.Data1, guid.Data2, guid.Data3,
     //          guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
     //          guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
@@ -139,11 +143,60 @@ std::string guidToString(const GUID& guid)
     return std::string(buffer);
 }
 
+// 获取设备接口路径作为唯一id
+std::string getDevInterfacePath(const DIDEVICEINSTANCE* pdidInstance, std::string productName){
+    std::string result = "";
+    LPDIRECTINPUTDEVICE8 pDevice = nullptr;
+    // 创建设备实例
+    if (FAILED(g_pDirectInput->CreateDevice(pdidInstance->guidInstance, &pDevice, NULL))) {
+        qDebug() << "设备创建失败！";
+
+        QMetaObject::invokeMethod(QCoreApplication::instance(), [=](){
+            QMessageBox::critical(nullptr, "错误", "获取" + QString("设备[").append(productName).append("]") + "的路径失败 \n\n原因: 设备创建失败！");
+        }, Qt::QueuedConnection);
+
+        return result;
+    }
+
+    // 设备属性结构体
+    DIPROPGUIDANDPATH diprop;
+    memset(&diprop, 0, sizeof(diprop));  // 清零结构体
+    // 设置 DIPROPHEADER
+    diprop.diph.dwSize = sizeof(DIPROPGUIDANDPATH);
+    diprop.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+    diprop.diph.dwObj = 0;               // 0 表示设备本身，而不是特定对象
+    diprop.diph.dwHow = DIPH_DEVICE;     // 表示获取设备属性
+
+    if (SUCCEEDED(pDevice->GetProperty(DIPROP_GUIDANDPATH, &diprop.diph))) {
+        // diprop.wszPath 包含设备路径（如 \\?\HID#VID_1234&PID_5678...）
+        auto wszPath = QString::fromWCharArray(diprop.wszPath);
+        QRegularExpression reg1("(^.+(?=vid))|(#{.*$)");
+        wszPath.replace(reg1, "");
+
+        result = "(" + wszPath.toStdString() + ")";
+    }
+
+    if(pDevice){
+        pDevice->Release();
+        pDevice = nullptr;
+    }
+
+    return result;
+}
+
 // DirectInput 回调函数，用于列出所有连接的游戏控制器设备
 BOOL CALLBACK EnumDevicesCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext) {
     DiDeviceInfo deviceInfo;
     deviceInfo.name = QString::fromWCharArray(pdidInstance->tszProductName).toStdString();
-    deviceInfo.name += guidToString(pdidInstance->guidProduct);
+
+    // 开启设备名称强唯一模式
+    if(enableStrongUniqueDeviceNameMode){
+        deviceInfo.name += getDevInterfacePath(pdidInstance, deviceInfo.name);
+    }else{
+        deviceInfo.name += guidToString(pdidInstance->guidProduct);
+    }
+
+
     deviceInfo.guidInstance = pdidInstance->guidInstance;
 
     diDeviceList.append(deviceInfo);
@@ -226,7 +279,14 @@ QString getDeviceName(LPDIRECTINPUTDEVICE8 pDevice){
     diInstance.dwSize = sizeof(DIDEVICEINSTANCE);
     HRESULT hr2 = pDevice->GetDeviceInfo(&diInstance);
     if (SUCCEEDED(hr2)){
-        deviceName = QString::fromWCharArray(diInstance.tszProductName) + guidToString(diInstance.guidProduct).data();
+        // 设备的产品名称
+        deviceName = QString::fromWCharArray(diInstance.tszProductName);
+        // 开启设备名称强唯一模式
+        if(enableStrongUniqueDeviceNameMode){
+            deviceName += getDevInterfacePath(&diInstance, deviceName.toStdString());
+        }else{
+            deviceName += guidToString(diInstance.guidProduct).data();
+        }
     }
 
     return deviceName;
