@@ -1058,7 +1058,6 @@ void MainWindow::loadMappingsFile(std::string filename){
                 mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
                 // 根据按键名称设置 dev_btn_bit_value，不从文件中获取
                 mapping->dev_btn_bit_value = stringToButtonsValueType(mapping->dev_btn_name);
-                qDebug() << mapping->dev_btn_bit_value;
 
                 // 按键名称不为空才添加进列表
                 if(!mapping->dev_btn_name.empty()){
