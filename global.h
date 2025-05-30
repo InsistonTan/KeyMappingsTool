@@ -110,4 +110,8 @@ bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList);
 // BUTTONS_VALUE_TYPE 转换为字符串
 std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue);
 
+// string 转换为 BUTTONS_VALUE_TYPE
+BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr);
+
+
 #endif // GLOBAL_H

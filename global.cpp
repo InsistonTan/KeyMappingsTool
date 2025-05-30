@@ -681,3 +681,31 @@ std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue){
     }
     return btnValueStr;
 }
+
+BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr) {
+    BUTTONS_VALUE_TYPE btnValue;
+    QString str = QString::fromStdString(btnValueStr);
+    QStringList parts = str.split("+", Qt::SkipEmptyParts); // 分割字符串 当没有"+"时, parts.size() == 1
+    for (const QString& part : parts) {
+        if (part.startsWith("按键")) {
+            bool ok;
+            int buttonIndex = part.mid(2).toInt(&ok);
+            if (ok && buttonIndex >= 0 && buttonIndex < DINPUT_MAX_BUTTONS) {
+                btnValue.setBit(buttonIndex, true);
+            }
+        } else if (part.startsWith("摇杆")) {
+            QStringList subParts = part.split("-");
+            if (subParts.size() == 2 && subParts[1].startsWith("角度")) {
+                bool ok;
+                int angle = subParts[1].mid(2).toInt(&ok);
+                if (ok && angle >= 0 && angle < 360) {
+                    uint16_t angleValue = ~angle; // 角度得反码
+                    btnValue |= (BUTTONS_VALUE_TYPE)angleValue << ((subParts[0].mid(2).toInt() - 1) * 16 + DINPUT_MAX_BUTTONS);
+                }
+            }
+        }
+    }
+
+    return btnValue;
+}
+    

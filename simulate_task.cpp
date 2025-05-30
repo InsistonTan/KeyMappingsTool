@@ -52,29 +52,9 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
 
-            // 根据按键名称设置按键值，不从文件中获取
-            std::string btn_name = mapping->dev_btn_name;
-            if (btn_name.find("按键") != std::string::npos) {
-                QStringList btnStrList = QString::fromStdString(btn_name).split("+");
-                for (const QString& btn : btnStrList) {
-                    if (btn.contains("按键")) {
-                        // 处理按键名称
-                        int index = btn.mid(2).toInt(); // 获取按键索引
-                        mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                    } else if (btn.contains("摇杆") && btn.contains("角度")) {
-                        // 处理摇杆名称 摇杆1-角度0  摇杆2-角度0  摇杆1-角度180
-                        uint16_t index = btn.mid(2, 1).toUInt(); // 获取摇杆索引
-                        uint16_t angle = btn.mid(6).toUInt(); // 获取角度值
-                        // 这里用反码操作, 因为摇杆的值是0-360度, 而没有操作时返回的也是0, 所以需要反码操作来表示操作
-                        BUTTONS_VALUE_TYPE povBitValue = (uint16_t)~angle;
-                        mapping->dev_btn_bit_value |= povBitValue << ((index - 1)* 16 + DINPUT_MAX_BUTTONS);
-                    }
-                }
-
-                // 将映射添加进多按键映射列表
-                MappingRelation newMapping = *mapping;
-                handleMultiBtnVector.push_back(newMapping);
-            }
+            // 将映射添加进多按键映射列表
+            MappingRelation newMapping = *mapping;
+            handleMultiBtnVector.push_back(newMapping);
         }
     }
 
