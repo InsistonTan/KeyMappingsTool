@@ -21,6 +21,7 @@
 bool AssistFuncWindow::ETS2_enableAutoCancelHandbrake = false;
 bool AssistFuncWindow::SYSTEM_enableMappingAfterOpening = false;
 bool AssistFuncWindow::SYSTEM_enableOnlyLongestMapping = false;
+bool AssistFuncWindow::SYSTEM_enableOnlyChangeKeyWhenNew = true;
 
 AssistFuncWindow::AssistFuncWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -121,6 +122,10 @@ bool AssistFuncWindow::getEnableOnlyLongestMapping()
     return SYSTEM_enableOnlyLongestMapping;
 }
 
+bool AssistFuncWindow::getEnableOnlyChangeKeyWhenNew() {
+    return SYSTEM_enableOnlyChangeKeyWhenNew;
+}
+
 void AssistFuncWindow::saveSettings(){
     // 创建一个 QFile 对象，并打开文件进行写入
     QFile file2(appDataDirPath + ASSIST_FUNC_SETTINGS);  // 文件路径可以是绝对路径或相对路径
@@ -133,6 +138,7 @@ void AssistFuncWindow::saveSettings(){
     text2.append("\"SYSTEM_enableRunUponStartup\":").append(ui->checkBox_5->isChecked() ? "true" : "false").append(",\n\t");
     text2.append("\"SYSTEM_enableMappingAfterOpening\":").append(ui->checkBox_2->isChecked() ? "true" : "false").append(",\n\t");
     text2.append("\"SYSTEM_enableOnlyLongestMapping\":").append(ui->checkBox_3->isChecked() ? "true" : "false").append(",\n\t");
+    text2.append("\"SYSTEM_enableOnlyChangeKeyWhenNew\":").append(ui->checkBox_7->isChecked() ? "true" : "false").append(",\n\t");
     text2.append("\"SYSTEM_enableForceFeedback\":").append(ui->checkBox_4->isChecked() ? "true" : "false").append(",\n\t");
 
     text2.append("\"SYSTEM_forceFeedbackSettings\":{\n\t\t");
@@ -192,12 +198,14 @@ void AssistFuncWindow::loadSettings(){
     bool enableETS2AutoCancelHandbrake = (jsonObj.contains("ETS2_enableAutoCancelHandbrake")) ? jsonObj["ETS2_enableAutoCancelHandbrake"].toBool() : false;
     bool enableAutoStartMapping = (jsonObj.contains("SYSTEM_enableMappingAfterOpening")) ? jsonObj["SYSTEM_enableMappingAfterOpening"].toBool() : false;
     bool enableOnlyLongestMapping = (jsonObj.contains("SYSTEM_enableOnlyLongestMapping")) ? jsonObj["SYSTEM_enableOnlyLongestMapping"].toBool() : false;
+    bool enableOnlyChangeKeyWhenNew = (jsonObj.contains("SYSTEM_enableOnlyChangeKeyWhenNew")) ? jsonObj["SYSTEM_enableOnlyChangeKeyWhenNew"].toBool() : false;
     bool enableRunUponStartup = (jsonObj.contains("SYSTEM_enableRunUponStartup")) ? jsonObj["SYSTEM_enableRunUponStartup"].toBool() : false;
 
     this->SYSTEM_enableRunUponStartup = enableRunUponStartup;// 开机自启动
     this->ETS2_enableAutoCancelHandbrake = enableETS2AutoCancelHandbrake;// 欧卡2自动解除手刹
     this->SYSTEM_enableMappingAfterOpening = enableAutoStartMapping;// 打开软件自动开启映射
     this->SYSTEM_enableOnlyLongestMapping = enableOnlyLongestMapping;// 最长组合键优先
+    this->SYSTEM_enableOnlyChangeKeyWhenNew = enableOnlyChangeKeyWhenNew;// 仅在新按键时更改按键
     // 力反馈模拟
     this->SYSTEM_enableForceFeedback = (jsonObj.contains("SYSTEM_enableForceFeedback")) ? jsonObj["SYSTEM_enableForceFeedback"].toBool() : false;
 
@@ -391,6 +399,14 @@ void AssistFuncWindow::on_pushButton_clicked()
 
         // 提交信号
         SimulateTask::changeEnableOnlyLongestMapping();
+    }
+
+    // SYSTEM_enableOnlyChangeKeyWhenNew值发生变化
+    if(SYSTEM_enableOnlyChangeKeyWhenNew != ui->checkBox_7->isChecked()){
+        // SYSTEM_enableOnlyChangeKeyWhenNew变量值更新
+        SYSTEM_enableOnlyChangeKeyWhenNew = ui->checkBox_7->isChecked();
+        SYSTEM_enableOnlyChangeKeyWhenNew ? pushToQueue("<b style='color:rgb(0, 151, 144);'>开启</b> 新增映射时只返回变化的按键")
+                                          : pushToQueue("<b style='color:red;'>关闭</b> 新增映射时只返回变化的按键");
     }
 
 
@@ -657,5 +673,11 @@ void AssistFuncWindow::on_pushButton_4_clicked(){
     ets2KeyBinderWizard->setAttribute(Qt::WA_DeleteOnClose, true); // 设置关闭时删除对象
     ets2KeyBinderWizard->setWindowModality(Qt::ApplicationModal);  // 设置模态
     ets2KeyBinderWizard->show();
+}
+
+
+void AssistFuncWindow::on_checkBox_7_clicked()
+{
+    unsave();
 }
 

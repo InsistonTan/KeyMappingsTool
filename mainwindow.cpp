@@ -1201,7 +1201,7 @@ MappingRelation* MainWindow::getDevBtnData(){
         auto res = getInputState(enableLogs);
 
         // 获取初始按键状态
-        if (isFirstData) {
+        if (isFirstData && AssistFuncWindow::getEnableOnlyChangeKeyWhenNew()) {
             // 跳过前50ms的数据，第一次采集的数据为空，可能是BUG
             if (QDateTime::currentMSecsSinceEpoch() - timeTickFirst > 50) {
                 isFirstData = false;
@@ -1345,7 +1345,7 @@ MappingRelation* MainWindow::getDevBtnData(){
                     auto btnStrList = QString(item->dev_btn_name.data()).split("+");
 
                     // 方向盘按键
-                    if(firstKeyStateMap.size() > 0){
+                    if(firstKeyStateMap.size() > 0 && AssistFuncWindow::getEnableOnlyChangeKeyWhenNew()){
                         QString deviceName = item->deviceName;
                         BUTTONS_VALUE_TYPE nowValue = item->dev_btn_bit_value;
                         for (auto firstKey : firstKeyStateMap) {
