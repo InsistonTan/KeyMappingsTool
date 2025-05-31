@@ -1,3 +1,6 @@
+// 参考开源项目：https://github.com/Sab1e-GitHub/ETS2-KeyBinder
+// 参考开源项目：https://github.com/InsistonTan/KeyMappingsTool
+
 #include "ets2keybinderwizard.h"
 #include "manuallybinder.h"
 #include "ui_ets2keybinderwizard.h"
@@ -10,20 +13,28 @@
 #include <map>
 #include <string>
 
-// 参考开源项目：https://github.com/Sab1e-GitHub/ETS2-KeyBinder
-// 参考开源项目：https://github.com/InsistonTan/KeyMappingsTool
+using namespace std;
 
 const QString MEG_BOX_LINE = "------------------------";
 const QString MAPPING_FILE_NAME = "LightBinder";
+const QString SCS_BTN_STR_DEFAULT = "自动绑定"; // 默认按钮文本
 
 #define POV_MAX (4 * 4)
-std::map<int, size_t> povStandMap = {{0, 0}, {90, 1}, {180, 2}, {270, 3}}; // POV方向映射
-std::map<size_t, QString> povUiMap = {{0, "0度"}, {1, "90度"}, {2, "180度"}, {3, "270度"}};
-std::map<size_t, QString> povStringMap = {{0, "pov1_up"},  {1, "pov1_right"},  {2, "pov1_down"},  {3, "pov1_left"},
-                                          {4, "pov2_up"},  {5, "pov2_right"},  {6, "pov2_down"},  {7, "pov2_left"},
-                                          {8, "pov3_up"},  {9, "pov3_right"},  {10, "pov3_down"}, {11, "pov3_left"},
-                                          {12, "pov4_up"}, {13, "pov4_right"}, {14, "pov4_down"}, {15, "pov4_left"}};
-using namespace std;
+const map<int, size_t> povStandMap = {{0, 0}, {90, 1}, {180, 2}, {270, 3}}; // POV方向映射
+const map<size_t, QString> povUiMap = {{0, "0度"}, {1, "90度"}, {2, "180度"}, {3, "270度"}};
+const map<size_t, QString> povStringMap = {{0, "pov1_up"},  {1, "pov1_right"},  {2, "pov1_down"},  {3, "pov1_left"},
+                                           {4, "pov2_up"},  {5, "pov2_right"},  {6, "pov2_down"},  {7, "pov2_left"},
+                                           {8, "pov3_up"},  {9, "pov3_right"},  {10, "pov3_down"}, {11, "pov3_left"},
+                                           {12, "pov4_up"}, {13, "pov4_right"}, {14, "pov4_down"}, {15, "pov4_left"}};
+
+map<BindingType, QString> scsBtnStrMap = {
+    {BindingType::lightoff, SCS_BTN_STR_DEFAULT},    {BindingType::lighthorn, SCS_BTN_STR_DEFAULT},   {BindingType::wipers0, SCS_BTN_STR_DEFAULT},
+    {BindingType::wipers1, SCS_BTN_STR_DEFAULT},     {BindingType::wipers2, SCS_BTN_STR_DEFAULT},     {BindingType::wipers3, SCS_BTN_STR_DEFAULT},
+    {BindingType::wipers4, SCS_BTN_STR_DEFAULT},     {BindingType::lightpark, SCS_BTN_STR_DEFAULT},   {BindingType::lighton, SCS_BTN_STR_DEFAULT},
+    {BindingType::hblight, SCS_BTN_STR_DEFAULT},     {BindingType::lblinkerh, SCS_BTN_STR_DEFAULT},   {BindingType::rblinkerh, SCS_BTN_STR_DEFAULT},
+    {BindingType::gearsel1off, SCS_BTN_STR_DEFAULT}, {BindingType::gearsel2off, SCS_BTN_STR_DEFAULT}, {BindingType::gearsel1on, SCS_BTN_STR_DEFAULT},
+    {BindingType::gearsel2on, SCS_BTN_STR_DEFAULT},
+};
 
 // 欧卡2 设置    “摇杆 Button0” 0基索引
 // 欧卡2 配置文件 “joy.b1”      1基索引
@@ -31,10 +42,18 @@ using namespace std;
 
 ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(new Ui::ETS2KeyBinderWizard) {
     ui->setupUi(this);
-    this->setWindowTitle("欧卡2/美卡-原生按键绑定向导 v1.0-beta.8");
+    this->setWindowTitle("欧卡2/美卡-原生按键绑定向导 v1.0-beta.9");
 #if defined(INDEPENDENT_MODE)
     this->setWindowTitle(this->windowTitle() + " " + QString(__DATE__) + " " + QString(__TIME__));
 #endif
+    uiBtnMap = {
+        {BindingType::lightoff, ui->pushButton_5},     {BindingType::lightpark, ui->pushButton_6},    {BindingType::lighton, ui->pushButton_7},
+        {BindingType::hblight, ui->pushButton_14},     {BindingType::lighthorn, ui->pushButton_15},   {BindingType::wipers0, ui->pushButton_10},
+        {BindingType::wipers1, ui->pushButton_11},     {BindingType::wipers2, ui->pushButton_12},     {BindingType::wipers3, ui->pushButton_13},
+        {BindingType::wipers4, ui->pushButton_24},     {BindingType::lblinkerh, ui->pushButton_8},    {BindingType::rblinkerh, ui->pushButton_9},
+        {BindingType::gearsel1off, ui->pushButton_20}, {BindingType::gearsel2off, ui->pushButton_21}, {BindingType::gearsel1on, ui->pushButton_22},
+        {BindingType::gearsel2on, ui->pushButton_23},
+    };
 
     diDeviceList.clear();
     ui->comboBox->clear();
@@ -141,7 +160,7 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                         for (size_t i = capabilities.dwButtons; i < capabilities.dwButtons + POV_MAX; i++) {
                             size_t povIndex = i - capabilities.dwButtons;
                             if (keyState.getBit(i)) {
-                                povState += povUiMap[povIndex % 4] + ",";
+                                povState += povUiMap.at(povIndex % 4) + ",";
                             }
                         }
                         povState.chop(1);                    // 去掉最后一个逗号
@@ -170,9 +189,10 @@ ETS2KeyBinderWizard::~ETS2KeyBinderWizard() {
 QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
     QString globalControlsFilePath;
     if (ui->comboBox_4->currentIndex() == 0) {
-        globalControlsFilePath = QDir::homePath() + "/Documents/Euro Truck Simulator 2/global_controls.sii";
+        globalControlsFilePath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Euro Truck Simulator 2/global_controls.sii";
     } else {
-        globalControlsFilePath = QDir::homePath() + "/Documents/American Truck Simulator/global_controls.sii";
+        globalControlsFilePath =
+            QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/American Truck Simulator/global_controls.sii";
     }
 
     QFile file(globalControlsFilePath);
@@ -303,7 +323,7 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     }
 
     // 替换规则字典
-    map<BindingType, QString> replaceRules = {
+    const map<BindingType, QString> replaceRules = {
         {BindingType::lightoff, R"(mix lightoff `.*?semantical\.lightoff\?0`)"},
         {BindingType::lighthorn, R"(mix lighthorn `.*?semantical\.lighthorn\?0`)"},
         {BindingType::wipers0, R"(mix wipers0 `.*?semantical\.wipers0\?0`)"},
@@ -322,7 +342,7 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
         {BindingType::gearsel2on, R"(mix gearsel2on `.*?semantical\.gearsel2on\?0`)"},
     };
 
-    map<BindingType, QString> bindingTypeString = {
+    const map<BindingType, QString> bindingTypeString = {
         {BindingType::lightoff, "lightoff"},       {BindingType::lighthorn, "lighthorn"},   {BindingType::wipers0, "wipers0"},
         {BindingType::wipers1, "wipers1"},         {BindingType::wipers2, "wipers2"},       {BindingType::wipers3, "wipers3"},
         {BindingType::wipers4, "wipers4"},         {BindingType::lightpark, "lightpark"},   {BindingType::lighton, "lighton"},
@@ -337,8 +357,8 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     }
 
     // 获取替换规则
-    QString pattern = replaceRules[bindingType];
-    QString replacement = QString("mix %1 `%2 | semantical.%1?0`").arg(bindingTypeString[bindingType], ets2BtnStr);
+    QString pattern = replaceRules.at(bindingType);
+    QString replacement = QString("mix %1 `%2 | semantical.%1?0`").arg(bindingTypeString.at(bindingType), ets2BtnStr);
 
     QTextStream in(&controlsFile);
     QStringList lines;
@@ -372,10 +392,18 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     } else {
         qDebug() << "未检测到需要修改的内容";
     }
+
+    // 如果 controlsFile 还是打开状态，关闭它
+    if (controlsFile.isOpen()) {
+        controlsFile.close();
+    }
+
+    scsBtnStrMap[bindingType] = convertToUiString(convertToUiString(ets2BtnStr)); // 更新映射表
+    uiBtnMap.at(bindingType)->setText(convertToUiString(ets2BtnStr));             // 更新按钮文本
 }
 
 // 将字符串转换为 ETS2 格式
-QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = 128) {
+QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount) {
     QString ets2BtnStr;
     QString gameJoyStr = gameJoyPosStr.trimmed();
     if (gameJoyStr.isEmpty() || actionEffect.empty()) {
@@ -390,12 +418,64 @@ QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& a
             ets2BtnStr += gameJoyStr + ".b" + QString::number(item.first + 1) + "?0 & ";
         } else if (item.first < maxButtonCount + POV_MAX) { // POV
             size_t povIndex = item.first - maxButtonCount;
-            ets2BtnStr += gameJoyStr + "." + povStringMap[povIndex] + "?0 & ";
+            ets2BtnStr += gameJoyStr + "." + povStringMap.at(povIndex) + "?0 & ";
         }
     }
     ets2BtnStr.chop(3); // 去掉最后的 &
     qDebug() << "转换后的 ETS2 按键字符串：" << ets2BtnStr;
     return ets2BtnStr;
+}
+
+// 将游戏按键字符串转换为 UI 显示字符串
+QString convertToUiString(const QString& ets2BtnStr) {
+    QString uiStr;
+    if (ets2BtnStr.isEmpty()) {
+        return uiStr;
+    }
+
+    QStringList parts = ets2BtnStr.split("&");
+    for (const QString& part : parts) {
+        QString trimmedPart = part.trimmed();
+        // 去掉 ?0
+        if (trimmedPart.endsWith("?0")) {
+            trimmedPart.chop(2);                 // 去掉末尾的 ?0
+            trimmedPart = trimmedPart.trimmed(); // 去掉末尾空格
+        }
+        if (trimmedPart.startsWith("!")) {
+            uiStr += "不";
+            trimmedPart.remove(0, 1); // 去掉前面的 !
+        }
+        if (trimmedPart.startsWith("joy")) {
+            QStringList joyParts = trimmedPart.split(".");
+            if (joyParts.size() == 2) {
+                if (joyParts[1].startsWith("b")) {            // 按钮
+                    QString buttonIndex = joyParts[1].mid(1); // 去掉 "b"
+                    uiStr += "按钮" + buttonIndex + "+";
+                } else if (joyParts[1].startsWith("pov")) { // POV
+                    QString povDirection = joyParts[1];     // 如 "pov1_up"
+                    uiStr += povDirection + "+";
+                }
+            }
+        } else if (trimmedPart.startsWith("keyboard")) {
+            QStringList keyboardParts = trimmedPart.split(".");
+            if (keyboardParts.size() == 2) {
+                uiStr += "键盘-";
+                QString keyName = keyboardParts[1]; // 键名
+                if (keyName == "enter") {
+                    uiStr += "回车+";
+                } else if (keyName == "space") {
+                    uiStr += "空格+";
+                } else {
+                    uiStr += keyName + "+";
+                }
+            }
+        }
+    }
+    // 去掉最后一个加号
+    if (!uiStr.isEmpty() && uiStr.endsWith("+")) {
+        uiStr.chop(1);
+    }
+    return uiStr;
 }
 
 // 列出目录下的所有配置文件及其最后修改日期
@@ -1046,7 +1126,7 @@ BigKey ETS2KeyBinderWizard::getKeyState() {
                     }
                     val /= 10;
                 }
-                keyState.setBit(povStandMap[val] + capabilities.dwButtons + i * 4, true);
+                keyState.setBit(povStandMap.at(val) + capabilities.dwButtons + i * 4, true);
             }
         }
     } else {
@@ -1081,8 +1161,8 @@ void ETS2KeyBinderWizard::showManuallyBinder(BindingType bindingType) {
     // 当manuallyBinder没关闭时，不允许操作其他窗口
     manuallyBinder->setWindowModality(Qt::ApplicationModal); // 设置窗口模式为应用程序模态
 
-    manuallyBinder->setKeyCount(128);            // 设置按键数量
-    manuallyBinder->setBindingType(bindingType); // 设置绑定类型
+    manuallyBinder->setKeyCount(DINPUT_MAX_BUTTONS); // 设置按键数量
+    manuallyBinder->setBindingType(bindingType);     // 设置绑定类型
 
     // 连接信号槽
     connect(manuallyBinder, &ManuallyBinder::keyBound, this, &ETS2KeyBinderWizard::modifyControlsSii_Slot, Qt::DirectConnection);

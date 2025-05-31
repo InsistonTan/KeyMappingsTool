@@ -217,7 +217,7 @@
     <string>第3步 选择游戏控制器</string>
    </property>
    <property name="subTitle">
-    <string>确保设备已经连接电脑，若列表中未出现，请重新进入第3步</string>
+    <string>确保设备已经连接电脑，若列表中未出现，请重新进入第3步。选好后在游戏中不要改动 ，若改动需要重新绑定</string>
    </property>
    <layout class="QGridLayout" name="gridLayout_4">
     <item row="0" column="0">
@@ -394,7 +394,7 @@
        <item row="1" column="0" colspan="2">
         <widget class="QCheckBox" name="checkBox_3">
          <property name="text">
-          <string>绑定单个灯光映射（暂仅支持控制器的单个按键绑定）</string>
+          <string>显示按键绑定、绑定单个映射（暂仅支持控制器的单个按键绑定）</string>
          </property>
         </widget>
        </item>
@@ -567,9 +567,9 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-226</y>
+             <y>0</y>
              <width>374</width>
-             <height>480</height>
+             <height>464</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_8">
@@ -710,6 +710,12 @@
             </item>
             <item row="0" column="1">
              <widget class="QPushButton" name="pushButton_5">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
                <string>自动绑定</string>
               </property>

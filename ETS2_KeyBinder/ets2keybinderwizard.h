@@ -8,6 +8,7 @@
 #include "global.h"
 #include "showkeystate.h"
 #include <QDir>
+#include <QStandardPaths>
 #include <QWizard>
 #include <dinput.h>
 #include <string.h>
@@ -35,6 +36,9 @@ enum class BindingType
 };
 
 typedef std::map<int, bool> ActionEffect; // 受影响的按键位置和对应的新状态
+
+QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = DINPUT_MAX_BUTTONS);
+QString convertToUiString(const QString& ets2BtnStr);
 
 namespace Ui {
 class ETS2KeyBinderWizard;
@@ -127,14 +131,16 @@ private:
     QStringList gameJoyPosNameList = {
         "joy ", "joy2", "joy3", "joy4", "joy5",
     };
-    QString steamProfiles[2] = {QDir::homePath() + "/Documents/Euro Truck Simulator 2/steam_profiles",
-                                QDir::homePath() + "/Documents/American Truck Simulator/steam_profiles"};
-    QString profiles[2] = {QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles",
-                           QDir::homePath() + "/Documents/American Truck Simulator/profiles"};
+    QString steamProfiles[2] = {QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Euro Truck Simulator 2/steam_profiles",
+                                QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/American Truck Simulator/steam_profiles"};
+    QString profiles[2] = {QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Euro Truck Simulator 2/profiles",
+                           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/American Truck Simulator/profiles"};
     QString selectedProfilePath; // 选择的配置文件路径
 
     QList<QPair<QString, QDateTime>> steamProfileFolders;
     QList<QPair<QString, QDateTime>> profileFolders; // 所有配置文件列表
+
+    std::map<BindingType, QPushButton*> uiBtnMap;
 
     LPDIRECTINPUT8 pDirectInput = NULL;
     LPDIRECTINPUTDEVICE8 pDevice = NULL;
