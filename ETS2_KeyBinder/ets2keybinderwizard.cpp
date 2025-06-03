@@ -27,13 +27,42 @@ const map<size_t, QString> povStringMap = {{0, "pov1_up"},  {1, "pov1_right"},  
                                            {8, "pov3_up"},  {9, "pov3_right"},  {10, "pov3_down"}, {11, "pov3_left"},
                                            {12, "pov4_up"}, {13, "pov4_right"}, {14, "pov4_down"}, {15, "pov4_left"}};
 
+// 匹配规则字典
+const map<BindingType, QString> replaceRules = {
+    {BindingType::lightoff, R"(mix lightoff `.*?semantical\.lightoff\?0`)"},
+    {BindingType::lighthorn, R"(mix lighthorn `.*?semantical\.lighthorn\?0`)"},
+    {BindingType::wipers0, R"(mix wipers0 `.*?semantical\.wipers0\?0`)"},
+    {BindingType::wipers1, R"(mix wipers1 `.*?semantical\.wipers1\?0`)"},
+    {BindingType::wipers2, R"(mix wipers2 `.*?semantical\.wipers2\?0`)"},
+    {BindingType::wipers3, R"(mix wipers3 `.*?semantical\.wipers3\?0`)"},
+    {BindingType::wipers4, R"(mix wipers4 `.*?semantical\.wipers4\?0`)"},
+    {BindingType::lightpark, R"(mix lightpark `.*?semantical\.lightpark\?0`)"},
+    {BindingType::lighton, R"(mix lighton `.*?semantical\.lighton\?0`)"},
+    {BindingType::hblight, R"(mix hblight `.*?semantical\.hblight\?0`)"},
+    {BindingType::lblinkerh, R"(mix lblinkerh `.*?semantical\.lblinkerh\?0`)"},
+    {BindingType::rblinkerh, R"(mix rblinkerh `.*?semantical\.rblinkerh\?0`)"},
+    {BindingType::gearsel1off, R"(mix gearsel1off `.*?semantical\.gearsel1off\?0`)"},
+    {BindingType::gearsel1on, R"(mix gearsel1on `.*?semantical\.gearsel1on\?0`)"},
+    {BindingType::gearsel2off, R"(mix gearsel2off `.*?semantical\.gearsel2off\?0`)"},
+    {BindingType::gearsel2on, R"(mix gearsel2on `.*?semantical\.gearsel2on\?0`)"},
+};
+
+// 映射按键类型到字符串
+const map<BindingType, QString> bindingTypeString = {
+    {BindingType::lightoff, "lightoff"},       {BindingType::lighthorn, "lighthorn"},   {BindingType::wipers0, "wipers0"},
+    {BindingType::wipers1, "wipers1"},         {BindingType::wipers2, "wipers2"},       {BindingType::wipers3, "wipers3"},
+    {BindingType::wipers4, "wipers4"},         {BindingType::lightpark, "lightpark"},   {BindingType::lighton, "lighton"},
+    {BindingType::hblight, "hblight"},         {BindingType::lblinkerh, "lblinkerh"},   {BindingType::rblinkerh, "rblinkerh"},
+    {BindingType::gearsel1off, "gearsel1off"}, {BindingType::gearsel1on, "gearsel1on"}, {BindingType::gearsel2off, "gearsel2off"},
+    {BindingType::gearsel2on, "gearsel2on"},
+};
+
+// 映射按键类型到按钮文本
 map<BindingType, QString> scsBtnStrMap = {
-    {BindingType::lightoff, SCS_BTN_STR_DEFAULT},    {BindingType::lighthorn, SCS_BTN_STR_DEFAULT},   {BindingType::wipers0, SCS_BTN_STR_DEFAULT},
-    {BindingType::wipers1, SCS_BTN_STR_DEFAULT},     {BindingType::wipers2, SCS_BTN_STR_DEFAULT},     {BindingType::wipers3, SCS_BTN_STR_DEFAULT},
-    {BindingType::wipers4, SCS_BTN_STR_DEFAULT},     {BindingType::lightpark, SCS_BTN_STR_DEFAULT},   {BindingType::lighton, SCS_BTN_STR_DEFAULT},
-    {BindingType::hblight, SCS_BTN_STR_DEFAULT},     {BindingType::lblinkerh, SCS_BTN_STR_DEFAULT},   {BindingType::rblinkerh, SCS_BTN_STR_DEFAULT},
-    {BindingType::gearsel1off, SCS_BTN_STR_DEFAULT}, {BindingType::gearsel2off, SCS_BTN_STR_DEFAULT}, {BindingType::gearsel1on, SCS_BTN_STR_DEFAULT},
-    {BindingType::gearsel2on, SCS_BTN_STR_DEFAULT},
+    {BindingType::lightoff, ""},    {BindingType::lighthorn, ""},   {BindingType::wipers0, ""},    {BindingType::wipers1, ""},
+    {BindingType::wipers2, ""},     {BindingType::wipers3, ""},     {BindingType::wipers4, ""},    {BindingType::lightpark, ""},
+    {BindingType::lighton, ""},     {BindingType::hblight, ""},     {BindingType::lblinkerh, ""},  {BindingType::rblinkerh, ""},
+    {BindingType::gearsel1off, ""}, {BindingType::gearsel2off, ""}, {BindingType::gearsel1on, ""}, {BindingType::gearsel2on, ""},
 };
 
 // 欧卡2 设置    “摇杆 Button0” 0基索引
@@ -47,11 +76,11 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
     this->setWindowTitle(this->windowTitle() + " " + QString(__DATE__) + " " + QString(__TIME__));
 #endif
     uiBtnMap = {
-        {BindingType::lightoff, ui->pushButton_5},     {BindingType::lightpark, ui->pushButton_6},    {BindingType::lighton, ui->pushButton_7},
-        {BindingType::hblight, ui->pushButton_14},     {BindingType::lighthorn, ui->pushButton_15},   {BindingType::wipers0, ui->pushButton_10},
-        {BindingType::wipers1, ui->pushButton_11},     {BindingType::wipers2, ui->pushButton_12},     {BindingType::wipers3, ui->pushButton_13},
-        {BindingType::wipers4, ui->pushButton_24},     {BindingType::lblinkerh, ui->pushButton_8},    {BindingType::rblinkerh, ui->pushButton_9},
-        {BindingType::gearsel1off, ui->pushButton_20}, {BindingType::gearsel2off, ui->pushButton_21}, {BindingType::gearsel1on, ui->pushButton_22},
+        {BindingType::lightoff, ui->pushButton_5},     {BindingType::lightpark, ui->pushButton_6},   {BindingType::lighton, ui->pushButton_7},
+        {BindingType::hblight, ui->pushButton_14},     {BindingType::lighthorn, ui->pushButton_15},  {BindingType::wipers0, ui->pushButton_10},
+        {BindingType::wipers1, ui->pushButton_11},     {BindingType::wipers2, ui->pushButton_12},    {BindingType::wipers3, ui->pushButton_13},
+        {BindingType::wipers4, ui->pushButton_24},     {BindingType::lblinkerh, ui->pushButton_8},   {BindingType::rblinkerh, ui->pushButton_9},
+        {BindingType::gearsel1off, ui->pushButton_20}, {BindingType::gearsel1on, ui->pushButton_21}, {BindingType::gearsel2off, ui->pushButton_22},
         {BindingType::gearsel2on, ui->pushButton_23},
     };
 
@@ -119,9 +148,12 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                 return;
             }
 
+            // 读取游戏配置文件，并更新单按键映射界面
+            readControlsSii(selectedProfilePath);
+
             if (showKeyState == nullptr) {
                 showKeyState = new ShowKeyState();
-                showKeyState->setWindowTitle("按键状态");
+                showKeyState->setWindowTitle(ui->comboBox->currentText()); // 设置窗口标题为设备名称
                 // 设置坐标为主窗口的左边
                 showKeyState->setGeometry(this->geometry().x() - 180, this->geometry().y(), 160, 200);
                 showKeyState->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::Dialog | Qt::WindowCloseButtonHint); // 设置窗口为置顶
@@ -146,8 +178,9 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                 });
 
             } else {
-                showKeyState->setKeyCount(capabilities.dwButtons); // 设置按键数量
-                showKeyState->show();                              // 显示按键状态窗口
+                showKeyState->setKeyCount(capabilities.dwButtons);         // 设置按键数量
+                showKeyState->setWindowTitle(ui->comboBox->currentText()); // 设置窗口标题为设备名称
+                showKeyState->show();                                      // 显示按键状态窗口
             }
 
             if (timer == nullptr) {
@@ -303,7 +336,7 @@ void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
 }
 
 // 修改 controls.sii 文件
-void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr) {
+void ETS2KeyBinderWizard::readControlsSii(const QString& controlsFilePath) {
     QFile controlsFile(controlsFilePath);
 
     // 检查文件是否存在
@@ -322,34 +355,53 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
         return;
     }
 
-    // 替换规则字典
-    const map<BindingType, QString> replaceRules = {
-        {BindingType::lightoff, R"(mix lightoff `.*?semantical\.lightoff\?0`)"},
-        {BindingType::lighthorn, R"(mix lighthorn `.*?semantical\.lighthorn\?0`)"},
-        {BindingType::wipers0, R"(mix wipers0 `.*?semantical\.wipers0\?0`)"},
-        {BindingType::wipers1, R"(mix wipers1 `.*?semantical\.wipers1\?0`)"},
-        {BindingType::wipers2, R"(mix wipers2 `.*?semantical\.wipers2\?0`)"},
-        {BindingType::wipers3, R"(mix wipers3 `.*?semantical\.wipers3\?0`)"},
-        {BindingType::wipers4, R"(mix wipers4 `.*?semantical\.wipers4\?0`)"},
-        {BindingType::lightpark, R"(mix lightpark `.*?semantical\.lightpark\?0`)"},
-        {BindingType::lighton, R"(mix lighton `.*?semantical\.lighton\?0`)"},
-        {BindingType::hblight, R"(mix hblight `.*?semantical\.hblight\?0`)"},
-        {BindingType::lblinkerh, R"(mix lblinkerh `.*?semantical\.lblinkerh\?0`)"},
-        {BindingType::rblinkerh, R"(mix rblinkerh `.*?semantical\.rblinkerh\?0`)"},
-        {BindingType::gearsel1off, R"(mix gearsel1off `.*?semantical\.gearsel1off\?0`)"},
-        {BindingType::gearsel1on, R"(mix gearsel1on `.*?semantical\.gearsel1on\?0`)"},
-        {BindingType::gearsel2off, R"(mix gearsel2off `.*?semantical\.gearsel2off\?0`)"},
-        {BindingType::gearsel2on, R"(mix gearsel2on `.*?semantical\.gearsel2on\?0`)"},
-    };
+    // 清空映射表
+    scsBtnStrMap.clear();
+    // 清空按钮文本
+    for (auto btn : uiBtnMap) {
+        btn.second->setText(SCS_BTN_STR_DEFAULT);
+    }
 
-    const map<BindingType, QString> bindingTypeString = {
-        {BindingType::lightoff, "lightoff"},       {BindingType::lighthorn, "lighthorn"},   {BindingType::wipers0, "wipers0"},
-        {BindingType::wipers1, "wipers1"},         {BindingType::wipers2, "wipers2"},       {BindingType::wipers3, "wipers3"},
-        {BindingType::wipers4, "wipers4"},         {BindingType::lightpark, "lightpark"},   {BindingType::lighton, "lighton"},
-        {BindingType::hblight, "hblight"},         {BindingType::lblinkerh, "lblinkerh"},   {BindingType::rblinkerh, "rblinkerh"},
-        {BindingType::gearsel1off, "gearsel1off"}, {BindingType::gearsel1on, "gearsel1on"}, {BindingType::gearsel2off, "gearsel2off"},
-        {BindingType::gearsel2on, "gearsel2on"},
-    };
+    QTextStream in(&controlsFile);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        for (auto& pair : bindingTypeString) {
+            if (line.contains(pair.second)) {
+                // semantical 前面
+                // mix xx ` 后面
+                // 不一定有 |，也可能有多个 |，需要提取出 mix xx ` 和 semantical.xx?0 之间的
+                QString ets2BtnStr = line.section("mix " + pair.second + " `", 1, -1).section("semantical." + pair.second + "?0`", 0, 0).trimmed();
+                if (ets2BtnStr.endsWith("|")) {
+                    ets2BtnStr = ets2BtnStr.left(ets2BtnStr.length() - 1).trimmed(); // 去掉末尾的 |
+                }
+                qDebug() << "匹配到：" << pair.second << "对应的 ETS2 按键字符串：" << ets2BtnStr;
+                scsBtnStrMap[pair.first] = ets2BtnStr; // 更新映射表
+                uiBtnMap.at(pair.first)->setText(convertToUiString(ets2BtnStr));
+            }
+        }
+    }
+    controlsFile.close();
+}
+
+// 修改 controls.sii 文件
+void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr) {
+    QFile controlsFile(controlsFilePath);
+
+    // 检查文件是否存在
+    if (!QFileInfo::exists(controlsFilePath)) {
+        qDebug() << "配置文件不存在：" << controlsFilePath;
+        QMessageBox::critical(this, "错误",
+                              "修改游戏配置文件失败：该文件不存在！参考路径：\n" + steamProfiles[ui->comboBox_4->currentIndex()]
+                                  + "/xxxxxx/controls.sii\n" + profiles[ui->comboBox_4->currentIndex()] + "/xxxxxx/controls.sii\n");
+        return;
+    }
+
+    // 打开文件并读取内容
+    if (!controlsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "无法打开文件：" << controlsFilePath;
+        QMessageBox::critical(this, "错误", "打开游戏配置文件失败！文件路径：\n" + controlsFilePath);
+        return;
+    }
 
     if (replaceRules.find(bindingType) == replaceRules.end()) {
         qDebug() << "无效的绑定类型";
@@ -398,12 +450,13 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
         controlsFile.close();
     }
 
-    scsBtnStrMap[bindingType] = convertToUiString(convertToUiString(ets2BtnStr)); // 更新映射表
-    uiBtnMap.at(bindingType)->setText(convertToUiString(ets2BtnStr));             // 更新按钮文本
+    // 读取游戏配置文件，并更新单按键映射界面
+    scsBtnStrMap[bindingType] = ets2BtnStr;                           // 更新映射表
+    uiBtnMap.at(bindingType)->setText(convertToUiString(ets2BtnStr)); // 更新按钮文本
 }
 
 // 将字符串转换为 ETS2 格式
-QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount) {
+QString ETS2KeyBinderWizard::convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount) {
     QString ets2BtnStr;
     QString gameJoyStr = gameJoyPosStr.trimmed();
     if (gameJoyStr.isEmpty() || actionEffect.empty()) {
@@ -427,53 +480,61 @@ QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& a
 }
 
 // 将游戏按键字符串转换为 UI 显示字符串
-QString convertToUiString(const QString& ets2BtnStr) {
+QString ETS2KeyBinderWizard::convertToUiString(const QString& ets2BtnStrOriginal) {
     QString uiStr;
-    if (ets2BtnStr.isEmpty()) {
-        return uiStr;
+    if (ets2BtnStrOriginal.isEmpty()) {
+        return SCS_BTN_STR_DEFAULT;
     }
 
-    QStringList parts = ets2BtnStr.split("&");
-    for (const QString& part : parts) {
-        QString trimmedPart = part.trimmed();
-        // 去掉 ?0
-        if (trimmedPart.endsWith("?0")) {
-            trimmedPart.chop(2);                 // 去掉末尾的 ?0
-            trimmedPart = trimmedPart.trimmed(); // 去掉末尾空格
-        }
-        if (trimmedPart.startsWith("!")) {
-            uiStr += "不";
-            trimmedPart.remove(0, 1); // 去掉前面的 !
-        }
-        if (trimmedPart.startsWith("joy")) {
-            QStringList joyParts = trimmedPart.split(".");
-            if (joyParts.size() == 2) {
-                if (joyParts[1].startsWith("b")) {            // 按钮
-                    QString buttonIndex = joyParts[1].mid(1); // 去掉 "b"
-                    uiStr += "按钮" + buttonIndex + "+";
-                } else if (joyParts[1].startsWith("pov")) { // POV
-                    QString povDirection = joyParts[1];     // 如 "pov1_up"
-                    uiStr += povDirection + "+";
+    QStringList btnStr = ets2BtnStrOriginal.split("|");
+    for (const QString& ets2BtnStr : btnStr) {
+        QStringList parts = ets2BtnStr.split("&");
+        for (const QString& part : parts) {
+            QString trimmedPart = part.trimmed();
+            // 去掉 ?0
+            if (trimmedPart.endsWith("?0")) {
+                trimmedPart.chop(2);                 // 去掉末尾的 ?0
+                trimmedPart = trimmedPart.trimmed(); // 去掉末尾空格
+            }
+            if (trimmedPart.startsWith("!")) {
+                uiStr += "不";
+                trimmedPart.remove(0, 1); // 去掉前面的 !
+            }
+            if (trimmedPart.startsWith("joy")) {
+                QStringList joyParts = trimmedPart.split(".");
+                if (joyParts.size() == 2) {
+                    if (joyParts[1].startsWith("b")) {            // 按钮
+                        QString buttonIndex = joyParts[1].mid(1); // 去掉 "b"
+                        uiStr += "按钮" + buttonIndex + "+";
+                    } else if (joyParts[1].startsWith("pov")) { // POV
+                        QString povDirection = joyParts[1];     // 如 "pov1_up"
+                        uiStr += povDirection + "+";
+                    }
+                }
+            } else if (trimmedPart.startsWith("keyboard")) {
+                QStringList keyboardParts = trimmedPart.split(".");
+                if (keyboardParts.size() == 2) {
+                    uiStr += "键盘";
+                    QString keyName = keyboardParts[1]; // 键名
+                    if (keyName == "enter") {
+                        uiStr += "回车+";
+                    } else if (keyName == "space") {
+                        uiStr += "空格+";
+                    } else {
+                        uiStr += keyName + "+";
+                    }
                 }
             }
-        } else if (trimmedPart.startsWith("keyboard")) {
-            QStringList keyboardParts = trimmedPart.split(".");
-            if (keyboardParts.size() == 2) {
-                uiStr += "键盘-";
-                QString keyName = keyboardParts[1]; // 键名
-                if (keyName == "enter") {
-                    uiStr += "回车+";
-                } else if (keyName == "space") {
-                    uiStr += "空格+";
-                } else {
-                    uiStr += keyName + "+";
-                }
-            }
         }
+        // 去掉最后一个加号
+        if (!uiStr.isEmpty() && uiStr.endsWith("+")) {
+            uiStr.chop(1);
+        }
+        uiStr += " 或 "; // 每个按键组合之间用 "或" 分隔
     }
-    // 去掉最后一个加号
-    if (!uiStr.isEmpty() && uiStr.endsWith("+")) {
-        uiStr.chop(1);
+    // 去掉最后的 " 或 "
+    if (uiStr.endsWith(" 或 ")) {
+        uiStr.chop(3);
     }
     return uiStr;
 }
@@ -736,8 +797,6 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
 
 std::vector<BigKey> ETS2KeyBinderWizard::getMultiKeyState(const QString& title, const QStringList& messages) {
     if (checkHardwareDeviceAndMsgBox() == false) {
-        ui->checkBox_3->setChecked(true);
-        on_checkBox_3_clicked(true);
         return {}; // 设备未连接，取消操作
     }
 
@@ -1149,10 +1208,6 @@ void ETS2KeyBinderWizard::on_comboBox_3_activated(int index) {
 
 void ETS2KeyBinderWizard::on_comboBox_2_activated(int index) {
     gameDeviceName = ui->comboBox_2->currentText().toStdString();
-}
-
-void ETS2KeyBinderWizard::on_checkBox_3_clicked(bool checked) {
-    ui->stackedWidget->setCurrentIndex(checked);
 }
 
 void ETS2KeyBinderWizard::showManuallyBinder(BindingType bindingType) {

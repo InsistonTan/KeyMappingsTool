@@ -37,9 +37,6 @@ enum class BindingType
 
 typedef std::map<int, bool> ActionEffect; // 受影响的按键位置和对应的新状态
 
-QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = DINPUT_MAX_BUTTONS);
-QString convertToUiString(const QString& ets2BtnStr);
-
 namespace Ui {
 class ETS2KeyBinderWizard;
 }
@@ -52,6 +49,9 @@ public:
     ~ETS2KeyBinderWizard();
 
     QStringList getDeviceNameGameList();
+
+    QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = DINPUT_MAX_BUTTONS);
+    QString convertToUiString(const QString& ets2BtnStr);
 
     void oneKeyBind(BindingType bindingType, const QString& message);
     void multiKeyBind(std::map<BindingType, ActionEffect> actionEffectMap);
@@ -79,8 +79,6 @@ private slots:
     void on_comboBox_3_activated(int index);
 
     void on_comboBox_2_activated(int index);
-
-    void on_checkBox_3_clicked(bool checked);
 
     void on_pushButton_16_clicked();
 
@@ -164,6 +162,8 @@ private:
     bool backupProfile();
 
     bool generateMappingFile(ActionEffect hblight, ActionEffect lighthorn);
+
+    void readControlsSii(const QString& controlsFilePath);
 
     void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr);
 
