@@ -152,7 +152,7 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             readControlsSii(selectedProfilePath);
 
             if (showKeyState == nullptr) {
-                showKeyState = new ShowKeyState();
+                showKeyState = new ShowKeyState(this);
                 showKeyState->setWindowTitle(ui->comboBox->currentText()); // 设置窗口标题为设备名称
                 // 设置坐标为主窗口的左边
                 showKeyState->setGeometry(this->geometry().x() - 180, this->geometry().y(), 160, 200);
