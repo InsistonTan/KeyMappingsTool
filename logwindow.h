@@ -32,6 +32,8 @@ private slots:
 
     void on_checkBox_3_clicked();
 
+    void on_pushButton_clicked();
+
 private:
     Ui::LogWindow *ui;
 };

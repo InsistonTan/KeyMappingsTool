@@ -70,3 +70,9 @@ void LogWindow::on_checkBox_3_clicked()
     }
 }
 
+
+void LogWindow::on_pushButton_clicked()
+{
+    ui->textEdit->clear();
+}
+
