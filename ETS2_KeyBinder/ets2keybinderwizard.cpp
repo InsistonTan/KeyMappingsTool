@@ -1325,7 +1325,7 @@ void ETS2KeyBinderWizard::on_pushButton_23_clicked() {
 // 接线提示
 void ETS2KeyBinderWizard::on_pushButton_17_clicked() {
     QLabel* labelImage = new QLabel(this, Qt::Dialog | Qt::WindowCloseButtonHint);
-    labelImage->setWindowTitle("接线提示");
+    labelImage->setWindowTitle("接线提示-五菱宏光-转向灯拨杆");
 
     QString imagePath = ":/ETS2_KeyBinder/ConnectTip_WuLing.jpg";
 
@@ -1344,3 +1344,26 @@ void ETS2KeyBinderWizard::on_pushButton_17_clicked() {
     }
     labelImage->show();
 }
+
+void ETS2KeyBinderWizard::on_pushButton_25_clicked() {
+    QLabel* labelImage = new QLabel(this, Qt::Dialog | Qt::WindowCloseButtonHint);
+    labelImage->setWindowTitle("接线提示-五菱宏光-雨刮拨杆");
+
+    QString imagePath = ":/ETS2_KeyBinder/ConnectTip_WuLing_Wipers.jpg";
+
+    QFileInfo file(imagePath);
+
+    if (file.exists()) {
+        QImage image;
+        image.load(imagePath);
+
+               // Label跟随图片大小变化
+        labelImage->resize(QSize(image.width(), image.height()));
+        labelImage->setPixmap(QPixmap::fromImage(image));
+
+    } else {
+        qDebug() << "未找到该图片";
+    }
+    labelImage->show();
+}
+

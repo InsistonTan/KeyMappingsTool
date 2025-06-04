@@ -56,7 +56,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="resource.qrc">:/ETS2_KeyBinder/1_DisableSteamInput.jpg</pixmap>
+       <pixmap resource="../resource.qrc">:/ETS2_KeyBinder/1_DisableSteamInput.jpg</pixmap>
       </property>
      </widget>
     </item>
@@ -180,7 +180,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="resource.qrc">:/ETS2_KeyBinder/2_SelectInputDevice.jpg</pixmap>
+       <pixmap resource="../resource.qrc">:/ETS2_KeyBinder/2_SelectInputDevice.jpg</pixmap>
       </property>
      </widget>
     </item>
@@ -250,6 +250,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="toolTip">
+          <string>要绑定的设备</string>
+         </property>
          <item>
           <property name="text">
            <string>TEST1</string>
@@ -267,12 +270,15 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>游戏输入设备</string>
+          <string>游戏输入类型</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
         <widget class="QComboBox" name="comboBox_2">
+         <property name="toolTip">
+          <string>与游戏内对应顺序一致即可</string>
+         </property>
          <item>
           <property name="text">
            <string>joy</string>
@@ -308,7 +314,11 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QComboBox" name="comboBox_3"/>
+        <widget class="QComboBox" name="comboBox_3">
+         <property name="toolTip">
+          <string>要修改的游戏配置文件</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="2" rowspan="3">
         <widget class="QWidget" name="widget_4" native="true">
@@ -389,14 +399,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_6">
          <property name="text">
-          <string>1、五菱宏光转向灯拨杆</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QPushButton" name="pushButton_16">
-         <property name="text">
-          <string>    GO!    </string>
+          <string>1、接线提示-五菱宏光</string>
          </property>
         </widget>
        </item>
@@ -410,7 +413,21 @@
        <item row="1" column="1">
         <widget class="QPushButton" name="pushButton_17">
          <property name="text">
-          <string>接线提示</string>
+          <string>转向灯拨杆</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="pushButton_25">
+         <property name="text">
+          <string>雨刮拨杆</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1" colspan="2">
+        <widget class="QPushButton" name="pushButton_16">
+         <property name="text">
+          <string>    GO!    </string>
          </property>
         </widget>
        </item>
@@ -964,7 +981,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="resource.qrc"/>
+  <include location="../resource.qrc"/>
  </resources>
  <connections/>
 </ui>
