@@ -280,6 +280,22 @@
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QCheckBox" name="checkBox_7">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>280</y>
+        <width>421</width>
+        <height>19</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>方向盘需支持力反馈功能</string>
+      </property>
+      <property name="text">
+       <string>新增按键映射只返回变化按键</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QPushButton" name="pushButton">

@@ -1,6 +1,7 @@
 #ifndef MAPPING_RELATION_H
 #define MAPPING_RELATION_H
 #include "BtnTriggerTypeEnum.h"
+#include<QString>
 #include<string>
 #include "BigKey.hpp"
 //using namespace std;

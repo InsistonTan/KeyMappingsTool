@@ -47,24 +47,15 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
 
     // 如果映射列表里有映射xbox的记录, 才需要初始化虚拟xbox手柄
     this->needStartVirtualXbox = hasXboxMappingInMappingList(mappingList);
+    handleMultiBtnVector.clear();
 
     for(MappingRelation* mapping : mappingList){
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
 
-            // 根据按键名称设置按键值，不从文件中获取
-            std::string btn_name = mapping->dev_btn_name;
-            if (btn_name.find("按键") != std::string::npos) {
-                QStringList btnStrList = QString::fromStdString(btn_name).split("+");
-                for (const QString& btn : btnStrList) {
-                    int index = btn.mid(2).toInt(); // 获取按键索引
-                    mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                }
-
-                // 将映射添加进多按键映射列表
-                MappingRelation newMapping = *mapping;
-                handleMultiBtnVector.push_back(newMapping);
-            }
+            // 将映射添加进多按键映射列表
+            MappingRelation newMapping = *mapping;
+            handleMultiBtnVector.push_back(newMapping);
         }
     }
 
@@ -73,16 +64,19 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
 
     // 对组合键映射列表排序, 按子键的数量倒序
     std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
-        if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
-            return false;  // 将空的排在末尾
-        }
         // 比较加号的数量 
         int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
         int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
         if (aPlusCount != bPlusCount) {
             return aPlusCount > bPlusCount;  // 按加号数量降序排列
         }
-        // 如果加号数量相同, 则字符串大小比较
+        // 如果加号数量相同, 则没有角度的靠前
+        if (a.dev_btn_name.find("角度") != std::string::npos && b.dev_btn_name.find("角度") == std::string::npos) {
+            return false;  // a有角度, b没有角度, a靠后
+        } else if (a.dev_btn_name.find("角度") == std::string::npos && b.dev_btn_name.find("角度") != std::string::npos) {
+            return true;  // a没有角度, b有角度, a靠前
+        }
+        // 字符串大小比较
         return a.dev_btn_name > b.dev_btn_name;
     });
 
