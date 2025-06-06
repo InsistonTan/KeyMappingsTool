@@ -514,6 +514,33 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);
 
 
+    // 按键触发模式下拉框
+    QComboBox *triggerTypeComboBox = new QComboBox();
+    triggerTypeComboBox->setMaximumHeight(36);
+    triggerTypeComboBox->setMinimumHeight(36);
+    triggerTypeComboBox->setMinimumWidth(160);
+    triggerTypeComboBox->setMaximumWidth(160);
+    triggerTypeComboBox->setStyleSheet("QComboBox{padding-left:10px;}"
+                                       "QComboBox:disabled {"
+                                       "   background-color: #f0f0f0;"
+                                       "   color: #888888;"
+                                       "}"
+                                       );
+    // 添加下拉框选择项
+    for(int i = 0; i < TriggerTypeEnum::End; i++){
+        TriggerTypeEnum enumItem = static_cast<TriggerTypeEnum>(i);
+        triggerTypeComboBox->addItem(TRIGGER_TYPE_ENUM_MAP[enumItem].data());
+    }
+    // 设置一个序号, 为后续操作提供一个位置
+    triggerTypeComboBox->setObjectName(currentRowIndex);
+    // 历史配置展示
+    if(!isAddNewMapping){
+        triggerTypeComboBox->setCurrentText(TRIGGER_TYPE_ENUM_MAP[mapping->btnTriggerType].data());
+    }
+    // 连接信号和槽
+    connect(triggerTypeComboBox, &QComboBox::activated, this, &MainWindow::onTriggerTypeComboBoxActivated);
+
+
     // 映射模式下拉框
     QComboBox *mappingTypeComboBox = new QComboBox();
     mappingTypeComboBox->setMaximumHeight(36);
@@ -545,41 +572,28 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     connect(mappingTypeComboBox, &QComboBox::activated, this, [=]{
         if (mappingTypeComboBox->currentIndex() == 1){
             mapping->setMappingType(MappingType::Xbox);
+
+            // 轴映射 xbox, 隐藏按键触发模式的下拉框
+            if(mapping->dev_btn_type == (std::string)WHEEL_AXIS && mapping->mappingType == MappingType::Xbox){
+                // 恢复默认选项
+                triggerTypeComboBox->setCurrentIndex(0);
+                mapping->btnTriggerType = TriggerTypeEnum::Normal;
+                // 设置为不可用
+                triggerTypeComboBox->setDisabled(true);
+            }
         }else if (mappingTypeComboBox->currentIndex() == 0){
             mapping->setMappingType(MappingType::Keyboard);
+
+            // 轴映射 键盘按键, 显示按键触发模式的下拉框
+            if(mapping->dev_btn_type == (std::string)WHEEL_AXIS && mapping->mappingType == MappingType::Keyboard){
+                triggerTypeComboBox->setDisabled(false);
+            }
         }
         //updateASwitchPushButton(btn, mapping->mappingType);
         updateAKeyBoardComboBox(comboBox, mapping->dev_btn_type, mapping->mappingType);
         mapping->keyboard_name = comboBox->currentText().toStdString();
         mapping->keyboard_value = 0;
     });
-
-
-    // 按键触发模式下拉框
-    QComboBox *triggerTypeComboBox = new QComboBox();
-    triggerTypeComboBox->setMaximumHeight(36);
-    triggerTypeComboBox->setMinimumHeight(36);
-    triggerTypeComboBox->setMinimumWidth(160);
-    triggerTypeComboBox->setMaximumWidth(160);
-    triggerTypeComboBox->setStyleSheet("QComboBox{padding-left:10px;}"
-                                       "QComboBox:disabled {"
-                                       "   background-color: #f0f0f0;"
-                                       "   color: #888888;"
-                                       "}"
-                                       );
-    // 添加下拉框选择项
-    for(int i = 0; i < TriggerTypeEnum::End; i++){
-        TriggerTypeEnum enumItem = static_cast<TriggerTypeEnum>(i);
-        triggerTypeComboBox->addItem(TRIGGER_TYPE_ENUM_MAP[enumItem].data());
-    }
-    // 设置一个序号, 为后续操作提供一个位置
-    triggerTypeComboBox->setObjectName(currentRowIndex);
-    // 历史配置展示
-    if(!isAddNewMapping){
-        triggerTypeComboBox->setCurrentText(TRIGGER_TYPE_ENUM_MAP[mapping->btnTriggerType].data());
-    }
-    // 连接信号和槽
-    connect(triggerTypeComboBox, &QComboBox::activated, this, &MainWindow::onTriggerTypeComboBoxActivated);
 
 
     QLineEdit *lineEdit = new QLineEdit(isAddNewMapping ? "" : mapping->remark.data());
@@ -613,8 +627,11 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     layout->addWidget(deleteBtn, row, ++columnIndex, Qt::AlignLeft);
 
     if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)){
-        // 轴隐藏按键触发模式的下拉框
-        triggerTypeComboBox->setDisabled(true);
+        // 轴映射 xbox
+        if(mapping->mappingType == MappingType::Xbox){
+            // 轴隐藏按键触发模式的下拉框
+            triggerTypeComboBox->setDisabled(true);
+        }
 
         // 反转轴的勾选
         QCheckBox *checkBox = new QCheckBox("反转该轴", this);
@@ -1056,6 +1073,8 @@ void MainWindow::loadMappingsFile(std::string filename){
                 }
 
                 mapping->deviceName = (jsonObj.contains("deviceName") ? jsonObj["deviceName"].toString() : "");
+                // 根据按键名称设置 dev_btn_bit_value，不从文件中获取
+                mapping->dev_btn_bit_value = stringToButtonsValueType(mapping->dev_btn_name);
 
                 // 按键名称不为空才添加进列表
                 if(!mapping->dev_btn_name.empty()){
@@ -1113,6 +1132,10 @@ void MainWindow::loadMappingsFile(std::string filename){
                     }else{
                         mapping->btnTriggerType = TriggerTypeEnum::Normal;
                     }
+                    // 根据按键名称设置 dev_btn_bit_value，不从文件中获取
+                    mapping->dev_btn_bit_value = stringToButtonsValueType(mapping->dev_btn_name);
+                    qDebug() << mapping->dev_btn_bit_value;
+
                     mappingList.push_back(mapping);
                 }
             }
@@ -1170,57 +1193,52 @@ MappingRelation* MainWindow::getDevBtnData(){
         return nullptr;
     }
 
-    std::map<std::string, int> tempRecord;
-    bool isFirstData = true;
-    QMap<QString, int> firstBtnRecord;
 
     bool enableLogs = getEnablePovLog() || getEnableBtnLog() || getEnableAxisLog();
+    
+    // 获取第一次数据
+    bool isFirstData = true;
+    qint64 timeTickFirst = QDateTime::currentMSecsSinceEpoch();
+    std::map<QString, BUTTONS_VALUE_TYPE> firstKeyStateMap;
+    std::map<std::string, int> tempRecord;
+    
+    // 设置一个3s定时器，时间到后停止监听
+    qint64 listeningTime = QDateTime::currentMSecsSinceEpoch() + 3000; // 3秒后停止监听
+    qint64 timeTickRun = QDateTime::currentMSecsSinceEpoch();          // 记录当前时间戳
 
     // 监听设备按键状态
-    for(int i=0; i<300; i++){
+    while(QDateTime::currentMSecsSinceEpoch() < listeningTime){
+        if (QDateTime::currentMSecsSinceEpoch() - timeTickRun < 50) {
+            QApplication::processEvents(); // 处理事件队列，防止界面卡死
+            continue; // 每50ms获取一次数据
+        }
+        timeTickRun = QDateTime::currentMSecsSinceEpoch();
+
         // 获取设备状态数据
         auto res = getInputState(enableLogs);
 
-        // 跳过第一次数据获取(第一次res有可能为空, 会影响后面记录第一次数据)
-        if(i == 0){
-            // 释放res内存
-            qDeleteAll(res);  // 删除所有指针指向的对象
-            res.clear();      // 清空列表
-            Sleep(50);
-            continue;
-        }
-
-        // 从firstBtnRecord中移除已经松开的按键
-        if(!firstBtnRecord.isEmpty()){
-            // 第一次按下的按键列表
-            auto firstBtnStrList = firstBtnRecord.keys();
-
-            // 当前按下的按键列表
-            QList<QString> currentPressingBtnStrList;
-
-            if(res.size() > 0){
-                // 生成 当前按下的按键列表
-                for(auto item : res){
-                    if(item->dev_btn_type == (std::string)WHEEL_BUTTON){
-                        auto strList = QString(item->dev_btn_name.data()).split("+");
-                        for(auto str : strList){
-                            currentPressingBtnStrList.append(item->deviceName + "-" + str);
+        // 获取初始按键状态
+        if (isFirstData && AssistFuncWindow::getEnableOnlyChangeKeyWhenNew()) {
+            // 跳过前50ms的数据，第一次采集的数据为空，可能是BUG
+            if (QDateTime::currentMSecsSinceEpoch() - timeTickFirst > 50) {
+                isFirstData = false;
+                auto firstKeyRes = getInputState(enableLogs); // 获取按键状态，第一次获取为0，应该是BUG
+                for (auto item : firstKeyRes) {
+                    if (item->dev_btn_type == WHEEL_BUTTON) {
+                        QString deviceName = item->deviceName;
+                        if (firstKeyStateMap.find(deviceName) == firstKeyStateMap.end()) {
+                            // 记录第一次数据
+                            firstKeyStateMap.insert_or_assign(deviceName, item->dev_btn_bit_value);
+                        } else {
+                            // 不是第一次读到该按键的值, 叠加
+                            firstKeyStateMap[deviceName] |= item->dev_btn_bit_value;
                         }
                     }
                 }
-
-                // 遍历 第一次按下的按键列表, 释放已经松开的按键
-                for(auto firstBtnStr : firstBtnStrList){
-                    // 当前按下的按键列表为空, 或者 当前按下的按键列表不包含 firstBtnStr
-                    if(currentPressingBtnStrList.isEmpty() || !currentPressingBtnStrList.contains(firstBtnStr)){
-                        firstBtnRecord.remove(firstBtnStr);
-                    }
-                }
-            }else{
-                firstBtnRecord.clear();
+            } else {
+                continue;
             }
         }
-
 
         if(res.size() > 0){
             for(auto item : res){
@@ -1344,35 +1362,33 @@ MappingRelation* MainWindow::getDevBtnData(){
                     auto btnStrList = QString(item->dev_btn_name.data()).split("+");
 
                     // 方向盘按键
-                    // 记录第一次数据
-                    if(isFirstData){
-                        for(auto btnStr : btnStrList){
-                            firstBtnRecord.insert(item->deviceName + "-" + btnStr, 0);
-                        }
-                    }else{
-                        for(auto btnStr : btnStrList){
-                            // 第一次按键 不包含当前按键, 说明当前按键为新按下的
-                            if(!firstBtnRecord.contains(item->deviceName + "-" + btnStr)){
+                    if(firstKeyStateMap.size() > 0 && AssistFuncWindow::getEnableOnlyChangeKeyWhenNew()){
+                        QString deviceName = item->deviceName;
+                        BUTTONS_VALUE_TYPE nowValue = item->dev_btn_bit_value;
+                        for (auto firstKey : firstKeyStateMap) {
+                            if (firstKey.first == deviceName && (firstKey.second != nowValue)) {
+                                // 找出不同的按键
+                                BUTTONS_VALUE_TYPE btnValue = nowValue ^ firstKey.second;
+                                btnValue &= KEY_ONLY_FACTOR; // 去掉POV按键的值
+                                if (firstKey.second >> DINPUT_MAX_BUTTONS != nowValue >> DINPUT_MAX_BUTTONS) {
+                                    btnValue |= (nowValue & POV_ONLY_FACTOR); // 添加变化的POV按键的值
+                                }
+                                item->dev_btn_name = ButtonsValueTypeToString(btnValue);
+                                item->dev_btn_bit_value = btnValue;
                                 return item;
                             }
                         }
+                    } else {
+                        return item;
                     }
 
                 }
             }
-
-            isFirstData = false;
         }
 
         // 释放res内存
         qDeleteAll(res);  // 删除所有指针指向的对象
         res.clear();      // 清空列表
-
-        // 处理事件队列
-        QCoreApplication::processEvents();
-
-        // sleep
-        Sleep(10);
     }
 
     return nullptr;

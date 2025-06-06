@@ -45,16 +45,19 @@ bool SimulateTask::isAxisRotate(std::string btnName){
 
 // 排序函数, 按照子键的数量倒序排列
 bool compareBySubKeyCount(const MappingRelation& a, const MappingRelation& b) {
-    if (a.dev_btn_bit_value == BIGKEY_ZERO || b.dev_btn_bit_value == BIGKEY_ZERO) {
-        return false;  // 将空的排在末尾
-    }
-    // 比较加号的数量
+    // 比较加号的数量 
     int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
     int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
     if (aPlusCount != bPlusCount) {
         return aPlusCount > bPlusCount;  // 按加号数量降序排列
     }
-    // 如果加号数量相同, 则字符串大小比较
+    // 如果加号数量相同, 则没有角度的靠前
+    if (a.dev_btn_name.find("角度") != std::string::npos && b.dev_btn_name.find("角度") == std::string::npos) {
+        return false;  // a有角度, b没有角度, a靠后
+    } else if (a.dev_btn_name.find("角度") == std::string::npos && b.dev_btn_name.find("角度") != std::string::npos) {
+        return true;  // a没有角度, b有角度, a靠前
+    }
+    // 字符串大小比较
     return a.dev_btn_name > b.dev_btn_name;
 }
 
@@ -63,27 +66,15 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
 
     // 如果映射列表里有映射xbox的记录, 才需要初始化虚拟xbox手柄
     this->needStartVirtualXbox = hasXboxMappingInMappingList(mappingList);
+    handleMultiBtnVector.clear();
 
     for(MappingRelation* mapping : mappingList){
         if(isMappingValid(mapping)){
             addMappingToHandleMap(mapping);
 
-            // 根据按键名称设置按键值，不从文件中获取
-            std::string btn_name = mapping->dev_btn_name;
-            if (btn_name.find("按键") != std::string::npos) {
-                QStringList btnStrList = QString::fromStdString(btn_name).split("+");
-                for (const QString& btn : btnStrList) {
-                    int index = btn.mid(2).toInt(); // 获取按键索引
-                    mapping->dev_btn_bit_value.setBit(index, true); // 设置按键值
-                }
-                if (mapping->btnTriggerType >= TRIGGER_TYPE_ENUM_ETS2_SYNC_START &&
-                    mapping->btnTriggerType <= TRIGGER_TYPE_ENUM_ETS2_SYNC_END) {
-                        syncETS2Map.push_back(*mapping);
-                }
-                // 将映射添加进多按键映射列表
-                MappingRelation newMapping = *mapping;
-                handleMultiBtnVector.push_back(newMapping);
-            }
+            // 将映射添加进多按键映射列表
+            MappingRelation newMapping = *mapping;
+            handleMultiBtnVector.push_back(newMapping);
         }
     }
 
@@ -777,6 +768,19 @@ void SimulateTask::doWork(){
                         // 延迟5s触发
                         simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 5000);
                         break;
+                    case TriggerTypeEnum::Delay8s:
+                        // 延迟8s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 8000);
+                        break;
+                    case TriggerTypeEnum::Delay10s:
+                        // 延迟10s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 10000);
+                        break;
+                    case TriggerTypeEnum::Delay15s:
+                        // 延迟15s触发
+                        simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 15000);
+                        break;
+
                     case TriggerTypeEnum::Release:
                         // 松开按键才触发
                         break;
@@ -821,6 +825,19 @@ void SimulateTask::doWork(){
                             // 延迟5s触发
                             simulateXboxKeyDelayPressMs(NormalButton, item->second, 0, RELEASE_DELAY_MS, 5000);
                             break;
+                        case TriggerTypeEnum::Delay8s:
+                            // 延迟8s触发
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 8000);
+                            break;
+                        case TriggerTypeEnum::Delay10s:
+                            // 延迟10s触发
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 10000);
+                            break;
+                        case TriggerTypeEnum::Delay15s:
+                            // 延迟15s触发
+                            simulateKeyDelayPressMs(item->second, RELEASE_DELAY_MS, 15000);
+                            break;
+
                         case TriggerTypeEnum::Release:
                             // 松开按键才触发
                             break;
