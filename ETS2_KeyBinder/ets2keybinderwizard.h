@@ -8,6 +8,7 @@
 #include "global.h"
 #include "showkeystate.h"
 #include <QDir>
+#include <QStandardPaths>
 #include <QWizard>
 #include <dinput.h>
 #include <string.h>
@@ -49,6 +50,9 @@ public:
 
     QStringList getDeviceNameGameList();
 
+    QString convertToETS2_String(const QString& gameJoyPosStr, const ActionEffect& actionEffect, size_t maxButtonCount = DINPUT_MAX_BUTTONS);
+    QString convertToUiString(const QString& ets2BtnStr);
+
     void oneKeyBind(BindingType bindingType, const QString& message);
     void multiKeyBind(std::map<BindingType, ActionEffect> actionEffectMap);
 
@@ -75,8 +79,6 @@ private slots:
     void on_comboBox_3_activated(int index);
 
     void on_comboBox_2_activated(int index);
-
-    void on_checkBox_3_clicked(bool checked);
 
     void on_pushButton_16_clicked();
 
@@ -118,6 +120,8 @@ private slots:
 
     void on_pushButton_24_clicked();
 
+    void on_pushButton_25_clicked();
+
 private:
     Ui::ETS2KeyBinderWizard* ui;
 
@@ -127,14 +131,16 @@ private:
     QStringList gameJoyPosNameList = {
         "joy ", "joy2", "joy3", "joy4", "joy5",
     };
-    QString steamProfiles[2] = {QDir::homePath() + "/Documents/Euro Truck Simulator 2/steam_profiles",
-                                QDir::homePath() + "/Documents/American Truck Simulator/steam_profiles"};
-    QString profiles[2] = {QDir::homePath() + "/Documents/Euro Truck Simulator 2/profiles",
-                           QDir::homePath() + "/Documents/American Truck Simulator/profiles"};
+    QString steamProfiles[2] = {QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Euro Truck Simulator 2/steam_profiles",
+                                QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/American Truck Simulator/steam_profiles"};
+    QString profiles[2] = {QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Euro Truck Simulator 2/profiles",
+                           QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/American Truck Simulator/profiles"};
     QString selectedProfilePath; // 选择的配置文件路径
 
     QList<QPair<QString, QDateTime>> steamProfileFolders;
     QList<QPair<QString, QDateTime>> profileFolders; // 所有配置文件列表
+
+    std::map<BindingType, QPushButton*> uiBtnMap;
 
     LPDIRECTINPUT8 pDirectInput = NULL;
     LPDIRECTINPUTDEVICE8 pDevice = NULL;
@@ -158,6 +164,8 @@ private:
     bool backupProfile();
 
     bool generateMappingFile(ActionEffect hblight, ActionEffect lighthorn);
+
+    void readControlsSii(const QString& controlsFilePath);
 
     void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr);
 

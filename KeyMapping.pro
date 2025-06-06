@@ -13,6 +13,7 @@ SOURCES += \
     AssistFuncWorker.cpp \
     BtnTriggerTypeEnum.cpp \
     DeadAreaSettings.cpp \
+    ETS2_KeyBinder/bracketrightwidget.cpp \
     ETS2_KeyBinder/manuallybinder.cpp \
     ETS2_KeyBinder/showkeystate.cpp \
     ForceFeedbackSettingsWindow.cpp \
@@ -29,6 +30,7 @@ HEADERS += \
     AssistFuncWorker.h \
     BtnTriggerTypeEnum.h \
     DeadAreaSettings.h \
+    ETS2_KeyBinder/bracketrightwidget.h \
     ETS2_KeyBinder/manuallybinder.h \
     ETS2_KeyBinder/showkeystate.h \
     ForceFeedbackSettingsWindow.h \
