@@ -1,6 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <QString>
 #include <QList>
 #include <dinput.h>
 #include <mapping_relation.h>
@@ -22,6 +23,7 @@ extern QWidget* g_mainWindow;
 
 // 全局映射是否开启
 extern bool isRuning;
+extern std::map<QString, BUTTONS_VALUE_TYPE> g_btnBitValueMap; // 全局按键值
 
 // 是否暂停全局映射
 extern bool isPause;
@@ -115,6 +117,5 @@ std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue);
 
 // string 转换为 BUTTONS_VALUE_TYPE
 BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr);
-
 
 #endif // GLOBAL_H

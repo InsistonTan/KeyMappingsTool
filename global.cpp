@@ -16,6 +16,7 @@ LPDIRECTINPUT8 g_pDirectInput = nullptr;
 QList<LPDIRECTINPUTDEVICE8> initedDeviceList; // 已初始化的设备列表
 QList<DiDeviceInfo> diDeviceList;
 std::map<std::string, DIPROPRANGE> axisValueRangeMap;
+std::map<QString, BUTTONS_VALUE_TYPE> g_btnBitValueMap;
 
 // 清空已选择的设备列表
 void clearInitedDeviceList(){
@@ -29,6 +30,7 @@ void clearInitedDeviceList(){
     }
 
     initedDeviceList.clear();
+    g_btnBitValueMap.clear();
 }
 
 // 是否暂停全局映射
@@ -390,6 +392,7 @@ bool openDiDevice(QList<QString> deviceList) {
                 pushToQueue(parseSuccessLog(QString("连接设备[").append(deviceInfo.name.data()).append("]成功！")));
 
                 initedDeviceList.append(g_pDevice);
+                g_btnBitValueMap.insert_or_assign(deviceName, BUTTONS_VALUE_TYPE()); // 初始化按键值
             }
         }
     }
@@ -455,6 +458,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
                 }
             }
+
             if(enableLog && getEnableBtnLog()){
                 btnLog.append("}");
             }
@@ -768,4 +772,3 @@ BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr) {
 
     return btnValue;
 }
-    

@@ -10,4 +10,13 @@ std::map<TriggerTypeEnum, std::string> TRIGGER_TYPE_ENUM_MAP = {
     {Delay15s, "延迟15秒触发"},
     {Release, "按键松开时触发"},
     {PressAndRelease, "按下触发且松开也触发"},
+
+    {ETS2_SyncBlinkerLeft, "ETS2左转向灯同步"},
+    {ETS2_SyncBlinkerRight, "ETS2右转向灯同步"},
+    {ETS2_SyncLightsParking, "ETS2示廓灯同步"},
+    {ETS2_SyncLightsBeamLow, "ETS2近光灯同步"},
+    {ETS2_SyncLightsBeamHigh, "ETS2远光灯同步"},
+    {ETS2_SyncParkBrake, "ETS2手刹同步"},
+    {ETS2_SyncElectricEnabled, "ETS2通电同步"},
+    {ETS2_SyncEngineEnabled, "ETS2点火同步"},
 };
