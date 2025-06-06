@@ -438,7 +438,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
             // 遍历按键，查看按键是否按下
             std::string btnStr = "";
             BUTTONS_VALUE_TYPE btnBitValue;
-            for (size_t i = 0; i < std::size(js.rgbButtons); i++) {
+            for (size_t i = 0; i < DINPUT_MAX_BUTTONS; i++) {
                 if (js.rgbButtons[i] & 0x80) {
                     btnStr += "按键" + std::to_string(i) + "+";
                     btnBitValue.setBit(i, true);
@@ -455,34 +455,9 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
                 }
             }
-
-            if (!btnStr.empty()) {
-                // 去掉最后的 "+"
-                btnStr = btnStr.substr(0, btnStr.length() - 1);
-
-                // multiBtnVector不为空, 需要进行多按键映射处理
-                if (multiBtnVector.size() > 0) {
-                    // 多按键映射，需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
-                    for (auto multiBtn : multiBtnVector) {
-                        BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
-                        if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue)) {
-                            // 找到对应的按键, 进行映射
-                            if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
-                                btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
-                            }
-                            MappingRelation *mapping = new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName);
-                            mapping->setBtnBitValue(multiBtnBitValue);  // 设置按键值
-                            list.append(mapping);
-                        }
-                    }
-                }else{
-                    list.append(new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName));
-                }
-            }
             if(enableLog && getEnableBtnLog()){
                 btnLog.append("}");
             }
-
 
             // 遍历摇杆数据
             // DWORD	rgdwPOV[4];
@@ -503,8 +478,10 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
 
                         formatVal /= 10;
                     }
-                    std::string btnStr = "摇杆" + std::to_string(j+1) + "-角度" + std::to_string(formatVal);
-                    list.append(new MappingRelation(btnStr, WHEEL_BUTTON, val, 0, "", TriggerTypeEnum::Normal, deviceName));
+                    // 这里用反码操作, 因为摇杆的值是0-360度, 而没有操作时返回的也是0, 所以需要反码操作来表示操作
+                    BUTTONS_VALUE_TYPE povBitValue = (uint16_t)~formatVal;
+                    btnBitValue |= povBitValue << (j * 16 + DINPUT_MAX_BUTTONS);
+                    btnStr += "摇杆" + std::to_string(j+1) + "-角度" + std::to_string(formatVal) + "+";
                 }
 
                 // 记录日志
@@ -521,6 +498,32 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                 povLog.append("}");
             }
 
+            if (!btnStr.empty()) {
+                // 去掉最后的 "+"
+                btnStr = btnStr.substr(0, btnStr.length() - 1);
+
+                // multiBtnVector不为空, 需要进行多按键映射处理
+                if (multiBtnVector.size() > 0) {
+                    // 多按键映射，需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
+                    for (auto multiBtn : multiBtnVector) {
+                        BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
+                        if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue) &&
+                            ((multiBtnBitValue >> DINPUT_MAX_BUTTONS) == (btnBitValue >> DINPUT_MAX_BUTTONS))) {
+                            // 找到对应的按键, 进行映射
+                            if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
+                                btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
+                            }
+                            MappingRelation *mapping = new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName);
+                            mapping->setBtnBitValue(multiBtnBitValue);  // 设置按键值
+                            list.append(mapping);
+                        }
+                    }
+                }else{
+                    MappingRelation *mapping =new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName);
+                    mapping->setBtnBitValue(btnBitValue);  // 设置按键值
+                    list.append(mapping);
+                }
+            }
 
             // 映射xbox
             // if(getDefaultMappingType() == MappingType::Xbox){
@@ -715,4 +718,54 @@ bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList){
 
     return false;
 }
+// BUTTONS_VALUE_TYPE 转换为字符串
+std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue){
+    std::string btnValueStr = "";
+    for (size_t i = 0; i < DINPUT_MAX_BUTTONS; i++) {
+        if (btnValue.getBit(i)) {
+            btnValueStr += "按键" + std::to_string(i) + "+";
+        }
+    }
+    uint64_t povValue = (btnValue >> DINPUT_MAX_BUTTONS).toUint64_t();
+    if (povValue) {
+        for (int j = 0; j < 4; j++) {
+            uint16_t angle = (povValue >> (j * 16)) & (uint16_t)-1;
+            if (angle) {
+                angle = ~angle; // 角度得反码
+                btnValueStr += "摇杆" + std::to_string(j + 1) + "-角度" + std::to_string(angle) + "+";
+            }
+        }
+    }
+    if (btnValueStr.size() > 0) {
+        btnValueStr.pop_back();  // 去掉最后的 "+"
+    }
+    return btnValueStr;
+}
 
+BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr) {
+    BUTTONS_VALUE_TYPE btnValue;
+    QString str = QString::fromStdString(btnValueStr);
+    QStringList parts = str.split("+", Qt::SkipEmptyParts); // 分割字符串 当没有"+"时, parts.size() == 1
+    for (const QString& part : parts) {
+        if (part.startsWith("按键")) {
+            bool ok;
+            int buttonIndex = part.mid(2).toInt(&ok);
+            if (ok && buttonIndex >= 0 && buttonIndex < DINPUT_MAX_BUTTONS) {
+                btnValue.setBit(buttonIndex, true);
+            }
+        } else if (part.startsWith("摇杆")) {
+            QStringList subParts = part.split("-");
+            if (subParts.size() == 2 && subParts[1].startsWith("角度")) {
+                bool ok;
+                int angle = subParts[1].mid(2).toInt(&ok);
+                if (ok && angle >= 0 && angle < 360) {
+                    uint16_t angleValue = ~angle; // 角度得反码
+                    btnValue |= (BUTTONS_VALUE_TYPE)angleValue << ((subParts[0].mid(2).toInt() - 1) * 16 + DINPUT_MAX_BUTTONS);
+                }
+            }
+        }
+    }
+
+    return btnValue;
+}
+    

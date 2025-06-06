@@ -22,6 +22,7 @@ public:
 
     static bool getEnableMappingAfterOpening();
     static bool getEnableOnlyLongestMapping();
+    static bool getEnableOnlyChangeKeyWhenNew();
 
 signals:
     void stopWork();
@@ -59,6 +60,8 @@ private slots:
 
     void on_checkBox_7_clicked();
 
+    void on_checkBox_8_clicked();
+
 private:
     Ui::AssistFuncWindow *ui;
 
@@ -71,6 +74,7 @@ private:
     static bool ETS2_enableAutoCancelHandbrake;// 欧卡2辅助功能_开启自动解除手刹
     static bool SYSTEM_enableMappingAfterOpening;// 映射软件的系统功能_开启软件后立即开启映射
     static bool SYSTEM_enableOnlyLongestMapping;// 组合键按下时只执行组合键映射，不执行对应子键映射
+    static bool SYSTEM_enableOnlyChangeKeyWhenNew;// 新增映射时，只返回变化的按键
     bool SYSTEM_enableForceFeedback = false;// 开启力反馈模拟
     bool SYSTEM_enableRunUponStartup = false;// 开启开机自启动
 

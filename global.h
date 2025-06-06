@@ -13,6 +13,11 @@
 
 #define DEFAULT_INNER_DEADAREA_VALUE 0.03
 
+#define DINPUT_MAX_BUTTONS 128 // DirectInput 最大按键数
+
+#define POV_ONLY_FACTOR ((BUTTONS_VALUE_TYPE)((uint64_t)-1) << DINPUT_MAX_BUTTONS)
+#define KEY_ONLY_FACTOR ((((BUTTONS_VALUE_TYPE)((uint64_t)-1)) << 64) | ((BUTTONS_VALUE_TYPE)((uint64_t)-1)))
+
 extern QWidget* g_mainWindow;
 
 // 全局映射是否开启
@@ -104,5 +109,12 @@ bool hasXboxMappingInMappingList(std::vector<MappingRelation*> mappingList);
 
 // 是否开启设备名称强唯一模式, 开启该模式, 设备名称将附带设备路径信息
 extern bool enableStrongUniqueDeviceNameMode;
+
+// BUTTONS_VALUE_TYPE 转换为字符串
+std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue);
+
+// string 转换为 BUTTONS_VALUE_TYPE
+BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr);
+
 
 #endif // GLOBAL_H

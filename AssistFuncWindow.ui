@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>509</width>
-    <height>422</height>
+    <height>514</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
       <x>10</x>
       <y>9</y>
       <width>491</width>
-      <height>341</height>
+      <height>431</height>
      </rect>
     </property>
     <property name="widgetResizable">
@@ -32,7 +32,7 @@
        <x>0</x>
        <y>0</y>
        <width>489</width>
-       <height>339</height>
+       <height>429</height>
       </rect>
      </property>
      <widget class="QLabel" name="label">
@@ -285,7 +285,7 @@
        <rect>
         <x>10</x>
         <y>280</y>
-        <width>291</width>
+        <width>421</width>
         <height>19</height>
        </rect>
       </property>
@@ -296,13 +296,26 @@
        <string>设备名称附带强唯一性的设备路径信息</string>
       </property>
      </widget>
+     <widget class="QCheckBox" name="checkBox_8">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>310</y>
+        <width>231</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>新增按键映射只返回变化按键</string>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
       <x>400</x>
-      <y>370</y>
+      <y>460</y>
       <width>91</width>
       <height>31</height>
      </rect>
