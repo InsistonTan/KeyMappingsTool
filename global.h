@@ -18,6 +18,8 @@
 #define POV_ONLY_FACTOR ((BUTTONS_VALUE_TYPE)((uint64_t)-1) << DINPUT_MAX_BUTTONS)
 #define KEY_ONLY_FACTOR ((((BUTTONS_VALUE_TYPE)((uint64_t)-1)) << 64) | ((BUTTONS_VALUE_TYPE)((uint64_t)-1)))
 
+#define KEYBOARD_COMBINE_KEY_SPE ", " // 键盘按键组合键的分隔符
+
 extern QWidget* g_mainWindow;
 
 // 全局映射是否开启

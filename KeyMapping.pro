@@ -28,11 +28,13 @@ HEADERS += \
     AssistFuncWindow.h \
     AssistFuncWorker.h \
     BtnTriggerTypeEnum.h \
+    CustomListView.h \
     DeadAreaSettings.h \
     ETS2_KeyBinder/manuallybinder.h \
     ETS2_KeyBinder/showkeystate.h \
     ForceFeedbackSettingsWindow.h \
     ForceFeedbackWorker.h \
+    MultiSelectCombobox.h \
     device_info.h \
     ETS2_KeyBinder/ets2keybinderwizard.h \
     global.h \

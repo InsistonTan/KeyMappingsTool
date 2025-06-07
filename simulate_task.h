@@ -4,8 +4,9 @@
 #include<mapping_relation.h>
 #include<QThread>
 #include<windows.h>
-#include <ViGEm/Client.h>
+#include<ViGEm/Client.h>
 #include<key_map.h>
+#include "global.h"
 
 #define MAX_STR 255
 #define MAX_BUF 2048
@@ -30,12 +31,12 @@ class SimulateTask : public QObject {
 private:
     //hid_device *handle;// 当前设备的连接句柄
     std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
-    std::map<std::string, short> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
+    std::map<std::string, QString> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
     static std::vector<MappingRelation> handleMultiBtnVector;// 当前在使用的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
     static std::vector<MappingRelation> handleMultiBtnVectorSorted;// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
 
-    std::map<std::string, short> keyHoldingMap;// 记录按键一直按着的map; key: 设备-按键名称, value: 键盘扫描码
+    std::map<std::string, QString> keyHoldingMap;// 记录按键一直按着的map; key: 设备-按键名称, value: 键盘扫描码
 
     std::map<std::string, TriggerTypeEnum> keyTriggerTypeMap;// 记录按键触发模式的map; key: 设备-按键名称, value: 键盘扫描码
 
@@ -74,7 +75,26 @@ protected:
     bool isAxisRotate(std::string btnName);
 
     bool isMappingValid(MappingRelation* mapping){
-        return mapping != nullptr && !mapping->dev_btn_name.empty() && mapping->keyboard_value != 0;
+        // 键盘按键值是否有效
+        bool isKeyboardValueValid = false;
+
+        auto valueList = mapping->keyboard_value.split(KEYBOARD_COMBINE_KEY_SPE);
+        int validCounter = 0;
+        if(valueList.size() > 0){
+            for(auto value : valueList){
+                bool ok;
+                int valueInt = value.toInt(&ok);
+                if(ok && valueInt != 0){
+                    validCounter++;
+                }
+            }
+
+            if(validCounter == valueList.size()){
+                isKeyboardValueValid = true;
+            }
+        }
+
+        return mapping != nullptr && !mapping->dev_btn_name.empty() && isKeyboardValueValid;
     }
 
     void addMappingToHandleMap(MappingRelation* mapping);

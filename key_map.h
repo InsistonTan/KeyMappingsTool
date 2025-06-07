@@ -6,6 +6,7 @@
 
 #define PAUSE_BTN_STR "暂停/恢复映射快捷键"
 #define PAUSE_BTN_VAL -99
+#define PAUSE_BTN_VAL_STR "-99"
 
 // 手柄输入类型枚举
 enum XboxInputType {

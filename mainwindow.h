@@ -13,6 +13,7 @@
 #include "logwindow.h"
 #include "AssistFuncWindow.h"
 #include "DeadAreaSettings.h"
+#include "MultiSelectCombobox.h"
 
 #define CURRENT_VERSION "1.2.5" // 当前版本号
 
@@ -83,8 +84,8 @@ protected:
     // 上一次使用的设备是否在当前设备列表
     bool hasLastDevInCurrentDeviceList(std::string lastDeviceName);
 
-    QComboBox* createAKeyBoardComboBox(std::string dev_btn_type, MappingType mappingType);
-    void updateAKeyBoardComboBox(QComboBox* comboBox, std::string dev_btn_type, MappingType mappingType);
+    MultiSelectComboBox* createAKeyBoardComboBox(std::string dev_btn_type, MappingType mappingType);
+    void updateAKeyBoardComboBox(MultiSelectComboBox* comboBox, std::string dev_btn_type, MappingType mappingType);
     void updateASwitchPushButton(QPushButton* btn, MappingType mappingType);
 
     void showErrorMessage(std::string *text);
@@ -153,7 +154,7 @@ private slots:
     void on_pushButton_clicked();
 
     // 键盘按键选择下拉框 槽函数
-    void onKeyBoardComboBoxActivated(int index);
+    void onKeyBoardComboBoxActivated();
 
     // 设备选择下拉框, '选择后'信号对应的槽函数
     void on_comboBox_activated(int index);

@@ -498,15 +498,16 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
 
     // 键盘按键下拉框
-    QComboBox *comboBox = createAKeyBoardComboBox(mapping->dev_btn_type, mapping->mappingType); //// 重构代码优先处理
+    MultiSelectComboBox *comboBox = createAKeyBoardComboBox(mapping->dev_btn_type, mapping->mappingType);
     // 设置一个序号, 为后续操作提供一个位置
     comboBox->setObjectName(currentRowIndex);
     // 历史配置展示
     if(!isAddNewMapping){
-        comboBox->setCurrentText(mapping->keyboard_name.data());
+        comboBox->setItemSelected(mapping->keyboard_name.data());
     }
     // 连接信号和槽
-    connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);
+    //connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);
+    connect(comboBox, &MultiSelectComboBox::customActivated, this, &MainWindow::onKeyBoardComboBoxActivated);
 
 
     // 按键触发模式下拉框
@@ -565,6 +566,9 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
 
     // 连接信号和槽
     connect(mappingTypeComboBox, &QComboBox::activated, this, [=]{
+        // 恢复映射按键下拉框多选
+        comboBox->setSelectionMode(false);
+
         if (mappingTypeComboBox->currentIndex() == 1){
             mapping->setMappingType(MappingType::Xbox);
 
@@ -575,6 +579,9 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
                 mapping->btnTriggerType = TriggerTypeEnum::Normal;
                 // 设置为不可用
                 triggerTypeComboBox->setDisabled(true);
+
+                // 轴映射xbox, 映射按键下拉框只能单选
+                comboBox->setSelectionMode(true);
             }
         }else if (mappingTypeComboBox->currentIndex() == 0){
             mapping->setMappingType(MappingType::Keyboard);
@@ -624,8 +631,13 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     if((mapping != nullptr && mapping->dev_btn_type == (std::string)WHEEL_AXIS)){
         // 轴映射 xbox
         if(mapping->mappingType == MappingType::Xbox){
+            qDebug() << "轴映射xbox";
+
             // 轴隐藏按键触发模式的下拉框
             triggerTypeComboBox->setDisabled(true);
+
+            // 当轴映射xbox时, 键盘按键下拉框设置为单选模式
+            comboBox->setSelectionMode(true);
         }
 
         // 反转轴的勾选
@@ -737,7 +749,7 @@ QString MainWindow::saveMappingsToFile(std::string filename){
             text.append("\"dev_btn_name\":\"" + item->dev_btn_name + "\"").append(", ");
             text.append("\"dev_btn_type\":\"" + item->dev_btn_type + "\"").append(", ");
             text.append("\"keyboard_name\":\"" + (item->keyboard_name == "\\" ? "\\\\" : item->keyboard_name) + "\"").append(", ");
-            text.append("\"keyboard_value\":" + std::to_string(item->keyboard_value)).append(", ");
+            text.append("\"keyboard_value\":\"" + item->keyboard_value + "\"").append(", ");
             text.append("\"remark\":\"" + item->remark + "\"").append(", ");
             text.append("\"rotateAxis\":" + std::to_string(item->rotateAxis)).append(", ");
             text.append("\"btnTriggerType\":" + std::to_string(item->btnTriggerType)).append(", ");
@@ -1043,7 +1055,12 @@ void MainWindow::loadMappingsFile(std::string filename){
                 mapping->dev_btn_name = (jsonObj.contains("dev_btn_name")) ? jsonObj["dev_btn_name"].toString().toStdString() : "";
                 mapping->dev_btn_type = (jsonObj.contains("dev_btn_type")) ? jsonObj["dev_btn_type"].toString().toStdString() : "";
                 mapping->keyboard_name = (jsonObj.contains("keyboard_name")) ? jsonObj["keyboard_name"].toString().toStdString() : "";
-                mapping->keyboard_value = (jsonObj.contains("keyboard_value")) ? jsonObj["keyboard_value"].toInt() : 0;
+
+                mapping->keyboard_value = (jsonObj.contains("keyboard_value")) ? jsonObj["keyboard_value"].toString("") : "";
+                if(mapping->keyboard_value.isEmpty()){
+                    mapping->keyboard_value = (jsonObj.contains("keyboard_value")) ? std::to_string(jsonObj["keyboard_value"].toInt()).data() : "";
+                }
+
                 mapping->remark = (jsonObj.contains("remark")) ? jsonObj["remark"].toString().toStdString() : "";
                 mapping->rotateAxis = (jsonObj.contains("rotateAxis") && jsonObj["rotateAxis"].toInt() == 1) ? 1 : 0;
                 mapping->btnTriggerType =
@@ -1423,7 +1440,7 @@ void MainWindow::updateASwitchPushButton(QPushButton *btn, MappingType mappingTy
     }
 }
     
-void MainWindow::updateAKeyBoardComboBox(QComboBox *comboBox, std::string dev_btn_type, MappingType mappingType){
+void MainWindow::updateAKeyBoardComboBox(MultiSelectComboBox *comboBox, std::string dev_btn_type, MappingType mappingType){
     // 清空下拉框
     comboBox->clear();
 
@@ -1446,14 +1463,14 @@ void MainWindow::updateAKeyBoardComboBox(QComboBox *comboBox, std::string dev_bt
 }
 
 // 创建一个键盘按键下拉选择框
-QComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type, MappingType mappingType){
-    QComboBox *comboBox = new QComboBox();
+MultiSelectComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type, MappingType mappingType){
+    MultiSelectComboBox *comboBox = new MultiSelectComboBox();
     comboBox->setCurrentIndex(-1);
     comboBox->setMaximumHeight(36);
     comboBox->setMinimumHeight(36);
     comboBox->setMinimumWidth(150);
     comboBox->setMaximumWidth(150);
-    comboBox->setStyleSheet("QComboBox{padding-left:10px;}");
+    //comboBox->setStyleSheet("QComboBox{}");
 
     // 添加下拉框选择项
     updateAKeyBoardComboBox(comboBox, dev_btn_type, mappingType);
@@ -1462,9 +1479,11 @@ QComboBox* MainWindow::createAKeyBoardComboBox(std::string dev_btn_type, Mapping
 }
 
 
-void MainWindow::onKeyBoardComboBoxActivated(int index){
+void MainWindow::onKeyBoardComboBoxActivated(){
     // 获取触发信号的对象
-    QComboBox *comboBox = qobject_cast<QComboBox*>(sender());
+    MultiSelectComboBox *comboBox = qobject_cast<MultiSelectComboBox*>(sender());
+    // 获取下拉框已选择的选项
+    auto selectedItemList = comboBox->selectedItems();
 
     // 获取到该映射的位置
     int rowIndex = comboBox->objectName().toInt();
@@ -1472,18 +1491,24 @@ void MainWindow::onKeyBoardComboBoxActivated(int index){
     MappingRelation *mapping = mappingList[rowIndex];
 
     QList<std::map<std::string, short>> mapList = {VK_MAP, VK_XBOX_BTN_MAP, VK_XBOX_AXIS_MAP};
-    for(auto map : mapList){
-        // 在键盘 按键名称与虚拟值 map中根据名称查找出值, 并更新到已配置的mapping中
-        auto item = map.find(comboBox->currentText().toStdString());  // 查找键为 key 的元素
-        if (item != map.end()) {
-            qDebug("key_name:%s, key_value:%d", item ->first.data(), item->second);
 
-            mapping->keyboard_name = item ->first;
-            mapping->keyboard_value = item->second;
-
-            //break;
+    // 已选择项对于的键盘扫描码列表
+    QStringList keyboardValueList;
+    for(auto selected : selectedItemList){
+        for(auto map : mapList){
+            // 在键盘 按键名称与虚拟值 map中根据名称查找出值, 并更新到已配置的mapping中
+            auto item = map.find(selected.toStdString());  // 查找键为 key 的元素
+            if (item != map.end()) {
+                keyboardValueList.append(std::to_string(item->second).data());
+                break;
+            }
         }
     }
+
+    mapping->keyboard_name = comboBox->lineEdit()->text().toStdString();
+    mapping->keyboard_value = keyboardValueList.size() > 0 ? keyboardValueList.join(KEYBOARD_COMBINE_KEY_SPE) : "";
+
+    qDebug("keyboard_name:%s, keyboard_value:%s", mapping->keyboard_name.data(), mapping->keyboard_value.toStdString().data());
 }
 
 
