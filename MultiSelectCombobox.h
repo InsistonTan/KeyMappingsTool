@@ -30,7 +30,7 @@ private:
     // 实际点击的选项
     QStandardItem* realClickItem = nullptr;
 
-    // 是否为多选模式
+    // 是否为单选模式
     bool isSingleSelectionMode = false;
 
 public:
@@ -142,7 +142,10 @@ private:
 
         //qDebug() << "selected.size() : " << selected.size();
 
-        lineEdit()->setText(selected.join(KEYBOARD_COMBINE_KEY_SPE));
+        QString text = selected.join(KEYBOARD_COMBINE_KEY_SPE);
+
+        lineEdit()->setText(text);
+        lineEdit()->setToolTip(text);
     }
 
     // 事件过滤器
