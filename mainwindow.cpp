@@ -48,8 +48,13 @@ MainWindow::MainWindow(QMainWindow *parent)
     ui->setupUi(this);
 
     this->setFixedSize(972, 643);
+#ifdef QT_DEBUG
+    this->setWindowTitle(QString("KeyMappingsTool v").append(CURRENT_VERSION)
+                             .append(" - ").append(APP_BRANCH_NAME)
+                             .append(" - ").append(APP_COMMIT_ID));
+#else
     this->setWindowTitle(QString("KeyMappingsTool v").append(CURRENT_VERSION));
-
+#endif
     // 初始化
     init();
 

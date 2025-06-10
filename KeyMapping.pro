@@ -83,3 +83,12 @@ RESOURCES += \
     resource.qrc
 
 RC_FILE = appicon.rc
+
+# 获取 git 分支名
+GIT_BRANCH = $$system(git rev-parse --abbrev-ref HEAD)
+# 获取 git 提交ID
+GIT_COMMIT = $$system(git rev-parse --short HEAD)
+
+# 定义到代码中
+DEFINES += APP_BRANCH_NAME=\\\"$$GIT_BRANCH\\\"
+DEFINES += APP_COMMIT_ID=\\\"$$GIT_COMMIT\\\"
