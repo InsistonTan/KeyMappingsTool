@@ -497,6 +497,9 @@ void SimulateTask::doWork(){
 
     pushToQueue(parseSuccessLog("启动全局映射成功!"));
 
+    // 记录 按键触发模式为 "保持按住且再次按下才松开" 的按键状态
+    QMap<QString, int> keepPressMap;
+
     while(getIsRunning()){
         // 轮询设备状态
         auto res = getInputState(false, handleMultiBtnVector);
@@ -602,6 +605,22 @@ void SimulateTask::doWork(){
                             // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
                             simulateKeyPressMs(scanCode, RELEASE_DELAY_MS);
                             break;
+                        case TriggerTypeEnum::KeepPress:
+                        {
+                            // 保持按下的按键名称
+                            QString keepPressBtnStr = (btnStr + std::to_string(scanCode)).data();
+                            if(keepPressMap.contains(keepPressBtnStr)){
+                                // 松开按键
+                                simulateKeyPress(scanCode, true);
+                                keepPressMap.remove(keepPressBtnStr);
+                            }else{
+                                // 按键按下, 并保持
+                                simulateKeyPress(scanCode, false);
+                                // 记录按下状态
+                                keepPressMap.insert(keepPressBtnStr, scanCode);
+                            }
+                            break;
+                        }
                         case TriggerTypeEnum::Normal:
                             //qDebug() << "默认的同步模式";
                             // 默认的同步模式
@@ -661,6 +680,22 @@ void SimulateTask::doWork(){
                                 // 按下按键触发一次 按下松开 且松开按键再次触发一次 按下松开
                                 simulateXboxKeyPressMs(NormalButton, scanCode, 0, RELEASE_DELAY_MS);
                                 break;
+                            case TriggerTypeEnum::KeepPress:
+                            {
+                                // 保持按下的按键名称
+                                QString keepPressBtnStr = (btnStr + std::to_string(scanCode)).data();
+                                if(keepPressMap.contains(keepPressBtnStr)){
+                                    // 松开按键
+                                    simulateXboxKeyPress(NormalButton, scanCode, 0, true);
+                                    keepPressMap.remove(keepPressBtnStr);
+                                }else{
+                                    // 按键按下, 并保持
+                                    simulateXboxKeyPress(NormalButton, scanCode, 0, false);
+                                    // 记录按下状态
+                                    keepPressMap.insert(keepPressBtnStr, scanCode);
+                                }
+                                break;
+                            }
                             case TriggerTypeEnum::Normal:
                                 //qDebug() << "默认的同步模式";
                                 // 默认的同步模式

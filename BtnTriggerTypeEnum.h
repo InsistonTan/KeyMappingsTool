@@ -18,6 +18,8 @@ enum TriggerTypeEnum {
     Delay10s = 7,// 延迟10秒触发
     Delay15s = 8,// 延迟15秒触发
 
+    KeepPress = 9,// 保持按住, 再次按下才释放
+
     End //结束标识, 用于遍历枚举
 };
 

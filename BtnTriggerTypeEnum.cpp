@@ -10,4 +10,5 @@ std::map<TriggerTypeEnum, std::string> TRIGGER_TYPE_ENUM_MAP = {
     {Delay15s, "延迟15秒触发"},
     {Release, "按键松开时触发"},
     {PressAndRelease, "按下触发且松开也触发"},
+    {KeepPress, "保持按住(再次按下松开)"},
 };
