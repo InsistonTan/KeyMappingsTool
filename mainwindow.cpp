@@ -31,9 +31,10 @@
 #include<QRegularExpression>
 #include<QHostInfo>
 #include<QDate>
-#include <QDesktopServices>
-#include <QUrl>
-#include <QStyleHints>
+#include<QDesktopServices>
+#include<QUrl>
+#include<QStyleHints>
+#include<QTextEdit>
 
 QList<QString> MainWindow::currentSelectedDeviceList = {}; // 当前选择的设备列表
 
@@ -1974,31 +1975,53 @@ void MainWindow::checkUpdate(QString apiHost){
                     // 获取最新版本号, 跟目前版本号比较
                     if(obj.contains("latest_version") && obj["latest_version"].toString() > CURRENT_VERSION){
                         qDebug() << "检查到有新版本";
-                        QString text = "新版本: " + obj["latest_version"].toString()
-                                        + "\n\n更新内容:\n" + (obj.contains("desc") && !obj["desc"].toString().isEmpty() ? obj["desc"].toString() : "暂无更新日志")
-                                        + "";
-                        // 创建一个 QMessageBox
-                        QMessageBox msgBox;
-                        msgBox.setWindowTitle("版本更新提醒");
-                        msgBox.setText(text);
-                        // 设置图标
-                        msgBox.setIcon(QMessageBox::Information);
-                        // 创建并添加自定义按钮
-                        QPushButton* github = msgBox.addButton("github下载", QMessageBox::ActionRole);
-                        QPushButton* lanzou = msgBox.addButton("蓝奏云下载", QMessageBox::ActionRole);
-                        QPushButton* cancel = msgBox.addButton("取消", QMessageBox::RejectRole);
-                        // 设置默认按钮
-                        msgBox.setDefaultButton(cancel);
-                        // 显示消息框
-                        msgBox.exec();
-                        // 判断用户点击'github下载'按钮
-                        if (msgBox.clickedButton() == github){
-                            // 打开网页链接
+
+
+                        QString updateDesc = (obj.contains("desc") && !obj["desc"].toString().isEmpty() ? obj["desc"].toString() : "暂无更新日志");
+                        updateDesc.replace("\n", "<br>");
+                        updateDesc.replace(" ", "&nbsp;");
+
+                        QString text = "<b style='color:green;font-size:14px;'>新版本: v" + obj["latest_version"].toString() + "</b>"
+                                       + "<br><br>"
+                                       + "<b>更新内容</b>:<br>"
+                                       + updateDesc;
+
+                        QDialog dialog;
+                        dialog.setWindowTitle("版本更新提醒");
+                        dialog.setMinimumSize(500, 400);
+                        QVBoxLayout *layout = new QVBoxLayout(&dialog);
+
+                        QTextEdit *textEdit = new QTextEdit();
+                        textEdit->setText(text);
+                        textEdit->setReadOnly(true);
+
+                        QDialogButtonBox *buttonBox = new QDialogButtonBox();
+
+                        // 添加github下载按钮
+                        QPushButton *githubButton = new QPushButton("github下载");
+                        buttonBox->addButton(githubButton, QDialogButtonBox::ActionRole);
+                        connect(githubButton, &QPushButton::clicked, [&](){
                             QDesktopServices::openUrl(QUrl(obj.contains("download_github") && !obj["download_github"].toString().isEmpty() ? obj["download_github"].toString() : ""));
-                        }else if(msgBox.clickedButton() == lanzou){
-                            // 打开网页链接
+                        });
+
+                        // 添加蓝奏云下载按钮
+                        QPushButton *lanzouButton = new QPushButton("蓝奏云下载");
+                        buttonBox->addButton(lanzouButton, QDialogButtonBox::ActionRole);
+                        connect(lanzouButton, &QPushButton::clicked, [&](){
                             QDesktopServices::openUrl(QUrl(obj.contains("download_lanzou") && !obj["download_lanzou"].toString().isEmpty() ? obj["download_lanzou"].toString() : ""));
-                        }
+                        });
+
+                        // 添加取消按钮
+                        QPushButton *cancelButton = new QPushButton("取消");
+                        buttonBox->addButton(cancelButton, QDialogButtonBox::ActionRole);
+                        connect(cancelButton, &QPushButton::clicked, [&](){
+                            dialog.close();
+                        });
+
+                        layout->addWidget(textEdit);
+                        layout->addWidget(buttonBox);
+
+                        dialog.exec();
                     }
                 }
             }
