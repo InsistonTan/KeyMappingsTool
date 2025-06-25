@@ -15,7 +15,7 @@
 #include "DeadAreaSettings.h"
 #include "MultiSelectCombobox.h"
 
-#define CURRENT_VERSION "1.2.5" // 当前版本号
+#define CURRENT_VERSION "1.2.6 beta1" // 当前版本号
 
 #define MAX_STR 255
 #define MAX_BUF 2048
