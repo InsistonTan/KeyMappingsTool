@@ -783,7 +783,7 @@ void SimulateTask::doWork(){
                                 }
                             }
 
-                            qDebug() << "devAxisDataPer: " << devAxisDataPer << ", finalValue: " << finalValue;
+                            //qDebug() << "devAxisDataPer: " << devAxisDataPer << ", finalValue: " << finalValue;
 
                             // 模拟xbox轴
                             simulateXboxKeyPress(inputType, finalValue, 0, false);
