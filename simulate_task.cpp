@@ -327,13 +327,19 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
         // 设置左摇杆的X、Y值 (-32768 到 32767)
         report.sThumbLX = inputValue1;
         //report.sThumbLY = inputValue2;
+    }else if((inputType == LeftJoystickUpperY || inputType == LeftJoystickLowerY)){
+        report.sThumbLY = inputValue1;
+    }
 
-    }else if(inputType == RightJoystick){
+    else if(inputType == RightJoystick){
         // 设置右摇杆的X、Y值 (-32768 到 32767)
         report.sThumbRX = inputValue1;
         //report.sThumbRY = inputValue2;
+    }else if((inputType == RightJoystickUpperY || inputType == RightJoystickLowerY)){
+        report.sThumbRY = inputValue1;
+    }
 
-    }else if(inputType == LeftTrigger){
+    else if(inputType == LeftTrigger){
         // 设置左扳机的值 (0 到 255)
         report.bLeftTrigger = inputValue1;
 
@@ -499,6 +505,11 @@ void SimulateTask::doWork(){
 
     // 记录 按键触发模式为 "保持按住且再次按下才松开" 的按键状态
     QMap<QString, int> keepPressMap;
+
+    // 当前xbox左摇杆Y轴值
+    int xboxLeftJoystickValueY = 0;
+    // 当前xbox右摇杆Y轴值
+    int xboxRightJoystickValueY = 0;
 
     while(getIsRunning()){
         // 轮询设备状态
@@ -746,36 +757,33 @@ void SimulateTask::doWork(){
 
                             // 设置的扳机内部死区值
                             if(inputType == XboxInputType::LeftTrigger || inputType == XboxInputType::RightTrigger){
-                                // 扳机内部死区值
-                                int innerDeadAreaValue = (xboxMax - xboxMin) * getXboxTriggerInnerDeadAreaValue();
+                                finalValue = calXboxSingleAxisFinalValue(getXboxTriggerInnerDeadAreaValue(), devAxisDataPer, xboxMax, xboxMin, false);
+                            }
 
-                                // 施加死区影响之后的值的区间范围
-                                int tempMin = xboxMin - innerDeadAreaValue;
-                                int tempMax = xboxMax - innerDeadAreaValue;
+                            // 设置摇杆Y轴的 上半轴和下半轴
+                            if(inputType == XboxInputType::LeftJoystickUpperY  || inputType == XboxInputType::LeftJoystickLowerY
+                                || inputType == XboxInputType::RightJoystickUpperY || inputType == XboxInputType::RightJoystickLowerY){
 
-                                if(innerDeadAreaValue >= 0){
-                                    // 当前值处于区间的内的值
-                                    int tempValue = (int)(tempMin + (tempMax - tempMin) * devAxisDataPer);
+                                finalValue = calXboxSingleAxisFinalValue(getXboxJoystickInnerDeadAreaValue(), devAxisDataPer, xboxMax, xboxMin, (xboxMin < 0 && xboxMax == 0));
 
-                                    tempMin = xboxMin;
-                                    tempMax = xboxMax - innerDeadAreaValue;
-
-                                    // 新区间百分比
-                                    double newAreaPer = (double)tempValue / (tempMax - tempMin);
-                                    newAreaPer = std::max(newAreaPer, 0.0);
-
-                                    // 根据新区间百分比 计算出 原xbox区间的值
-                                    finalValue = std::max(xboxMin, std::min((int)(newAreaPer * (xboxMax - xboxMin)), xboxMax));
+                                // 如果当前左摇杆Y轴处于上移状态, 就需要跳过Y轴下半轴的静置状态数据0, 反之如果Y轴处于下移状态, 就需要跳过上半轴的静置数据0
+                                if(((xboxLeftJoystickValueY > 0 && inputType == XboxInputType::LeftJoystickLowerY) || (xboxLeftJoystickValueY < 0 && inputType == XboxInputType::LeftJoystickUpperY))
+                                    && finalValue == 0){
+                                    continue;
                                 }else{
-
-                                    tempMin = xboxMin - innerDeadAreaValue;
-                                    tempMax = xboxMax;
-
-                                    // 根据新区间百分比 计算出 原xbox区间的值
-                                    finalValue = std::max(xboxMin, std::min((int)(tempMin + (tempMax - tempMin) * devAxisDataPer), xboxMax));
+                                    xboxLeftJoystickValueY = finalValue;
                                 }
 
+                                // 右摇杆Y轴同理
+                                if(((xboxRightJoystickValueY > 0 && inputType == XboxInputType::RightJoystickLowerY) || (xboxRightJoystickValueY < 0 && inputType == XboxInputType::RightJoystickUpperY))
+                                    && finalValue == 0){
+                                    continue;
+                                }else {
+                                    xboxRightJoystickValueY = finalValue;
+                                }
                             }
+
+                            qDebug() << "devAxisDataPer: " << devAxisDataPer << ", finalValue: " << finalValue;
 
                             // 模拟xbox轴
                             simulateXboxKeyPress(inputType, finalValue, 0, false);
@@ -801,6 +809,65 @@ void SimulateTask::doWork(){
     emit msgboxSignal(false, "全局映射已停止!");
 
     pushToQueue("全局映射已停止!");
+}
+
+// 根据设置的内部死区, 计算出xbox轴的最终值
+int SimulateTask::calXboxSingleAxisFinalValue(double innerDeadAreaPer, double devAxisDataPer, int xboxAxisMaxValue, int xboxAxisMinValue, bool isDecrease){
+    int finalValue = 0;
+
+    int xboxMax = xboxAxisMaxValue;
+    int xboxMin = xboxAxisMinValue;
+
+    // 是否为递减区间, 例如xbox左摇杆Y轴的下半轴区间为[-32768, 0], 但实际数值是由 0 递减到 -32768
+    if(isDecrease){
+        // 将递减转换成递增, [-32768, 0] -> [0, 32768]
+        xboxMin = xboxAxisMaxValue;
+        xboxMax = -xboxAxisMinValue;
+    }
+
+    // 如果设备轴没动, 那最终值就应该是xbox轴的最小值
+    if(devAxisDataPer < 0.00005){
+        return xboxMin;
+    }
+
+    // 扳机内部死区值
+    int innerDeadAreaValue = (xboxMax - xboxMin) * innerDeadAreaPer;
+
+    // 施加死区影响之后的值的区间范围(区间前移或者后移)
+    int tempMin = xboxMin - innerDeadAreaValue;
+    int tempMax = xboxMax - innerDeadAreaValue;
+
+    if(innerDeadAreaValue >= 0){
+        // 当前设备值处于前移区间的值
+        int tempValue = (int)(tempMin + (tempMax - tempMin) * devAxisDataPer);
+
+        // 新区间最小值从0开始, 用来使前移的部分小于0, 小于0的是不生效的, 所以前移部分为内部死区部分
+        tempMin = xboxMin;
+        tempMax = xboxMax - innerDeadAreaValue;
+
+        // 新区间百分比
+        double newAreaPer = (double)tempValue / (tempMax - tempMin);
+        // 小于0代表处于死区范围, 不生效
+        newAreaPer = std::max(newAreaPer, 0.0);
+
+        // 根据新区间百分比 计算出 原xbox区间的值
+        finalValue = std::max(xboxMin, std::min((int)(newAreaPer * (xboxMax - xboxMin)), xboxMax));
+    }else{
+
+        tempMin = xboxMin - innerDeadAreaValue;
+        tempMax = xboxMax;
+
+        // 根据新区间百分比 计算出 原xbox区间的值
+        finalValue = std::max(xboxMin, std::min((int)(tempMin + (tempMax - tempMin) * devAxisDataPer), xboxMax));
+    }
+
+    // 是否为递减区间, 例如xbox左摇杆Y轴的下半轴区间为[-32768, 0], 但实际数值是由 0 递减到 -32768
+    if(isDecrease){
+        // 反转最终值, 将递增转换成递减
+        finalValue = -finalValue;
+    }
+
+    return finalValue;
 }
 
 // 模拟按键操作

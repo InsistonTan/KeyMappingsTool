@@ -122,6 +122,9 @@ protected:
     void simulateXboxKeyPress(XboxInputType inputType, int inputValue1, int inputValue2, bool isRelease);
     void simulateXboxKeyPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs);
     void simulateXboxKeyDelayPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs, size_t delayMs);
+
+    // 根据设置的内部死区, 计算出xbox轴的最终值
+    int calXboxSingleAxisFinalValue(double innerDeadAreaPer, double devAxisDataPer, int xboxAxisMaxValue, int xboxAxisMinValue, bool isDecrease);
 };
 
 #endif // SIMULATE_TASK_H

@@ -10,11 +10,17 @@
 
 // 手柄输入类型枚举
 enum XboxInputType {
-    LeftJoystick = 1,// 左摇杆
-    RightJoystick = 2,// 右摇杆
+    LeftJoystick = 1,// 左摇杆(X轴)
+    RightJoystick = 2,// 右摇杆(X轴)
     LeftTrigger = 3,// 左扳机
     RightTrigger = 4,// 右扳机
     NormalButton = 5,// 普通按键
+
+    LeftJoystickUpperY = 6,// 左摇杆Y轴的上半轴
+    LeftJoystickLowerY = 7,// 左摇杆Y轴的下半轴
+
+    RightJoystickUpperY = 8,// 右摇杆Y轴的上半轴
+    RightJoystickLowerY = 9,// 右摇杆Y轴的下半轴
 };
 
 struct VALUE_RANGE {
@@ -24,14 +30,26 @@ struct VALUE_RANGE {
 
 const static std::map<short, VALUE_RANGE> XBOX_AXIS_VALUE_RANGE_MAP = {
     {static_cast<int>(LeftJoystick), VALUE_RANGE{-32768, 32767}},
+    {static_cast<int>(LeftJoystickUpperY), VALUE_RANGE{0, 32767}},
+    {static_cast<int>(LeftJoystickLowerY), VALUE_RANGE{-32768, 0}},
+
     {static_cast<int>(RightJoystick), VALUE_RANGE{-32768, 32767}},
+    {static_cast<int>(RightJoystickUpperY), VALUE_RANGE{0, 32767}},
+    {static_cast<int>(RightJoystickLowerY), VALUE_RANGE{-32768, 0}},
+
     {static_cast<int>(LeftTrigger), VALUE_RANGE{0, 255}},
     {static_cast<int>(RightTrigger), VALUE_RANGE{0, 255}},
 };
 
 const static std::map<std::string, short> VK_XBOX_AXIS_MAP = {
     {"手柄摇杆-左摇杆", static_cast<int>(LeftJoystick)},
+    {"左摇杆-Y轴上半轴", static_cast<int>(LeftJoystickUpperY)},
+    {"左摇杆-Y轴下半轴", static_cast<int>(LeftJoystickLowerY)},
+
     {"手柄摇杆-右摇杆", static_cast<int>(RightJoystick)},
+    {"右摇杆-Y轴上半轴", static_cast<int>(RightJoystickUpperY)},
+    {"右摇杆-Y轴下半轴", static_cast<int>(RightJoystickLowerY)},
+
     {"手柄扳机-左扳机", static_cast<int>(LeftTrigger)},
     {"手柄扳机-右扳机", static_cast<int>(RightTrigger)},
 };
