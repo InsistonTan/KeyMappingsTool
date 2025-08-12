@@ -122,13 +122,6 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
 
         std::string btnStr = item->first;
 
-        // // 找到 '#' 字符的位置
-        // size_t pos = btnStr.find('#');
-        // // 如果找到了 '#', 截取子串
-        // if (pos != std::string::npos) {
-        //     btnStr = btnStr.substr(0, pos);
-        // }
-
         // 本次按下的按键列表为空, 或者当前按下的按键列表中不包含当前按键, 则松开当前按键
         if (pressBtnList.empty() || !isCurrentBtnInList(pressBtnList, btnStr)) {
             // 键盘按键组合键释放
