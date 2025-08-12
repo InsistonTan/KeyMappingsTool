@@ -507,8 +507,9 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                     // 多按键映射，需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
                     for (auto multiBtn : multiBtnVector) {
                         BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
-                        if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue) &&
-                            ((multiBtnBitValue >> DINPUT_MAX_BUTTONS) == (btnBitValue >> DINPUT_MAX_BUTTONS))) {
+                        if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue)
+                            //&& ((multiBtnBitValue >> DINPUT_MAX_BUTTONS) == (btnBitValue >> DINPUT_MAX_BUTTONS))
+                            ){
                             // 找到对应的按键, 进行映射
                             if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
                                 btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
