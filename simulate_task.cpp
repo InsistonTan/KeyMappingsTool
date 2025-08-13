@@ -246,7 +246,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLX -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLX += XBOX_AXIS_SPEED;
+                        report.sThumbLX = 0;
                     }
                     break;
                 case -2:
@@ -254,7 +254,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLX += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLX -= XBOX_AXIS_SPEED;
+                        report.sThumbLX = 0;
                     }
                     break;
                 case -3:
@@ -262,7 +262,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLY += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLY -= XBOX_AXIS_SPEED;
+                        report.sThumbLY = 0;
                     }
                     break;
                 case -4:
@@ -270,7 +270,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLY -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLY += XBOX_AXIS_SPEED;
+                        report.sThumbLY = 0;
                     }
                     break;
                 case -5:
@@ -278,7 +278,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRX -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRX += XBOX_AXIS_SPEED;
+                        report.sThumbRX = 0;
                     }
                     break;
                 case -6:
@@ -286,7 +286,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRX += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRX -= XBOX_AXIS_SPEED;
+                        report.sThumbRX = 0;
                     }
                     break;
                 case -7:
@@ -294,7 +294,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRY += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRY -= XBOX_AXIS_SPEED;
+                        report.sThumbRY = 0;
                     }
                     break;
                 case -8:
@@ -302,7 +302,7 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRY -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRY += XBOX_AXIS_SPEED;
+                        report.sThumbRY = 0;
                     }
                     break;
                 case -9:
@@ -331,8 +331,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLY += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLX += XBOX_AXIS_SPEED;
-                        report.sThumbLY -= XBOX_AXIS_SPEED;
+                        report.sThumbLX = 0;
+                        report.sThumbLY = 0;
                     }
                     break;
                 case -12:
@@ -342,8 +342,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLY -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLX += XBOX_AXIS_SPEED;
-                        report.sThumbLY += XBOX_AXIS_SPEED;
+                        report.sThumbLX = 0;
+                        report.sThumbLY = 0;
                     }
                     break;
                 case -13:
@@ -353,8 +353,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLY += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLX -= XBOX_AXIS_SPEED;
-                        report.sThumbLY -= XBOX_AXIS_SPEED;
+                        report.sThumbLX = 0;
+                        report.sThumbLY = 0;
                     }
                     break;
                 case -14:
@@ -364,8 +364,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbLY -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbLX -= XBOX_AXIS_SPEED;
-                        report.sThumbLY += XBOX_AXIS_SPEED;
+                        report.sThumbLX = 0;
+                        report.sThumbLY = 0;
                     }
                     break;
 
@@ -376,8 +376,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRY += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRX += XBOX_AXIS_SPEED;
-                        report.sThumbRY -= XBOX_AXIS_SPEED;
+                        report.sThumbRX = 0;
+                        report.sThumbRY = 0;
                     }
                     break;
                 case -16:
@@ -387,8 +387,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRY -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRX += XBOX_AXIS_SPEED;
-                        report.sThumbRY += XBOX_AXIS_SPEED;
+                        report.sThumbRX = 0;
+                        report.sThumbRY = 0;
                     }
                     break;
                 case -17:
@@ -398,8 +398,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRY += XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRX -= XBOX_AXIS_SPEED;
-                        report.sThumbRY -= XBOX_AXIS_SPEED;
+                        report.sThumbRX = 0;
+                        report.sThumbRY = 0;
                     }
                     break;
                 case -18:
@@ -409,8 +409,8 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                         report.sThumbRY -= XBOX_AXIS_SPEED;
                     }else{
                         // 松开按键, 摇杆归位
-                        report.sThumbRX -= XBOX_AXIS_SPEED;
-                        report.sThumbRY = XBOX_AXIS_SPEED;
+                        report.sThumbRX = 0;
+                        report.sThumbRY = 0;
                     }
                     break;
                 default:
