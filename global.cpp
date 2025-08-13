@@ -501,15 +501,20 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
             if (!btnStr.empty()) {
                 // 去掉最后的 "+"
                 btnStr = btnStr.substr(0, btnStr.length() - 1);
+                QStringList btnStrList = QString(btnStr.data()).split("+");
 
                 // multiBtnVector不为空, 需要进行多按键映射处理
                 if (multiBtnVector.size() > 0) {
                     // 多按键映射，需要匹配按键，并拆分为多个 MappingRelation对象, 根据keyValue进行拆分
                     for (auto multiBtn : multiBtnVector) {
+                        // 按键位值判断组合键是否被按下
                         BUTTONS_VALUE_TYPE multiBtnBitValue = multiBtn.dev_btn_bit_value;
-                        if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue)
-                            //&& ((multiBtnBitValue >> DINPUT_MAX_BUTTONS) == (btnBitValue >> DINPUT_MAX_BUTTONS))
-                            ){
+                        if (multiBtn.deviceName == deviceName && (multiBtnBitValue) && ((multiBtnBitValue & btnBitValue) == multiBtnBitValue)){
+                            // 如果按键包含十字键, 则需要保证 multiBtnBitValue的第三段 和 btnBitValue的第三段值相同, 否则跳过
+                            if(QString(multiBtn.dev_btn_name.data()).contains("角度") && (multiBtnBitValue >> DINPUT_MAX_BUTTONS) != (btnBitValue >> DINPUT_MAX_BUTTONS)){
+                                continue;
+                            }
+
                             // 找到对应的按键, 进行映射
                             if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
                                 btnBitValue &= (~multiBtnBitValue);  // 清除当前按键的值
@@ -518,6 +523,32 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                             mapping->setBtnBitValue(multiBtnBitValue);  // 设置按键值
                             list.append(mapping);
                         }
+
+                        // // 按键名称判断组合键是否被按下
+                        // // 设备不同, 跳过
+                        // if (multiBtn.deviceName != deviceName){
+                        //     continue;
+                        // }
+
+                        // // 当前按下的按键列表中 包含 配置的组合按键
+                        // QStringList multiBtnStrList = QString(multiBtn.dev_btn_name.data()).split("+");
+                        // int count = 0;
+                        // for(auto multiBtnStr : multiBtnStrList){
+                        //     if(btnStrList.contains(multiBtnStr)){
+                        //         count++;
+                        //     }
+                        // }
+                        // if(count > 0 && count == multiBtnStrList.size()){
+                        //     // 找到对应的按键, 进行映射
+                        //     if (AssistFuncWindow::getEnableOnlyLongestMapping()) {
+                        //         // 清除当前按键的值
+                        //         for(auto multiBtnStr : multiBtnStrList){
+                        //             btnStrList.removeAll(multiBtnStr);
+                        //         }
+                        //     }
+                        //     MappingRelation *mapping = new MappingRelation(multiBtn.dev_btn_name, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName);
+                        //     list.append(mapping);
+                        // }
                     }
                 }else{
                     MappingRelation *mapping =new MappingRelation(btnStr, WHEEL_BUTTON, 0, 0, "", TriggerTypeEnum::Normal, deviceName);
