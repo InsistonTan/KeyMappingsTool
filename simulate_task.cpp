@@ -225,10 +225,21 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
             // {"手柄左摇杆-右移", -2},
             // {"手柄左摇杆-上移", -3},
             // {"手柄左摇杆-下移", -4},
+
             // {"手柄右摇杆-左移", -5},
             // {"手柄右摇杆-右移", -6},
             // {"手柄右摇杆-上移", -7},
             // {"手柄右摇杆-下移", -8},
+
+            // {"左摇杆-左上移", -11},
+            // {"左摇杆-左下移", -12},
+            // {"左摇杆-右上移", -13},
+            // {"左摇杆-右下移", -14},
+
+            // {"右摇杆-左上移", -15},
+            // {"右摇杆-左下移", -16},
+            // {"右摇杆-右上移", -17},
+            // {"右摇杆-右下移", -18},
             switch (inputValue1){
                 case -1:
                     if(!isRelease){
@@ -296,10 +307,10 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                     break;
                 case -9:
                     if(!isRelease){
-                        qDebug("按下左扳机");
+                        //qDebug("按下左扳机");
                         report.bLeftTrigger = XBOX_TRIGGER_SPEED;
                     }else{
-                        qDebug("松开左扳机");
+                        //qDebug("松开左扳机");
                         // 松开按键, 扳机归位
                         report.bLeftTrigger = 0;
                     }
@@ -310,6 +321,96 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
                     }else{
                         // 松开按键, 扳机归位
                         report.bRightTrigger = 0;
+                    }
+                    break;
+
+                case -11:
+                    // 左摇杆-左上角
+                    if(!isRelease){
+                        report.sThumbLX -= XBOX_AXIS_SPEED;
+                        report.sThumbLY += XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbLX += XBOX_AXIS_SPEED;
+                        report.sThumbLY -= XBOX_AXIS_SPEED;
+                    }
+                    break;
+                case -12:
+                    // 左摇杆-左下角
+                    if(!isRelease){
+                        report.sThumbLX -= XBOX_AXIS_SPEED;
+                        report.sThumbLY -= XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbLX += XBOX_AXIS_SPEED;
+                        report.sThumbLY += XBOX_AXIS_SPEED;
+                    }
+                    break;
+                case -13:
+                    // 左摇杆-右上角
+                    if(!isRelease){
+                        report.sThumbLX += XBOX_AXIS_SPEED;
+                        report.sThumbLY += XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbLX -= XBOX_AXIS_SPEED;
+                        report.sThumbLY -= XBOX_AXIS_SPEED;
+                    }
+                    break;
+                case -14:
+                    // 左摇杆-右下角
+                    if(!isRelease){
+                        report.sThumbLX += XBOX_AXIS_SPEED;
+                        report.sThumbLY -= XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbLX -= XBOX_AXIS_SPEED;
+                        report.sThumbLY += XBOX_AXIS_SPEED;
+                    }
+                    break;
+
+                case -15:
+                    // 右摇杆-左上角
+                    if(!isRelease){
+                        report.sThumbRX -= XBOX_AXIS_SPEED;
+                        report.sThumbRY += XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbRX += XBOX_AXIS_SPEED;
+                        report.sThumbRY -= XBOX_AXIS_SPEED;
+                    }
+                    break;
+                case -16:
+                    // 右摇杆-左下角
+                    if(!isRelease){
+                        report.sThumbRX -= XBOX_AXIS_SPEED;
+                        report.sThumbRY -= XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbRX += XBOX_AXIS_SPEED;
+                        report.sThumbRY += XBOX_AXIS_SPEED;
+                    }
+                    break;
+                case -17:
+                    // 右摇杆-右上角
+                    if(!isRelease){
+                        report.sThumbRX += XBOX_AXIS_SPEED;
+                        report.sThumbRY += XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbRX -= XBOX_AXIS_SPEED;
+                        report.sThumbRY -= XBOX_AXIS_SPEED;
+                    }
+                    break;
+                case -18:
+                    // 右摇杆-右下角
+                    if(!isRelease){
+                        report.sThumbRX += XBOX_AXIS_SPEED;
+                        report.sThumbRY -= XBOX_AXIS_SPEED;
+                    }else{
+                        // 松开按键, 摇杆归位
+                        report.sThumbRX -= XBOX_AXIS_SPEED;
+                        report.sThumbRY = XBOX_AXIS_SPEED;
                     }
                     break;
                 default:
