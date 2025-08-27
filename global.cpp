@@ -426,14 +426,12 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
         // 获取设备名称
         QString deviceName = getDeviceName(g_pDevice);
 
-
         // 获取按键状态
         if (SUCCEEDED(g_pDevice->GetDeviceState(sizeof(DIJOYSTATE2), &js))) {
             QString btnLog = "";
             if(enableLog && getEnableBtnLog()){
                 btnLog.append("按键数据: { ");
             }
-
 
             // 遍历按键，查看按键是否按下
             std::string btnStr = "";
@@ -485,7 +483,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                 }
 
                 // 记录日志
-                if(enableLog && getEnableBtnLog()){
+                if(enableLog && getEnablePovLog()){
                     if(val > -1){
                         povLog.append("<span style='color:green;'><b>" + std::to_string(val) + "</b></span>").append(", ");
                     }else{
@@ -562,7 +560,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
             if(true){
                 // 过滤无效数据
                 if(js.lX == js.lY && js.lY == js.lRx && js.lRx == js.lRy && js.lRy == js.lRz){
-                    return list;
+
                 }else{
                     // LONG lX;                  // X轴位置
                     //if()
@@ -605,7 +603,7 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                 //QDateTime currentDateTime = QDateTime::currentDateTime();
 
                 // 格式化输出当前日期和时间
-                QString logText = "设备状态数据:<br/>";
+                QString logText =  "[" + deviceName +"]设备状态数据:<br/>";
 
                 if(getEnableBtnLog()){
                     logText.append("    ").append(btnLog).append("<br/>");
