@@ -998,25 +998,33 @@ void SimulateTask::simulateKeyPress(short scanCode, bool isKeyRelease) {
         INPUT input = {0};
         input.type = INPUT_MOUSE;
         input.mi.dwFlags = MOUSEEVENTF_MOVE;  // 相对移动
+
+        // x轴移动像素数
+        auto xValue = MOUSE_X_SPEED * getMouseMoveSpeedTimes();
+        long dx = (xValue < 1) ? 1 : xValue;
+        // y轴移动像素数
+        auto yValue = MOUSE_Y_SPEED * getMouseMoveSpeedTimes();
+        long dy = (yValue < 1) ? 1 : yValue;
+
         // 鼠标左移
         if(scanCode == -1){
-            input.mi.dx = -MOUSE_X_SPEED;
+            input.mi.dx = -dx;
             input.mi.dy = 0;
         }
         // 鼠标上移
         else if(scanCode == -2){
             input.mi.dx = 0;
-            input.mi.dy = -MOUSE_Y_SPEED;
+            input.mi.dy = -dy;
         }
         // 鼠标右移
         else if(scanCode == -3){
-            input.mi.dx = MOUSE_X_SPEED;
+            input.mi.dx = dx;
             input.mi.dy = 0;
         }
         // 鼠标下移
         else if(scanCode == -4){
             input.mi.dx = 0;
-            input.mi.dy = MOUSE_Y_SPEED;
+            input.mi.dy = dy;
         }
 
         // 鼠标左键点击

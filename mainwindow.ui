@@ -310,7 +310,7 @@ QComboBox QAbstractItemView {
      </rect>
     </property>
     <property name="text">
-     <string>死区设置</string>
+     <string>设置</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_9">

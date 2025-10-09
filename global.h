@@ -20,6 +20,8 @@
 
 #define KEYBOARD_COMBINE_KEY_SPE ", " // 键盘按键组合键的分隔符
 
+#define DEFAULT_MOUSE_MOVE_SPEED_TIMES_VALUE 1.0
+
 extern QWidget* g_mainWindow;
 
 // 全局映射是否开启
@@ -118,5 +120,9 @@ std::string ButtonsValueTypeToString(BUTTONS_VALUE_TYPE btnValue);
 // string 转换为 BUTTONS_VALUE_TYPE
 BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr);
 
+//模拟鼠标移动速度的倍率
+extern double mouseMoveSpeedTimes;
+void setMouseMoveSpeedTimes(double val);
+double getMouseMoveSpeedTimes();
 
 #endif // GLOBAL_H

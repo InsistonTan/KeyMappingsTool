@@ -12,7 +12,7 @@ DeadAreaSettings::DeadAreaSettings(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("死区设置");
+    setWindowTitle("设置");
 
     loadSettingsFile();
 
@@ -20,6 +20,7 @@ DeadAreaSettings::DeadAreaSettings(QWidget *parent)
     this->ui->lineEdit_2->setText(std::to_string(getXboxTriggerInnerDeadAreaValue()).data());
     this->ui->lineEdit_4->setText(std::to_string(getInnerDeadAreaPanti()).data());
     this->ui->lineEdit_3->setText(std::to_string(getInnerDeadAreaTaban()).data());
+    this->ui->lineEdit_5->setText(std::to_string(getMouseMoveSpeedTimes()).data());
 
     save();
 }
@@ -30,10 +31,10 @@ DeadAreaSettings::~DeadAreaSettings()
 }
 
 void DeadAreaSettings::unsave(){
-    setWindowTitle("死区设置 *设置未保存");
+    setWindowTitle("设置 *设置未保存");
 }
 void DeadAreaSettings::save(){
-    setWindowTitle("死区设置");
+    setWindowTitle("设置");
 }
 
 void DeadAreaSettings::on_lineEdit_textChanged(const QString &arg1)
@@ -74,6 +75,8 @@ void DeadAreaSettings::on_pushButton_clicked()
     setInnerDeadAreaPanti(ui->lineEdit_4->text().toDouble());
     // 设置轴映射键盘按键时, 踏板轴的内部死区
     setInnerDeadAreaTaban(ui->lineEdit_3->text().toDouble());
+    // 设置鼠标移动速度倍率
+    setMouseMoveSpeedTimes(ui->lineEdit_5->text().toDouble());
 
     saveSettingsToFile();
 
@@ -94,7 +97,10 @@ void DeadAreaSettings::saveSettingsToFile(){
     // 映射手柄, 手柄摇杆的内部死区
     text2.append("\"xboxJoystickInnerDeadAreaValue\":").append(std::to_string(ui->lineEdit->text().toDouble())).append(",\n\t");
     // 映射手柄, 手柄扳机的内部死区
-    text2.append("\"xboxTriggerInnerDeadAreaValue\":").append(std::to_string(ui->lineEdit_2->text().toDouble())).append("");
+    text2.append("\"xboxTriggerInnerDeadAreaValue\":").append(std::to_string(ui->lineEdit_2->text().toDouble())).append(",\n\t");
+
+    // 鼠标移动速度的倍率
+    text2.append("\"mouseMoveSpeedTimes\":").append(std::to_string(ui->lineEdit_5->text().toDouble())).append("");
 
     text2.append("\n}");
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -104,9 +110,9 @@ void DeadAreaSettings::saveSettingsToFile(){
         // 关闭文件
         file2.close();
     } else {
-        qDebug() << "打开xbox死区设置文件失败!";
-        QMessageBox::critical(this, "保存失败", "打开/创建xbox死区设置文件失败!");
-        pushToQueue(parseErrorLog("打开/创建xbox死区设置文件失败!"));
+        qDebug() << "打开设置文件失败!";
+        QMessageBox::critical(this, "保存失败", "打开/创建设置文件失败!");
+        pushToQueue(parseErrorLog("打开/创建设置文件失败!"));
     }
 }
 
@@ -114,7 +120,7 @@ void DeadAreaSettings::loadSettingsFile(){
     // 打开 JSON 文件
     QFile file(getAppDataDirStr() + SETTINGS_FILE_NAME);
     if (!file.open(QIODevice::ReadOnly)) {
-        pushToQueue(parseWarningLog("打开xbox死区设置文件失败!"));
+        pushToQueue(parseWarningLog("打开设置文件失败!"));
         return;
     }
 
@@ -122,7 +128,7 @@ void DeadAreaSettings::loadSettingsFile(){
     QByteArray jsonData = file.readAll();
     QJsonDocument doc = QJsonDocument::fromJson(jsonData);
     if (doc.isNull()) {
-        pushToQueue(parseWarningLog("解析xbox死区设置文件的json内容失败!"));
+        pushToQueue(parseWarningLog("解析设置文件的json内容失败!"));
         return;
     }
 
@@ -170,6 +176,18 @@ void DeadAreaSettings::loadSettingsFile(){
 
         setInnerDeadAreaTaban(value);
         this->ui->lineEdit_3->setText(std::to_string(value).data());
+    }
+
+    // mouseMoveSpeedTimes
+    if(jsonObj.contains("mouseMoveSpeedTimes")){
+        double value = jsonObj["mouseMoveSpeedTimes"].toDouble(DEFAULT_MOUSE_MOVE_SPEED_TIMES_VALUE);
+        // 输入超出范围
+        if(value <= 0){
+            value = DEFAULT_MOUSE_MOVE_SPEED_TIMES_VALUE;
+        }
+
+        setMouseMoveSpeedTimes(value);
+        this->ui->lineEdit_5->setText(std::to_string(value).data());
     }
 }
 
@@ -224,6 +242,24 @@ void DeadAreaSettings::on_lineEdit_3_editingFinished()
     // 输入超出范围 0, 1
     if (!ok || value < 0 || value > 1) {
         ui->lineEdit_3->setText(std::to_string(DEFAULT_INNER_DEADAREA_VALUE).data());
+    }
+}
+
+
+void DeadAreaSettings::on_lineEdit_5_textChanged(const QString &arg1)
+{
+    unsave();
+}
+
+
+void DeadAreaSettings::on_lineEdit_5_editingFinished()
+{
+    bool ok;
+    double value = ui->lineEdit_5->text().toDouble(&ok);
+
+    // 输入超出范围
+    if (!ok || value <= 0) {
+        ui->lineEdit_5->setText(std::to_string(DEFAULT_MOUSE_MOVE_SPEED_TIMES_VALUE).data());
     }
 }
 

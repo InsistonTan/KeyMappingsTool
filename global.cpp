@@ -798,4 +798,12 @@ BUTTONS_VALUE_TYPE stringToButtonsValueType(const std::string& btnValueStr) {
 
     return btnValue;
 }
-    
+
+//模拟鼠标移动速度的倍率
+double mouseMoveSpeedTimes = 1.0;
+void setMouseMoveSpeedTimes(double val){
+    mouseMoveSpeedTimes = val;
+}
+double getMouseMoveSpeedTimes(){
+    return mouseMoveSpeedTimes;
+}

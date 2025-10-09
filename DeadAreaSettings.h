@@ -36,6 +36,10 @@ private slots:
 
     void on_lineEdit_3_editingFinished();
 
+    void on_lineEdit_5_textChanged(const QString &arg1);
+
+    void on_lineEdit_5_editingFinished();
+
 private:
     Ui::DeadAreaSettings *ui;
 
