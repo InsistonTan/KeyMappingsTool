@@ -555,47 +555,45 @@ QList<MappingRelation*> getInputState(bool enableLog, std::vector<MappingRelatio
                 }
             }
 
-            // 映射xbox
-            // if(getDefaultMappingType() == MappingType::Xbox){
-            if(true){
-                // 过滤无效数据
-                if(js.lX == js.lY && js.lY == js.lRx && js.lRx == js.lRy && js.lRy == js.lRz){
+            // 轴数据
+            // 过滤无效数据
+            if(js.lX != 0 && js.lX == js.lY && js.lY == js.lRx && js.lRx == js.lRy && js.lRy == js.lRz){
 
-                }else{
-                    // LONG lX;                  // X轴位置
-                    //if()
-                    //qDebug() << "lx: " << js.lX;
-                    list.append(new MappingRelation("X轴", WHEEL_AXIS, js.lX, 0, "", TriggerTypeEnum::Normal, deviceName));
+            }else{
+                // LONG lX;                  // X轴位置
+                //if()
+                //qDebug() << "lx: " << js.lX;
+                list.append(new MappingRelation("X轴", WHEEL_AXIS, js.lX, 0, "", TriggerTypeEnum::Normal, deviceName));
 
-                    // LONG lY;                  // Y轴位置
-                    //qDebug() << "lY: " << js.lY;
-                    list.append(new MappingRelation("Y轴", WHEEL_AXIS, js.lY, 0, "", TriggerTypeEnum::Normal, deviceName));
+                // LONG lY;                  // Y轴位置
+                //qDebug() << "lY: " << js.lY;
+                list.append(new MappingRelation("Y轴", WHEEL_AXIS, js.lY, 0, "", TriggerTypeEnum::Normal, deviceName));
 
-                    // LONG lZ;                  // Z轴位置
-                    //qDebug() << "lZ: " << js.lZ;
-                    list.append(new MappingRelation("Z轴", WHEEL_AXIS, js.lZ, 0, "", TriggerTypeEnum::Normal, deviceName));
+                // LONG lZ;                  // Z轴位置
+                //qDebug() << "lZ: " << js.lZ;
+                list.append(new MappingRelation("Z轴", WHEEL_AXIS, js.lZ, 0, "", TriggerTypeEnum::Normal, deviceName));
 
-                    // LONG lRx;                 // X轴旋转
-                    //qDebug() << "lRx: " << js.lRx;
-                    list.append(new MappingRelation("X轴旋转", WHEEL_AXIS, js.lRx, 0, "", TriggerTypeEnum::Normal, deviceName));
+                // LONG lRx;                 // X轴旋转
+                //qDebug() << "lRx: " << js.lRx;
+                list.append(new MappingRelation("X轴旋转", WHEEL_AXIS, js.lRx, 0, "", TriggerTypeEnum::Normal, deviceName));
 
-                    // LONG lRy;                 // Y轴旋转
-                    //qDebug() << "lRy: " << js.lRy;
-                    list.append(new MappingRelation("Y轴旋转", WHEEL_AXIS, js.lRy, 0, "", TriggerTypeEnum::Normal, deviceName));
+                // LONG lRy;                 // Y轴旋转
+                //qDebug() << "lRy: " << js.lRy;
+                list.append(new MappingRelation("Y轴旋转", WHEEL_AXIS, js.lRy, 0, "", TriggerTypeEnum::Normal, deviceName));
 
-                    // LONG lRz;                 // Z轴旋转
-                    //qDebug() << "lRz: " << js.lRz;
-                    list.append(new MappingRelation("Z轴旋转", WHEEL_AXIS, js.lRz, 0, "", TriggerTypeEnum::Normal, deviceName));
+                // LONG lRz;                 // Z轴旋转
+                //qDebug() << "lRz: " << js.lRz;
+                list.append(new MappingRelation("Z轴旋转", WHEEL_AXIS, js.lRz, 0, "", TriggerTypeEnum::Normal, deviceName));
 
-                    // LONG rglSlider[2];        // 滑动轴（通常是推杆或油门控制）
-                    //qDebug() << "rglSlider[0]: " << js.rglSlider[0];
-                    list.append(new MappingRelation("滑动轴1", WHEEL_AXIS, js.rglSlider[0], 0, "", TriggerTypeEnum::Normal, deviceName));
+                // LONG rglSlider[2];        // 滑动轴（通常是推杆或油门控制）
+                //qDebug() << "rglSlider[0]: " << js.rglSlider[0];
+                list.append(new MappingRelation("滑动轴1", WHEEL_AXIS, js.rglSlider[0], 0, "", TriggerTypeEnum::Normal, deviceName));
 
-                    //qDebug() << "rglSlider[1]: " << js.rglSlider[1];
-                    list.append(new MappingRelation("滑动轴2", WHEEL_AXIS, js.rglSlider[1], 0, "", TriggerTypeEnum::Normal, deviceName));
-                    //qDebug("");
-                }
+                //qDebug() << "rglSlider[1]: " << js.rglSlider[1];
+                list.append(new MappingRelation("滑动轴2", WHEEL_AXIS, js.rglSlider[1], 0, "", TriggerTypeEnum::Normal, deviceName));
+                //qDebug("");
             }
+
 
             // 记录日志
             if(enableLog){
