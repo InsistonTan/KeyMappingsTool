@@ -1,6 +1,13 @@
-# KeyMappingsTool 方向盘按键映射工具
+# <img src="wheel_icon.png" align="left" width="128" height="128"/> KeyMappingsTool
+![GitHub_Stars](https://img.shields.io/github/stars/InsistonTan/KeyMappingsTool?style=flat&color=ffcf49)
+[![GitHub All Releases](https://img.shields.io/github/downloads/InsistonTan/KeyMappingsTool/total)](https://github.com/InsistonTan/KeyMappingsTool/releases)
+[![GitHub issues by-label](https://img.shields.io/github/issues/InsistonTan/KeyMappingsTool?color=blue)](https://github.com/InsistonTan/KeyMappingsTool/issues)
+
+方向盘按键映射工具
+
 ## 简介
 本项目基于QT框架(QT6.x)开发, 实现方向盘或游戏控制器的按键映射功能
+
 ### 为什么会有这个项目
 
 我自己目前使用的方向盘是魔爪R3, 在我使用方向盘游玩尘埃拉力赛2.0时, 发现方向盘的按键没法操作游戏菜单, 在使用vr游玩的时候每次都要摸鼠标, 很是麻烦, 就想着能不能开发一个映射工具自己用, 然后就有了本项目
@@ -51,7 +58,15 @@
 - 映射按键支持多选(实现键盘组合键功能)
 
 - ......
---- 
+---
+
+## Q&A
+Q: 如何解决方向盘映射虚拟xbox手柄时, 游戏只接收方向盘输入或者同时接收了方向盘和虚拟手柄的输入, 导致操作异常的问题?
+
+
+A: 使用[HidHide](https://github.com/nefarius/HidHide)工具. 该工具可以实现只让白名单的程序识别到方向盘设备, 不在白名单的程序将无法识别到方向盘设备. 这样就可以让游戏识别不到方向盘, 也就不会有输入冲突
+
+---
 
 ## 社交媒体账号
 哔哩哔哩: [insistonTan](https://space.bilibili.com/254052051)
