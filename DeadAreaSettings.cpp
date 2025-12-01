@@ -16,11 +16,11 @@ DeadAreaSettings::DeadAreaSettings(QWidget *parent)
 
     loadSettingsFile();
 
-    this->ui->lineEdit->setText(std::to_string(getXboxJoystickInnerDeadAreaValue()).data());
-    this->ui->lineEdit_2->setText(std::to_string(getXboxTriggerInnerDeadAreaValue()).data());
-    this->ui->lineEdit_4->setText(std::to_string(getInnerDeadAreaPanti()).data());
-    this->ui->lineEdit_3->setText(std::to_string(getInnerDeadAreaTaban()).data());
-    this->ui->lineEdit_5->setText(std::to_string(getMouseMoveSpeedTimes()).data());
+    this->ui->lineEdit->setText(removeUnnecessaryZero(std::to_string(getXboxJoystickInnerDeadAreaValue()).data()));
+    this->ui->lineEdit_2->setText(removeUnnecessaryZero(std::to_string(getXboxTriggerInnerDeadAreaValue()).data()));
+    this->ui->lineEdit_4->setText(removeUnnecessaryZero(std::to_string(getInnerDeadAreaPanti()).data()));
+    this->ui->lineEdit_3->setText(removeUnnecessaryZero(std::to_string(getInnerDeadAreaTaban()).data()));
+    this->ui->lineEdit_5->setText(removeUnnecessaryZero(std::to_string(getMouseMoveSpeedTimes()).data()));
 
     save();
 }
@@ -50,7 +50,7 @@ void DeadAreaSettings::on_lineEdit_editingFinished()
 
     // 输入超出范围 -1, 1
     if (!ok || value < -1 || value > 1) {
-        ui->lineEdit->setText("0.000000");
+        ui->lineEdit->setText("0");
     }
 }
 
@@ -60,14 +60,14 @@ void DeadAreaSettings::on_pushButton_clicked()
     double value = ui->lineEdit->text().toDouble();
     if(value <= -1 || value >= 1){
         value = 0;
-        ui->lineEdit->setText("0.000000");
+        ui->lineEdit->setText("0");
     }
     setXboxJoystickInnerDeadAreaValue(value);
 
     double value2 = ui->lineEdit_2->text().toDouble();
     if(value2 <= -1 || value2 >= 1){
         value2 = 0;
-        ui->lineEdit_2->setText("0.000000");
+        ui->lineEdit_2->setText("0");
     }
     setXboxTriggerInnerDeadAreaValue(value2);
 
@@ -199,7 +199,7 @@ void DeadAreaSettings::on_lineEdit_2_editingFinished()
 
     // 输入超出范围 -1, 1
     if (!ok || value < -1 || value > 1) {
-        ui->lineEdit_2->setText("0.000000");
+        ui->lineEdit_2->setText("0");
     }
 }
 
