@@ -151,23 +151,27 @@ void AssistFuncWindow::saveSettings(){
     text2.append("\"SYSTEM_enableStrongUniqueDeviceNameMode\":").append(ui->checkBox_7->isChecked() ? "true" : "false").append(",\n\t");
 
     text2.append("\"SYSTEM_forceFeedbackSettings\":{\n\t\t");
-    text2.append("\"throttleAxis\":").append("\"" + forceFeedbackSettingsWindow->throttleAxis + "\"").append(",\n\t\t");
-    text2.append("\"throttleAxisDeviceName\":").append("\"" + forceFeedbackSettingsWindow->throttleAxisDeviceName + "\"").append(",\n\t\t");
+        text2.append("\"throttleAxis\":").append("\"" + forceFeedbackSettingsWindow->throttleAxis + "\"").append(",\n\t\t");
+        text2.append("\"throttleAxisDeviceName\":").append("\"" + forceFeedbackSettingsWindow->throttleAxisDeviceName + "\"").append(",\n\t\t");
 
-    text2.append("\"brakeAxis\":").append("\"" + forceFeedbackSettingsWindow->brakeAxis + "\"").append(",\n\t\t");
-    text2.append("\"brakeAxisDeviceName\":").append("\"" + forceFeedbackSettingsWindow->brakeAxisDeviceName + "\"").append(",\n\t\t");
+        text2.append("\"brakeAxis\":").append("\"" + forceFeedbackSettingsWindow->brakeAxis + "\"").append(",\n\t\t");
+        text2.append("\"brakeAxisDeviceName\":").append("\"" + forceFeedbackSettingsWindow->brakeAxisDeviceName + "\"").append(",\n\t\t");
 
-    text2.append("\"steeringWheelAxis\":").append("\"" + forceFeedbackSettingsWindow->steeringWheelAxis + "\"").append(",\n\t\t");
-    text2.append("\"steeringWheelAxisDeviceName\":").append("\"" + forceFeedbackSettingsWindow->steeringWheelAxisDeviceName + "\"").append(",\n\t\t");
+        text2.append("\"steeringWheelAxis\":").append("\"" + forceFeedbackSettingsWindow->steeringWheelAxis + "\"").append(",\n\t\t");
+        text2.append("\"steeringWheelAxisDeviceName\":").append("\"" + forceFeedbackSettingsWindow->steeringWheelAxisDeviceName + "\"").append(",\n\t\t");
 
-    text2.append("\"isThrottleReverse\":").append(forceFeedbackSettingsWindow->isThrottleReverse ? "true" : "false").append(",\n\t\t");
-    text2.append("\"isBrakeReverse\":").append(forceFeedbackSettingsWindow->isBrakeReverse ? "true" : "false").append(",\n\t\t");
+        text2.append("\"isThrottleReverse\":").append(forceFeedbackSettingsWindow->isThrottleReverse ? "true" : "false").append(",\n\t\t");
+        text2.append("\"isBrakeReverse\":").append(forceFeedbackSettingsWindow->isBrakeReverse ? "true" : "false").append(",\n\t\t");
 
-    text2.append("\"acceleration_100km_time_s\":").append(std::to_string(forceFeedbackSettingsWindow->acceleration_100km_time_s)).append(",\n\t\t");
-    text2.append("\"stop_100km_dis_m\":").append(std::to_string(forceFeedbackSettingsWindow->stop_100km_dis_m)).append(",\n\t\t");
-    text2.append("\"maxSpeed_km_h\":").append(std::to_string(forceFeedbackSettingsWindow->maxSpeed_km_h)).append(",\n\t\t");
-    text2.append("\"maxForceFeedbackGain\":").append(std::to_string(forceFeedbackSettingsWindow->maxForceFeedbackGain)).append("\n\t");
-    text2.append("}\n");
+        text2.append("\"acceleration_100km_time_s\":").append(std::to_string(forceFeedbackSettingsWindow->acceleration_100km_time_s)).append(",\n\t\t");
+        text2.append("\"stop_100km_dis_m\":").append(std::to_string(forceFeedbackSettingsWindow->stop_100km_dis_m)).append(",\n\t\t");
+        text2.append("\"maxSpeed_km_h\":").append(std::to_string(forceFeedbackSettingsWindow->maxSpeed_km_h)).append(",\n\t\t");
+        text2.append("\"maxForceFeedbackGain\":").append(std::to_string(forceFeedbackSettingsWindow->maxForceFeedbackGain)).append(",\n\t\t");
+
+        text2.append("\"isConstantForceMode\":").append(forceFeedbackSettingsWindow->isConstantForceMode ? "true" : "false").append(",\n\t\t");
+        text2.append("\"constantCorrectiveForceGain\":").append(std::to_string(forceFeedbackSettingsWindow->constantCorrectiveForceGain)).append(",\n\t\t");
+        text2.append("\"constantDampingGain\":").append(std::to_string(forceFeedbackSettingsWindow->constantDampingGain));
+    text2.append("\n\t\t}\n");
 
     text2.append("}");
     if (file2.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -253,6 +257,14 @@ void AssistFuncWindow::loadSettings(){
         }
         if(settingsObj.contains("maxForceFeedbackGain")){
             this->forceFeedbackSettingsWindow->maxForceFeedbackGain = settingsObj["maxForceFeedbackGain"].toDouble();
+        }
+
+        this->forceFeedbackSettingsWindow->isConstantForceMode = (settingsObj.contains("isConstantForceMode")) ? settingsObj["isConstantForceMode"].toBool() : false;
+        if(settingsObj.contains("constantCorrectiveForceGain")){
+            this->forceFeedbackSettingsWindow->constantCorrectiveForceGain = settingsObj["constantCorrectiveForceGain"].toDouble();
+        }
+        if(settingsObj.contains("constantDampingGain")){
+            this->forceFeedbackSettingsWindow->constantDampingGain = settingsObj["constantDampingGain"].toDouble();
         }
     }
 }

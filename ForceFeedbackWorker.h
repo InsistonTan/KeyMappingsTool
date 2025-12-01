@@ -3,6 +3,7 @@
 #include "ForceFeedbackSettingsWindow.h"
 #include "dinput.h"
 #include <QObject>
+#include <QMutex>
 
 #define WORKER_SLEEP_TIME_MS 10 // 线程sleep的时间间隔 ms
 #define GROUND_FRICTION_COEFFICIENT -0.015 // 地面摩檫力系数
@@ -31,6 +32,11 @@ private:
     int stop_100km_dis_m = default_stop_100km_dis_m;// 百公里刹停所需距离(米)
     double maxSpeed_m_s = default_maxSpeed_km_h * 1000.0 / 3600.0;// 车辆最高时速(m/s)
     double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
+
+    //QMutex mutexConstantForce;
+    bool isConstantForceMode = false;// 是否为恒定力反馈模式
+    double constantCorrectiveForceGain = default_constant_corrective_force_gain;// 恒定回正力强度
+    double constantDampingGain = default_constant_damping_gain;// 恒定转向阻尼强度
 
     // 油门踏板的数值范围
     DIPROPRANGE throttleValueRange;

@@ -335,6 +335,10 @@ void ForceFeedbackWorker::init(){
     this->maxSpeed_m_s = this->forceFeedbackSettings->maxSpeed_km_h * 1000.0 / 3600.0;
     this->maxForceFeedbackGain = this->forceFeedbackSettings->maxForceFeedbackGain;
 
+    this->isConstantForceMode = this->forceFeedbackSettings->isConstantForceMode;
+    this->constantCorrectiveForceGain = this->forceFeedbackSettings->constantCorrectiveForceGain;
+    this->constantDampingGain = this->forceFeedbackSettings->constantDampingGain;
+
     // 油门踏板的数值范围
     this->throttleValueRange = axisValueRangeMap.find(this->throttleAxisDeviceName.toStdString()  + "-" + this->throttleAxis.toStdString())->second;
     // 刹车踏板的数值范围
@@ -401,15 +405,46 @@ void ForceFeedbackWorker::doWork(){
 
 
     while(isWorkerRunning){
-        // 轮询设备状态
-        auto res = getInputState();
-
         // 重新拉取转向轴设备, 防止力反馈丢失
         g_pDevice2->Acquire();
         // 检查连接状态
         if (FAILED(g_pDevice2->Poll())) {
             g_pDevice2->Acquire();
         }
+
+        // 恒定力回馈模式
+        if(this->isConstantForceMode){
+            // 弹簧效果强度系数
+            diSpringCondition.lPositiveCoefficient = (LONG)(DI_FFNOMINALMAX * this->constantCorrectiveForceGain);
+            diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
+            // 阻尼效果强度系数
+            diDamperCondition.lPositiveCoefficient = (LONG)(DI_FFNOMINALMAX * this->constantDampingGain);
+            diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
+
+            // 释放锁
+            //mutexConstantForce.unlock();
+
+            // 更新回正力
+            if (g_pSpringForce) {
+                g_pSpringForce->SetParameters(&diSpring, DIEP_TYPESPECIFICPARAMS | DIEP_START);
+            }
+
+            // 更新阻尼
+            if (g_pDamper) {
+                g_pDamper->SetParameters(&diDamper, DIEP_TYPESPECIFICPARAMS | DIEP_START);
+            }
+
+            // sleep
+            QThread::msleep(200);
+
+            // 处理事件队列
+            QCoreApplication::processEvents();
+
+            continue;
+        }
+
+        // 轮询设备状态
+        auto res = getInputState();
 
         double totalA = 0.0;// 总的加速度
 

@@ -807,3 +807,7 @@ void setMouseMoveSpeedTimes(double val){
 double getMouseMoveSpeedTimes(){
     return mouseMoveSpeedTimes;
 }
+
+QString removeUnnecessaryZero(QString str){
+    return str.remove(QRegularExpression("\\.?0+$"));
+}

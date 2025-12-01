@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include "global.h"
 #include<QMessageBox>
+#include<QStyleHints>
 
 ForceFeedbackSettingsWindow::ForceFeedbackSettingsWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -164,13 +165,25 @@ void ForceFeedbackSettingsWindow::updateUI(bool isFirstUpdate){
     }
 
     // 百公里加速所需时间s
-    ui->lineEdit->setText(QString::number(this->acceleration_100km_time_s, 'f', 2));
+    ui->lineEdit->setText(removeUnnecessaryZero(QString::number(this->acceleration_100km_time_s)));
     // 百公里刹停所需距离
     ui->lineEdit_2->setText(std::to_string(this->stop_100km_dis_m).data());
     // 车辆最高时速
     ui->lineEdit_3->setText(std::to_string(this->maxSpeed_km_h).data());
     // 最大力回馈强度
-    ui->lineEdit_4->setText(QString::number(this->maxForceFeedbackGain, 'f', 2));
+    ui->lineEdit_4->setText(removeUnnecessaryZero(QString::number(this->maxForceFeedbackGain)));
+
+
+    // 恒定力模式
+    ui->checkBox_3->setChecked(this->isConstantForceMode);
+    // 恒定回正力强度
+    ui->lineEdit_5->setText(removeUnnecessaryZero(QString::number(this->constantCorrectiveForceGain)));
+    // 恒定阻尼
+    ui->lineEdit_6->setText(removeUnnecessaryZero(QString::number(this->constantDampingGain)));
+
+
+    // 检查是否是恒定力模式
+    checkConstantForceMode();
 
     // 初次更新为非手动更新, 需要将窗口标题恢复
     if(isFirstUpdate){
@@ -380,5 +393,99 @@ void ForceFeedbackSettingsWindow::on_lineEdit_3_textChanged(const QString &arg1)
 void ForceFeedbackSettingsWindow::on_lineEdit_4_textChanged(const QString &arg1)
 {
     unsave();
+}
+
+
+void ForceFeedbackSettingsWindow::checkConstantForceMode(){
+    if(ui->checkBox_3->isChecked()){
+        ui->lineEdit->setDisabled(true);
+        ui->lineEdit_2->setDisabled(true);
+        ui->lineEdit_3->setDisabled(true);
+        ui->lineEdit_4->setDisabled(true);
+
+        ui->lineEdit_5->setDisabled(false);
+        ui->lineEdit_6->setDisabled(false);
+    }else{
+        ui->lineEdit->setDisabled(false);
+        ui->lineEdit_2->setDisabled(false);
+        ui->lineEdit_3->setDisabled(false);
+        ui->lineEdit_4->setDisabled(false);
+
+        ui->lineEdit_5->setDisabled(true);
+        ui->lineEdit_6->setDisabled(true);
+    }
+
+    QList<QLineEdit*> lineEditList = {ui->lineEdit, ui->lineEdit_2, ui->lineEdit_3, ui->lineEdit_4, ui->lineEdit_5, ui->lineEdit_6};
+    for(auto lineEdit : lineEditList){
+        // 输入框没被禁用
+        if(lineEdit->isEnabled()){
+            // 适配深色模式
+            if (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark){
+                lineEdit->setStyleSheet("QLineEdit{background-color: rgb(45, 45, 45); color: white;}");
+            }else{
+                lineEdit->setStyleSheet("QLineEdit{background-color: white; color: black;}");
+            }
+        }
+        // 被禁用
+        else{
+            if (qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark){
+                lineEdit->setStyleSheet("QLineEdit{background-color: rgb(45, 45, 45); color: rgb(85, 85, 85);}");
+            }else{
+                lineEdit->setStyleSheet("QLineEdit{background-color: rgb(220, 220, 220); color: rgb(150, 150, 150);}");
+            }
+        }
+    }
+}
+
+
+
+void ForceFeedbackSettingsWindow::on_checkBox_3_clicked()
+{
+    this->isConstantForceMode = ui->checkBox_3->isChecked();
+
+    unsave();
+    updateUI();
+}
+
+
+void ForceFeedbackSettingsWindow::on_lineEdit_5_editingFinished()
+{
+    bool ok;
+    double value = ui->lineEdit_5->text().toDouble(&ok);
+
+    // 校验输入
+    if (!ok) {
+        ui->lineEdit_5->setText(QString::number(default_constant_corrective_force_gain, 'f', 2));
+        this->constantCorrectiveForceGain = default_constant_corrective_force_gain;
+    }else if(value < 0.000005){
+        ui->lineEdit_5->setText("0");
+        this->constantCorrectiveForceGain = 0.0;
+    }else if(value > 1.0){
+        ui->lineEdit_5->setText("1");
+        this->constantCorrectiveForceGain = 1.0;
+    }else{
+        this->constantCorrectiveForceGain = value;
+    }
+}
+
+
+void ForceFeedbackSettingsWindow::on_lineEdit_6_editingFinished()
+{
+    bool ok;
+    double value = ui->lineEdit_6->text().toDouble(&ok);
+
+    // 校验输入
+    if (!ok) {
+        ui->lineEdit_6->setText(QString::number(default_constant_damping_gain, 'f', 2));
+        this->constantDampingGain = default_constant_damping_gain;
+    }else if(value < 0.000005){
+        ui->lineEdit_6->setText("0");
+        this->constantDampingGain = 0.0;
+    }else if(value > 1.0){
+        ui->lineEdit_6->setText("1");
+        this->constantDampingGain = 1.0;
+    }else{
+        this->constantDampingGain = value;
+    }
 }
 
