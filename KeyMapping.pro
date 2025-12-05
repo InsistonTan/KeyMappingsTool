@@ -81,6 +81,11 @@ LIBS += -L$$PWD/ -lViGEmClient
 
 LIBS += -ldinput8 -ldxguid
 
+
+LIBS += -lUser32
+LIBS += -lwinmm
+
+
 RESOURCES += \
     resource.qrc
 

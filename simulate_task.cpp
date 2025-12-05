@@ -2,8 +2,8 @@
 #include "AssistFuncWindow.h"
 #include <global.h>
 #include <QDebug>
-#include<QTimer>
-#include<QCoreApplication>
+#include <QTimer>
+#include <QCoreApplication>
 
 std::vector<MappingRelation> SimulateTask::handleMultiBtnVector = {};// 当前在使用的 设备组合键映射列表
 std::vector<MappingRelation> SimulateTask::handleMultiBtnVectorUnsort = {};// 未排序的 设备组合键映射列表
@@ -605,6 +605,9 @@ void SimulateTask::doWork(){
     // 当前xbox右摇杆Y轴值
     int xboxRightJoystickValueY = 0;
 
+    // 设置系统定时器精度为1ms
+    timeBeginPeriod(1);
+
     while(getIsRunning()){
         // 轮询设备状态
         auto res = getInputState(false, handleMultiBtnVector);
@@ -893,6 +896,9 @@ void SimulateTask::doWork(){
 
         Sleep(5);
     }
+
+    // 恢复默认的系统定时器精度
+    timeEndPeriod(1);
 
     // 关闭虚拟xbox设备
     closeXboxController();
