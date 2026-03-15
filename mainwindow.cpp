@@ -83,9 +83,6 @@ void MainWindow::init(){
         appDataDirPath = "";
     }
 
-    // 初始化辅助功能窗口, 加载辅助功能设置
-    this->assistWindow = new AssistFuncWindow();
-
     // 初始化directInput并扫描设备
     initDirectInput();
 
@@ -149,13 +146,17 @@ void MainWindow::init(){
     // 日志窗口
     this->logWindow = new LogWindow();
 
+    // 初始化死区设置窗口
+    this->deadareaSettings = new DeadAreaSettings();
+
+    // 初始化辅助功能窗口, 加载辅助功能设置
+    this->assistWindow = new AssistFuncWindow();
+
     // 辅助功能窗口连接信号与槽
     connect(this->assistWindow, &AssistFuncWindow::saveLastDeviceToFileSignal, this, &MainWindow::saveLastDeviceToFileSlot);
     if(AssistFuncWindow::getEnableMappingAfterOpening()){
         on_pushButton_2_clicked();
     }
-
-    this->deadareaSettings = new DeadAreaSettings();
 
     g_mainWindow = this;
 }
