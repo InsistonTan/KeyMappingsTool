@@ -170,6 +170,10 @@ private:
     void modifyControlsSii(const QString& controlsFilePath, BindingType bindingType, const QString& ets2BtnStr);
 
     void showManuallyBinder(BindingType bindingType);
+
+    // 尝试自动选择游戏输入类型&游戏配置文件
+    void tryAutoSelectGameInputTypeAndProfile();
+    bool tryAutoSelectGameInputTypeAndProfile(QPair<QString, QDateTime> profileFolder, bool isSteamProfile);
 };
 
 #endif // ETS2KEYBINDERWIZARD_H

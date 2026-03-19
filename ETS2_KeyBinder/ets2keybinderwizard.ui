@@ -279,6 +279,12 @@
          <property name="toolTip">
           <string>与游戏内对应顺序一致即可</string>
          </property>
+         <property name="currentText">
+          <string>joy</string>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
          <item>
           <property name="text">
            <string>joy</string>
@@ -444,8 +450,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>463</width>
-         <height>473</height>
+         <width>398</width>
+         <height>571</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_8">

@@ -96,7 +96,8 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             ui->comboBox->addItem(item.name.data());
         }
     }
-    on_comboBox_activated(0); // 默认选择第一个设备
+    // 取消默认选择第一个, 为了能保证正常触发 自动匹配游戏输入类型和配置文件(tryAutoSelectGameInputTypeAndProfile()函数)
+    //on_comboBox_activated(0); // 默认选择第一个设备
 
     connect(this, &QWizard::currentIdChanged, this, [=](int id) {
         if (id == 2) {
@@ -333,6 +334,9 @@ void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
         }
     }
     gameDeviceName = ui->comboBox_2->currentText().toStdString();
+
+    // 尝试自动匹配 游戏输入类型和配置文件
+    tryAutoSelectGameInputTypeAndProfile();
 }
 
 // 修改 controls.sii 文件
@@ -1367,3 +1371,98 @@ void ETS2KeyBinderWizard::on_pushButton_25_clicked() {
     labelImage->show();
 }
 
+
+// 尝试自动选择游戏输入类型&游戏配置文件
+void ETS2KeyBinderWizard::tryAutoSelectGameInputTypeAndProfile(){
+    // steamProfileFolders profileFolders
+    if(steamProfileFolders.isEmpty() && profileFolders.isEmpty()){
+        return;
+    }
+
+    // 遍历steam_profiles
+    for(auto profileFolder : steamProfileFolders){
+        if(tryAutoSelectGameInputTypeAndProfile(profileFolder, true)){
+            return;
+        }
+    }
+
+    // 遍历profiles
+    for(auto profileFolder : profileFolders){
+        if(tryAutoSelectGameInputTypeAndProfile(profileFolder, false)){
+            return;
+        }
+    }
+
+    QMessageBox::warning(this, "匹配失败", "自动匹配 游戏输入类型和游戏配置文件 失败!       \n\n请手动选择");
+}
+
+bool ETS2KeyBinderWizard::tryAutoSelectGameInputTypeAndProfile(QPair<QString, QDateTime> profileFolder, bool isSteamProfile){
+    // controls.sii文件路径
+    QString filePath;
+    if(isSteamProfile){
+        filePath = steamProfiles[ui->comboBox_4->currentIndex()] + "/" + profileFolder.first + "/controls.sii";
+    }else{
+        filePath = profiles[ui->comboBox_4->currentIndex()] + "/" + profileFolder.first + "/controls.sii";
+    }
+
+    // qDebug() << "profilePath: " << filePath;
+    // qDebug() << "deviceName: " << deviceName.data();
+
+    QString deviceGUID;
+
+    // 匹配出当前选择的设备编号
+    QRegularExpression re(R"(\(([a-zA-Z0-9]{8})\)$)");
+    QRegularExpressionMatch match = re.match(deviceName.data());
+    // 匹配成功
+    if (match.hasMatch()) {
+        deviceGUID = match.captured(1);
+        //qDebug() << "提取结果:" << deviceGUID;
+    } else {
+        return false;
+    }
+
+    // 读取配置文件
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "无法打开文件:" << filePath;
+        return false;
+    }
+
+    QTextStream in(&file);
+
+    // 游戏输入类型, 配置文件名称
+    QString inputType, profileName;
+
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        if(line.contains(deviceGUID)){
+            qDebug() << line;
+
+            // 确定游戏输入类型
+            for(short i = 0; i < gameJoyPosNameList.size(); i++){
+                if(line.contains(gameJoyPosNameList.at(i))){
+                    //qDebug() << "输入类型: " << gameJoyPosNameList.at(i);
+                    ui->comboBox_2->setCurrentIndex(i);
+                    on_comboBox_2_activated(ui->comboBox_3->currentIndex());
+
+                    inputType = gameJoyPosNameList.at(i);
+                    break;
+                }
+            }
+
+            profileName = profileFolder.first + " (" + profileFolder.second.toString("yyyy-MM-dd HH:mm:ss") + ")";
+            ui->comboBox_3->setCurrentText(profileName);
+            on_comboBox_3_activated(ui->comboBox_3->currentIndex());
+
+            QMessageBox::information(this, "匹配成功", "自动匹配 游戏输入类型和游戏配置文件 成功! \n\n游戏输入类型: " + inputType + "\n\n游戏配置文件: " + profileName);
+
+            return true;
+        }
+    }
+
+    file.close();
+
+    //qDebug() << "该配置文件未匹配成功: " << filePath;
+
+    return false;
+}
