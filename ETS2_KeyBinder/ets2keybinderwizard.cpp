@@ -134,6 +134,9 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
                     ui->comboBox->setCurrentIndex(-1);
                 }
             }
+
+            // 如果硬件设备未选择, 禁止下一步
+            this->button(QWizard::NextButton)->setEnabled(ui->comboBox->currentIndex() >= 0);
         } else if (id == 3) {
             // 连接设备
             if (deviceName.empty()) {
@@ -337,6 +340,9 @@ void ETS2KeyBinderWizard::on_comboBox_activated(int index) {
 
     // 尝试自动匹配 游戏输入类型和配置文件
     tryAutoSelectGameInputTypeAndProfile();
+
+    // 启用下一步按钮
+    this->button(QWizard::NextButton)->setEnabled(true);
 }
 
 // 修改 controls.sii 文件

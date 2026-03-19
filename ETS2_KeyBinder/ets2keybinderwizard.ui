@@ -253,6 +253,9 @@
          <property name="toolTip">
           <string>要绑定的设备</string>
          </property>
+         <property name="placeholderText">
+          <string/>
+         </property>
          <item>
           <property name="text">
            <string>TEST1</string>
