@@ -8,6 +8,7 @@
 #include<QDir>
 #include<QCoreApplication>
 #include<QRegularExpression>
+#include "key_map.h"
 
 QWidget* g_mainWindow = nullptr;
 
@@ -808,4 +809,30 @@ double getMouseMoveSpeedTimes(){
 
 QString removeUnnecessaryZero(QString str){
     return str.remove(QRegularExpression("\\.?0+$"));
+}
+
+// 根据按键值转换成按键名称
+QString getKeyNameFromKeyValue(MappingRelation *mapping){
+    QStringList nameList;
+
+    // 根据映射类型和设备按键类型选择 按键名称:按键值 的map
+    auto map = mapping->mappingType == MappingType::Keyboard ? VK_MAP : (mapping->dev_btn_type == WHEEL_AXIS ? VK_XBOX_AXIS_MAP : VK_XBOX_BTN_MAP);
+
+    auto valueStrList = mapping->keyboard_value.split(KEYBOARD_COMBINE_KEY_SPE);
+    for(auto valStr : valueStrList){
+        bool ok;
+        short val = valStr.toShort(&ok);
+        if(!ok){
+            continue;
+        }
+
+        // 根据value寻找key
+        for(auto item : map){
+            if(item.second == val){
+                nameList.append(item.first.data());
+            }
+        }
+    }
+
+    return nameList.size() > 0 ? nameList.join(KEYBOARD_COMBINE_KEY_SPE) : "";
 }

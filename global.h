@@ -128,4 +128,7 @@ double getMouseMoveSpeedTimes();
 // 将浮点型的后面多余的0去掉, 例如 "1.500000" -> "1.5"
 QString removeUnnecessaryZero(QString str);
 
+// 根据按键值转换成按键名称
+QString getKeyNameFromKeyValue(MappingRelation *mapping);
+
 #endif // GLOBAL_H

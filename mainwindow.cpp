@@ -505,7 +505,7 @@ void MainWindow::paintOneLineMapping(MappingRelation *mapping, int index){
     comboBox->setObjectName(currentRowIndex);
     // 历史配置展示
     if(!isAddNewMapping){
-        comboBox->setItemSelected(mapping->keyboard_name.data());
+        comboBox->setItemSelected(getKeyNameFromKeyValue(mapping));
     }
     // 连接信号和槽
     //connect(comboBox, &QComboBox::activated, this, &MainWindow::onKeyBoardComboBoxActivated);

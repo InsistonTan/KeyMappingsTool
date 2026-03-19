@@ -42,11 +42,11 @@ const static std::map<short, VALUE_RANGE> XBOX_AXIS_VALUE_RANGE_MAP = {
 };
 
 const static std::map<std::string, short> VK_XBOX_AXIS_MAP = {
-    {"手柄摇杆-左摇杆", static_cast<int>(LeftJoystick)},
+    {"左摇杆-X轴", static_cast<int>(LeftJoystick)},
     {"左摇杆-Y轴上半轴", static_cast<int>(LeftJoystickUpperY)},
     {"左摇杆-Y轴下半轴", static_cast<int>(LeftJoystickLowerY)},
 
-    {"手柄摇杆-右摇杆", static_cast<int>(RightJoystick)},
+    {"右摇杆-X轴", static_cast<int>(RightJoystick)},
     {"右摇杆-Y轴上半轴", static_cast<int>(RightJoystickUpperY)},
     {"右摇杆-Y轴下半轴", static_cast<int>(RightJoystickLowerY)},
 
