@@ -810,8 +810,6 @@ void fixMultiKeyBind(std::map<BindingType, ActionEffect> *actionEffectMap){
             }
         }
     }
-
-    qDebug() << "111";
 }
 
 void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actionEffectMap) {
