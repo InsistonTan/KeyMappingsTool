@@ -782,6 +782,38 @@ void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& mes
     }
 }
 
+// 修复组合绑定按键冲突问题
+// 例如: 按键1 -> 雨刮1档, 按键1+按键2 -> 雨刮2档, 那么雨刮1档就应该为: 按键1+非按键2, 否则当按键1+按键2按下时, 会触发雨刮1档而不是2档
+void fixMultiKeyBind(std::map<BindingType, ActionEffect> *actionEffectMap){
+    if(actionEffectMap == nullptr){
+        return;
+    }
+
+    // 遍历 actionEffectMap, 找到所有涉及的按键
+    QSet<int> keySet;
+    for (auto it = actionEffectMap->begin(); it != actionEffectMap->end(); ++it) {
+        for(auto subItem : it->second){
+            if(!keySet.contains(subItem.first)){
+                keySet.insert(subItem.first);
+            }
+        }
+    }
+
+    // 对每个操作补上需要的 非按键
+    for (auto it = actionEffectMap->begin(); it != actionEffectMap->end(); ++it) {
+        QMap<int, bool> keyStateMap(it->second);
+
+        for(auto key : keySet){
+            // 如果按键map里没有当前key, 则需要往按键map里添加一个{key, false}的键值对
+            if(!keyStateMap.contains(key)){
+                it->second.insert({key, false});
+            }
+        }
+    }
+
+    qDebug() << "111";
+}
+
 void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actionEffectMap) {
     QMessageBox box(QMessageBox::Information, "多操作绑定", "是否绑定？");
     box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
@@ -791,6 +823,10 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
         // 防止下标越界
         if (ui->comboBox_2->currentIndex() >= 0 && ui->comboBox_2->currentIndex() < gameJoyPosNameList.size()) {
             QString gameJoyPosStr = gameJoyPosNameList[ui->comboBox_2->currentIndex()];
+
+            // 修复组合绑定
+            fixMultiKeyBind(&actionEffectMap);
+
             for (auto item : actionEffectMap) {
                 QString ets2BtnStr = convertToETS2_String(gameJoyPosStr, item.second, capabilities.dwButtons);
                 modifyControlsSii(selectedProfilePath, item.first, ets2BtnStr);
