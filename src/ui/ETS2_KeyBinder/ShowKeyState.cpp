@@ -1,5 +1,5 @@
-#include "showkeystate.h"
-#include "ui_showkeystate.h"
+#include "ShowKeyState.h"
+#include "ui_ShowKeyState.h"
 #include <QLabel>
 #include <QLayout>
 
@@ -28,10 +28,12 @@ void ShowKeyState::initUi() {
         delete item;           // 删除布局项
     }
 
+    auto btnString = StringConstants::btnString;
+
     // 给窗口添加 keyCount 个Label
     for (size_t i = 0; i < keyCount; i++) {
         QLabel* label = new QLabel(this);
-        label->setText("按键" + QString::number(i + 1));
+        label->setText(btnString + QString::number(i + 1));
         label->setAlignment(Qt::AlignCenter);
         // ui->gridLayout->addWidget(label);
         // 设置为2列布局

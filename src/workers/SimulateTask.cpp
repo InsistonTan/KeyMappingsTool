@@ -1,60 +1,35 @@
-#include <simulate_task.h>
-#include "AssistFuncWindow.h"
-#include <global.h>
+#include "SimulateTask.h"
+#include "common/StringConstants.h"
+#include "models/MappingRelation.h"
+#include "services/ConfigService.h"
+#include "services/DirectInputService.h"
+#include "common/Global.h"
+
 #include <QDebug>
 #include <QTimer>
 #include <QCoreApplication>
 
-std::vector<MappingRelation> SimulateTask::handleMultiBtnVector = {};// 当前在使用的 设备组合键映射列表
-std::vector<MappingRelation> SimulateTask::handleMultiBtnVectorUnsort = {};// 未排序的 设备组合键映射列表
-std::vector<MappingRelation> SimulateTask::handleMultiBtnVectorSorted = {};// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
+#include <services/LogService.h>
+#include <thread>
 
-void SimulateTask::addMappingToHandleMap(MappingRelation* mapping){
-    // 记录按键触发模式
-    if(mapping != nullptr){
-        std::string btnStr = mapping->deviceName.toStdString() + "-" + mapping->dev_btn_name;
 
-        // 记录按键触发模式
-        keyTriggerTypeMap.insert_or_assign(btnStr, mapping->btnTriggerType);
-
-        // 记录按键映射类型
-        keyMappingTypeMap.insert_or_assign(btnStr, mapping->mappingType);
-
-        // 记录需要反转的轴
-        if(mapping->rotateAxis == 1){
-            rotateAxisList.push_back(btnStr);
-        }
-
-        // handleMap还没有该按键, 直接添加
-        if(handleMap.find(btnStr) == handleMap.end()){
-            handleMap.insert_or_assign(btnStr, mapping->keyboard_value);
-        }
-    }
-}
-
-bool SimulateTask::isAxisRotate(std::string btnName){
-    for(auto item : rotateAxisList){
-        if(item == btnName){
-            return true;
-        }
-    }
-
-    return false;
-}
-
-SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
+SimulateTask::SimulateTask(QVector<MappingRelation> mappingList, const QVector<LPDIRECTINPUTDEVICE8>& readDataNeedInitedDeviceList){
     this->mappingList = mappingList;
+    this->readDataNeedInitedDeviceList = readDataNeedInitedDeviceList;
+    // 用户配置
+    userConfig = ConfigService::get();
 
     // 如果映射列表里有映射xbox的记录, 才需要初始化虚拟xbox手柄
-    this->needStartVirtualXbox = hasXboxMappingInMappingList(mappingList);
+    this->needStartVirtualXbox = Global::hasXboxMappingInMappingList(mappingList);
     handleMultiBtnVector.clear();
 
-    for(MappingRelation* mapping : mappingList){
+    for(MappingRelation& mapping : mappingList){
         if(isMappingValid(mapping)){
+            // 添加到按键模拟需要的map, key 按键名称 : value 按键值
             addMappingToHandleMap(mapping);
 
             // 将映射添加进多按键映射列表
-            MappingRelation newMapping = *mapping;
+            MappingRelation newMapping = mapping;
             handleMultiBtnVector.push_back(newMapping);
         }
     }
@@ -62,18 +37,20 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
     // 未排序的组合键映射列表
     handleMultiBtnVectorUnsort = handleMultiBtnVector;
 
+    auto angleString = StringConstants::angle;
+
     // 对组合键映射列表排序, 按子键的数量倒序
-    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [](MappingRelation a, MappingRelation b) {
-        // 比较加号的数量 
+    std::sort(handleMultiBtnVector.begin(), handleMultiBtnVector.end(), [angleString](MappingRelation a, MappingRelation b) {
+        // 比较加号的数量
         int aPlusCount = std::count(a.dev_btn_name.begin(), a.dev_btn_name.end(), '+');
         int bPlusCount = std::count(b.dev_btn_name.begin(), b.dev_btn_name.end(), '+');
         if (aPlusCount != bPlusCount) {
             return aPlusCount > bPlusCount;  // 按加号数量降序排列
         }
         // 如果加号数量相同, 则没有角度的靠前
-        if (a.dev_btn_name.find("角度") != std::string::npos && b.dev_btn_name.find("角度") == std::string::npos) {
+        if (a.dev_btn_name.contains(angleString) && !b.dev_btn_name.contains(angleString)) {
             return false;  // a有角度, b没有角度, a靠后
-        } else if (a.dev_btn_name.find("角度") == std::string::npos && b.dev_btn_name.find("角度") != std::string::npos) {
+        } else if (!a.dev_btn_name.contains(angleString) && b.dev_btn_name.contains(angleString)) {
             return true;  // a没有角度, b有角度, a靠前
         }
         // 字符串大小比较
@@ -84,9 +61,42 @@ SimulateTask::SimulateTask(std::vector<MappingRelation*> mappingList){
     handleMultiBtnVectorSorted = handleMultiBtnVector;
 
     // 如果不启用最长组合键优先模式, 就使用 未排序的
-    if (!AssistFuncWindow::getEnableOnlyLongestMapping()) {
+    if (!ConfigService::getGlobalUserConfig().SYSTEM_enableOnlyLongestMapping) {
         handleMultiBtnVector = handleMultiBtnVectorUnsort;
     }
+}
+
+void SimulateTask::addMappingToHandleMap(const MappingRelation& mapping){
+    // 记录按键触发模式
+    if(mapping.valid){
+        auto btnStr = mapping.deviceName + "-" + mapping.dev_btn_name;
+
+        // 记录按键触发模式
+        keyTriggerTypeMap[btnStr] = mapping.btnTriggerType;
+
+        // 记录按键映射类型
+        keyMappingTypeMap[btnStr] = mapping.mappingType;
+
+        // 记录需要反转的轴
+        if(mapping.rotateAxis == 1){
+            rotateAxisList.push_back(btnStr);
+        }
+
+        // handleMap还没有该按键, 直接添加
+        if(handleMap.find(btnStr) == handleMap.end()){
+            handleMap[btnStr] = mapping.keyboard_value;
+        }
+    }
+}
+
+bool SimulateTask::isAxisRotate(QString btnName){
+    for(auto const &item : rotateAxisList){
+        if(item == btnName){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void SimulateTask::closeDevice(){
@@ -98,17 +108,17 @@ void SimulateTask::closeDevice(){
 }
 
 // 检查当前按键是否一直在按住
-bool SimulateTask::isCurrentKeyHolding(std::string keyStr){
-    return keyHoldingMap.find(keyStr) != keyHoldingMap.end();
+bool SimulateTask::isCurrentKeyHolding(QString keyStr){
+    return keyHoldingMap.contains(keyStr);
 }
 
-bool isCurrentBtnInList(QList<MappingRelation*> pressBtnList, std::string currentBtn){
+bool isCurrentBtnInList(const QVector<MappingRelation>& pressBtnList, QString currentBtn){
     if(pressBtnList.empty()){
         return false;
     }
 
     for(auto item : pressBtnList){
-        if(item->deviceName.toStdString() + "-" + item->dev_btn_name == currentBtn){
+        if(Global::getBtnOrAxisFullName(item.deviceName, item.dev_btn_name) == currentBtn){
             return true;
         }
     }
@@ -116,16 +126,16 @@ bool isCurrentBtnInList(QList<MappingRelation*> pressBtnList, std::string curren
     return false;
 }
 
-void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
+void SimulateTask::releaseAllKey(const QVector<MappingRelation>& pressBtnList){
     // 使用迭代器遍历并删除符合条件的键
     for (auto item = keyHoldingMap.begin(); item != keyHoldingMap.end(); ) {
 
-        std::string btnStr = item->first;
+        auto btnStr = item.key();
 
         // 本次按下的按键列表为空, 或者当前按下的按键列表中不包含当前按键, 则松开当前按键
         if (pressBtnList.empty() || !isCurrentBtnInList(pressBtnList, btnStr)) {
             // 键盘按键组合键释放
-            auto vkeyList = item->second.split(KEYBOARD_COMBINE_KEY_SPE);
+            auto vkeyList = item.value().split(KEYBOARD_COMBINE_KEY_SPE);
             for(auto vkey : vkeyList){
                 int scanCode = vkey.toInt();
 
@@ -139,10 +149,16 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                         // 模拟按下
                         simulateKeyPressMs(scanCode, RELEASE_DELAY_MS);
                         break;
+
                     case TriggerTypeEnum::Normal:
                         // 释放该位置的按键
                         simulateKeyPress(scanCode, true);
+                        break;
+
+                    default:
+                        break;
                     }
+
 
                 }else{
                     // 映射xbox
@@ -154,16 +170,23 @@ void SimulateTask::releaseAllKey(QList<MappingRelation*> pressBtnList){
                         // 模拟按下
                         simulateXboxKeyPressMs(NormalButton, scanCode, 0, RELEASE_DELAY_MS);
                         break;
+
                     case TriggerTypeEnum::Normal:
                         // 释放该位置的按键
                         simulateXboxKeyPress(NormalButton, scanCode, 0, true);
+                        break;
+
+                    default:
+                        break;
                     }
                 }
             }
 
-            item = keyHoldingMap.erase(item); // 删除并更新迭代器
+            // 删除并更新迭代器
+            item = keyHoldingMap.erase(item);
         } else {
-            ++item; // 继续下一个
+            // 继续下一个
+            ++item;
         }
     }
 
@@ -484,11 +507,11 @@ void SimulateTask::closeXboxController(){
     }
 }
 
-QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
-    QList<std::string> list;
+QVector<QString> SimulateTask::getBtnStrListFromHandleMap(QString btnStr){
+    QVector<QString> list;
 
     // 没有该按键的映射
-    if(handleMap.find(btnStr) == handleMap.end()){
+    if(!handleMap.contains(btnStr)){
         return list;
     }else{
         list.append(btnStr);
@@ -497,56 +520,66 @@ QList<std::string> SimulateTask::getBtnStrListFromHandleMap(std::string btnStr){
 
     for (int i=1;;i++){
         // 没有该按键, 直接返回
-        if(handleMap.find(btnStr + "#" + std::to_string(i)) == handleMap.end()){
+        if(!handleMap.contains(btnStr + "#" + QString::number(i))){
             return list;
         }else{
-            list.append(btnStr + "#" + std::to_string(i));
+            list.append(btnStr + "#" + QString::number(i));
         }
     }
 }
 
-QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
+void SimulateTask::handleResult(QVector<MappingRelation>& res){
     if(!res.isEmpty()){
+        // 用户配置对象
+        auto userConfig = ConfigService::get();
+
+        // "左转"
+        auto wheelLeft = StringConstants::text_wheelLeft;
+        // "右转"
+        auto wheelRight = StringConstants::text_wheelRight;
+
         for(auto &currentBtn : res){
             // 按键名称补上设备名称
-            auto btnStr = currentBtn->deviceName.toStdString() + "-" + currentBtn->dev_btn_name;
-          
+            auto btnStr = Global::getBtnOrAxisFullName(currentBtn.deviceName,
+                                                       currentBtn.dev_btn_name);
+
             // 轴映射键盘
-            if((keyMappingTypeMap[btnStr] == MappingType::Keyboard) && btnStr.find("轴") != std::string::npos){
+            if((keyMappingTypeMap[btnStr] == MappingType::Keyboard)
+                && btnStr.contains(StringConstants::axisString)){
                 // 当前轴的值范围
-                auto currentRange = axisValueRangeMap.find(btnStr)->second;
+                auto currentRange = DirectInputService::getAxisValueRangeMap().value(btnStr);
                 int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
                 int mid = (currentMax + currentMin)/2;
 
                 // 配置了盘面轴左转映射
-                if(handleMap.find(btnStr + "左转") != handleMap.end()){
+                if(handleMap.contains(btnStr + wheelLeft)){
                     // 设置了轴反转
-                    if(isAxisRotate(btnStr + "左转")){
-                        if(currentBtn->dev_btn_value >= static_cast<int>(mid + ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                    if(isAxisRotate(btnStr + wheelLeft)){
+                        if(currentBtn.dev_btn_value >= static_cast<int>(mid + ((currentMax - mid) * userConfig.steeringAxisInnerDeadZone))){
                             //btnStr += "左转";
-                            currentBtn->dev_btn_name += "左转";
+                            currentBtn.dev_btn_name += wheelLeft;
                         }
                     }else{
                         //qDebug("当前值: %d, 设定值: %d", currentBtn->dev_btn_value, static_cast<int>(mid - ((currentMax - mid) * getInnerDeadAreaPanti())));
-                        if(currentBtn->dev_btn_value <= static_cast<int>(mid - ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                        if(currentBtn.dev_btn_value <= static_cast<int>(mid - ((currentMax - mid) * userConfig.steeringAxisInnerDeadZone))){
                             //btnStr += "左转";
-                            currentBtn->dev_btn_name += "左转";
+                            currentBtn.dev_btn_name += wheelLeft;
                         }
                     }
 
                 }
                 // 配置了盘面轴右转映射
-                if(handleMap.find(btnStr + "右转") != handleMap.end()){
+                if(handleMap.find(btnStr + wheelRight) != handleMap.end()){
                     // 设置了轴反转
-                    if(isAxisRotate(btnStr + "右转")){
-                        if(currentBtn->dev_btn_value <= (mid - ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                    if(isAxisRotate(btnStr + wheelRight)){
+                        if(currentBtn.dev_btn_value <= (mid - ((currentMax - mid) * userConfig.steeringAxisInnerDeadZone))){
                             //btnStr += "右转";
-                            currentBtn->dev_btn_name += "右转";
+                            currentBtn.dev_btn_name += wheelRight;
                         }
                     }else{
-                        if(currentBtn->dev_btn_value >= (mid + ((currentMax - mid) * getInnerDeadAreaPanti()))){
+                        if(currentBtn.dev_btn_value >= (mid + ((currentMax - mid) * userConfig.steeringAxisInnerDeadZone))){
                             //btnStr += "右转";
-                            currentBtn->dev_btn_name += "右转";
+                            currentBtn.dev_btn_name += wheelRight;
                         }
                     }
 
@@ -556,27 +589,25 @@ QList<MappingRelation*> SimulateTask::handleResult(QList<MappingRelation*> res){
                     // 设置了轴反转
                     if(isAxisRotate(btnStr)){
                         // 值小于内部死区范围不生效
-                        if(currentBtn->dev_btn_value > (currentMax - ((currentMax - currentMin) * getInnerDeadAreaTaban()))){
+                        if(currentBtn.dev_btn_value > (currentMax - ((currentMax - currentMin) * userConfig.steeringAxisInnerDeadZone))){
                             //btnStr = "000000";
-                            currentBtn->dev_btn_name += "000000";
+                            currentBtn.dev_btn_name += "000000";
                         }
                     }else{
                         // 值小于内部死区范围不生效
-                        if(currentBtn->dev_btn_value < (currentMin + ((currentMax - currentMin) * getInnerDeadAreaTaban()))){
+                        if(currentBtn.dev_btn_value < (currentMin + ((currentMax - currentMin) * userConfig.steeringAxisInnerDeadZone))){
                             //btnStr = "000000";
-                            currentBtn->dev_btn_name += "000000";
+                            currentBtn.dev_btn_name += "000000";
                         }
                     }
                 }
             }
         }
     }
-
-    return res;
 }
 
 void SimulateTask::doWork(){
-    qDebug("全局映射启动!");
+    //qDebug("全局映射启动!");
 
     // 需要启动虚拟手柄
     if(this->needStartVirtualXbox){
@@ -591,11 +622,12 @@ void SimulateTask::doWork(){
         }
     }
 
-    setIsRuning(true);
+    RunningStatus::setIsRuning(true);
     emit startedSignal();
-    emit msgboxSignal(false, "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
+    // 移除弹窗提醒
+    //emit msgboxSignal(false, "启动全局映射成功!\n如果游戏里不生效, 请使用管理员身份重新运行本程序 ");
 
-    pushToQueue(parseSuccessLog("启动全局映射成功!"));
+    LogService::parseSuccessLog(StringConstants::startKeyMappingsRunningSuccess);
 
     // 记录 按键触发模式为 "保持按住且再次按下才松开" 的按键状态
     QMap<QString, int> keepPressMap;
@@ -605,29 +637,46 @@ void SimulateTask::doWork(){
     // 当前xbox右摇杆Y轴值
     int xboxRightJoystickValueY = 0;
 
-    // 设置系统定时器精度为1ms
-    timeBeginPeriod(1);
 
-    while(getIsRunning()){
+    // 设置系统计时器精度
+    Global::setSystemTimePeriod_1ms();
+
+    // 高精度时钟, 用于固定while循环的执行频率
+    using clock = std::chrono::high_resolution_clock;
+    // 本轮执行的开始时间
+    auto currentExcuteTime = clock::now();
+
+    // 执行频率(hz)
+    auto excuteFrequency = 200;
+    // 每轮执行的最大时间 毫秒
+    auto each_mstime = 1000 / excuteFrequency;
+
+    // 存储结果
+    QVector<MappingRelation> res;
+
+    while(RunningStatus::getIsRunning()){
+        auto now = clock::now();
+        // 如果本轮执行的开始时间 已经滞后, 重置本轮执行的开始时间
+        if(currentExcuteTime < now){
+            currentExcuteTime = now;
+        }
+
         // 轮询设备状态
-        auto res = getInputState(false, handleMultiBtnVector);
+        DirectInputService::getInputState(res, this->readDataNeedInitedDeviceList, true, true, false, handleMultiBtnVector, userConfig.SYSTEM_enableOnlyLongestMapping);
 
         // 对res进行处理
-        res = handleResult(res);
+        handleResult(res);
 
         // 根据本次设备状态, 松开本次没有被按下的按键
         releaseAllKey(res);
 
         // 对当前按下的按键列表循环操作
         for(int i=0; !res.empty() && i < res.size(); i++){
-            // 当前设备按钮的字符串
-            //auto btnStrList = getBtnStrListFromHandleMap(res[i]->dev_btn_name);
-
             // 当前方向盘按键
             auto currentBtn = res[i];
 
             // 按键名称补上设备名称
-            std::string btnStr = currentBtn->deviceName.toStdString() + "-" + currentBtn->dev_btn_name;
+            auto btnStr = Global::getBtnOrAxisFullName(currentBtn.deviceName, currentBtn.dev_btn_name);
 
             // 先检查当前按钮是否在持续按下
             if(isCurrentKeyHolding(btnStr)){
@@ -643,8 +692,8 @@ void SimulateTask::doWork(){
                 //qDebug() << "按键[" << btnStr.data() << "]存在映射, 正在模拟对应操作";
 
                 // 按下了配置的暂停按键
-                if(item->second.contains(PAUSE_BTN_VAL_STR)){
-                    clickPauseBtn();
+                if(item.value().contains(PAUSE_BTN_VAL_STR)){
+                    RunningStatus::clickPauseBtn();
                     releaseAllKey({});
 
                     // 提交暂停按键被按下的信号
@@ -656,11 +705,12 @@ void SimulateTask::doWork(){
                 // qDebug() << "当前isPause值: " << (isPause ? "true" : "false");
 
                 // 如果当前是暂停状态, 跳过后续的映射操作
-                if(getIsPause()){
+                if(RunningStatus::getIsPause()){
                     continue;
                 }
 
-                auto vkeyList = item->second.split(KEYBOARD_COMBINE_KEY_SPE);
+                // 组合键拆分成列表
+                auto vkeyList = item.value().split(KEYBOARD_COMBINE_KEY_SPE);
                 for(auto vkey : vkeyList){
                     short scanCode = vkey.toInt();
 
@@ -669,10 +719,10 @@ void SimulateTask::doWork(){
                         // 对映射鼠标左键(-7), 鼠标右键(-8), 鼠标中键(-11), 以及其它键盘按键进行按下记录
                         if(scanCode == -7 || scanCode == -8 || scanCode == -11 ||  scanCode > 0){
                             if(keyHoldingMap.find(btnStr) != keyHoldingMap.end()){
-                                keyHoldingMap.insert_or_assign(btnStr, keyHoldingMap[btnStr] + KEYBOARD_COMBINE_KEY_SPE + vkey);
+                                keyHoldingMap[btnStr] = keyHoldingMap[btnStr] + KEYBOARD_COMBINE_KEY_SPE + vkey;
                             }else{
                                 // 记录按键按下
-                                keyHoldingMap.insert_or_assign(btnStr, item->second);
+                                keyHoldingMap[btnStr] = item.value();
                             }
                         }
 
@@ -716,7 +766,7 @@ void SimulateTask::doWork(){
                         case TriggerTypeEnum::KeepPress:
                         {
                             // 保持按下的按键名称
-                            QString keepPressBtnStr = (btnStr + std::to_string(scanCode)).data();
+                            QString keepPressBtnStr = btnStr + QString::number(scanCode);
                             if(keepPressMap.contains(keepPressBtnStr)){
                                 // 松开按键
                                 simulateKeyPress(scanCode, true);
@@ -741,14 +791,14 @@ void SimulateTask::doWork(){
                         //auto currentBtn = res[i];
 
                         // 映射普通xbox按键
-                        if(currentBtn->dev_btn_type == (std::string)WHEEL_BUTTON){
+                        if(currentBtn.dev_btn_type == DeviceDataTypeEnum::WHEEL_BUTTON){
                             // qDebug("映射Xbox模式-按键按下:%s", btnStr.data());
 
                             if(keyHoldingMap.find(btnStr) != keyHoldingMap.end()){
-                                keyHoldingMap.insert_or_assign(btnStr, keyHoldingMap[btnStr] + KEYBOARD_COMBINE_KEY_SPE + vkey);
+                                keyHoldingMap[btnStr] = keyHoldingMap[btnStr] + KEYBOARD_COMBINE_KEY_SPE + vkey;
                             }else{
                                 // 记录按键按下
-                                keyHoldingMap.insert_or_assign(btnStr, item->second);
+                                keyHoldingMap[btnStr] = item.value();
                             }
 
                             // 根据触发模式, 进行对应处理
@@ -791,7 +841,7 @@ void SimulateTask::doWork(){
                             case TriggerTypeEnum::KeepPress:
                             {
                                 // 保持按下的按键名称
-                                QString keepPressBtnStr = (btnStr + std::to_string(scanCode)).data();
+                                QString keepPressBtnStr = btnStr + QString::number(scanCode);
                                 if(keepPressMap.contains(keepPressBtnStr)){
                                     // 松开按键
                                     simulateXboxKeyPress(NormalButton, scanCode, 0, true);
@@ -819,7 +869,7 @@ void SimulateTask::doWork(){
                             auto xboxRange = XBOX_AXIS_VALUE_RANGE_MAP.find(scanCode)->second;
                             int xboxMin = xboxRange.minVal, xboxMax = xboxRange.maxVal;
 
-                            auto currentRange = axisValueRangeMap.find(btnStr)->second;
+                            auto currentRange = DirectInputService::getAxisValueRangeMap().value(btnStr);
                             int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
 
                             // 按键类型
@@ -827,9 +877,9 @@ void SimulateTask::doWork(){
 
                             double devAxisDataPer = 0.0;// 设备的值占设备值的范围的百分比
                             if(!isAxisRotate(btnStr)){
-                                devAxisDataPer = (static_cast<double>(currentBtn->dev_btn_value) - currentMin) / (currentMax - currentMin);
+                                devAxisDataPer = (static_cast<double>(currentBtn.dev_btn_value) - currentMin) / (currentMax - currentMin);
                             }else{
-                                devAxisDataPer = (currentMax - static_cast<double>(currentBtn->dev_btn_value)) /(currentMax - currentMin);
+                                devAxisDataPer = (currentMax - static_cast<double>(currentBtn.dev_btn_value)) /(currentMax - currentMin);
                             }
 
                             int finalValue = 0;// 最终映射成手柄的值
@@ -837,7 +887,7 @@ void SimulateTask::doWork(){
                             // 设置的摇杆内部死区值
                             if(inputType == XboxInputType::LeftJoystick || inputType == XboxInputType::RightJoystick){
                                 // 摇杆内部死区值
-                                int innerDeadAreaValue = (xboxMax - xboxMin) / 2 * getXboxJoystickInnerDeadAreaValue();
+                                int innerDeadAreaValue = (xboxMax - xboxMin) / 2 * userConfig.xboxJoystickInnerDeadAreaValue;
 
                                 int leftMin = xboxMin, leftMax = innerDeadAreaValue; // 手柄左半区的最小值最大值
                                 int rightMin = -innerDeadAreaValue, rightMax = xboxMax;// 手柄右半区的最小值最大值
@@ -854,14 +904,14 @@ void SimulateTask::doWork(){
 
                             // 设置的扳机内部死区值
                             if(inputType == XboxInputType::LeftTrigger || inputType == XboxInputType::RightTrigger){
-                                finalValue = calXboxSingleAxisFinalValue(getXboxTriggerInnerDeadAreaValue(), devAxisDataPer, xboxMax, xboxMin, false);
+                                finalValue = calXboxSingleAxisFinalValue(userConfig.xboxTriggerInnerDeadAreaValue, devAxisDataPer, xboxMax, xboxMin, false);
                             }
 
                             // 设置摇杆Y轴的 上半轴和下半轴
                             if(inputType == XboxInputType::LeftJoystickUpperY  || inputType == XboxInputType::LeftJoystickLowerY
                                 || inputType == XboxInputType::RightJoystickUpperY || inputType == XboxInputType::RightJoystickLowerY){
 
-                                finalValue = calXboxSingleAxisFinalValue(getXboxJoystickInnerDeadAreaValue(), devAxisDataPer, xboxMax, xboxMin, (xboxMin < 0 && xboxMax == 0));
+                                finalValue = calXboxSingleAxisFinalValue(userConfig.xboxJoystickInnerDeadAreaValue, devAxisDataPer, xboxMax, xboxMin, (xboxMin < 0 && xboxMax == 0));
 
                                 // 如果当前左摇杆Y轴处于上移状态, 就需要跳过Y轴下半轴的静置状态数据0, 反之如果Y轴处于下移状态, 就需要跳过上半轴的静置数据0
                                 if(((xboxLeftJoystickValueY > 0 && inputType == XboxInputType::LeftJoystickLowerY) || (xboxLeftJoystickValueY < 0 && inputType == XboxInputType::LeftJoystickUpperY))
@@ -890,15 +940,18 @@ void SimulateTask::doWork(){
             }
         }
 
-        // 释放res内存
-        qDeleteAll(res);  // 删除所有指针指向的对象
-        res.clear();      // 清空列表
+        // 处理事件队列
+        QCoreApplication::processEvents();
 
-        Sleep(5);
+        // 本轮执行的结束时间 = 开始时间 + 固定的每轮执行时间
+        currentExcuteTime += std::chrono::milliseconds(each_mstime);;
+
+        // 休眠至设置的 本次执行的结束时间
+        std::this_thread::sleep_until(currentExcuteTime);
     }
 
     // 恢复默认的系统定时器精度
-    timeEndPeriod(1);
+    Global::restoreSystemTimePeriod();
 
     // 关闭虚拟xbox设备
     closeXboxController();
@@ -906,9 +959,13 @@ void SimulateTask::doWork(){
     // 提交工作结束信号
     emit workFinished();
 
-    emit msgboxSignal(false, "全局映射已停止!");
+    LogService::pushToLogQueue(StringConstants::stopKeyMappingsRunningSucess);
+}
 
-    pushToQueue("全局映射已停止!");
+void SimulateTask::settingsChangedSlot()
+{
+    // 更新用户配置
+    userConfig = ConfigService::get();
 }
 
 // 根据设置的内部死区, 计算出xbox轴的最终值
@@ -1005,11 +1062,13 @@ void SimulateTask::simulateKeyPress(short scanCode, bool isKeyRelease) {
         input.type = INPUT_MOUSE;
         input.mi.dwFlags = MOUSEEVENTF_MOVE;  // 相对移动
 
+        auto mouseMoveSpeedTimes = ConfigService::get().mouseMoveSpeedTimes;
+
         // x轴移动像素数
-        auto xValue = MOUSE_X_SPEED * getMouseMoveSpeedTimes();
+        auto xValue = MOUSE_X_SPEED * mouseMoveSpeedTimes;
         long dx = (xValue < 1) ? 1 : xValue;
         // y轴移动像素数
-        auto yValue = MOUSE_Y_SPEED * getMouseMoveSpeedTimes();
+        auto yValue = MOUSE_Y_SPEED * mouseMoveSpeedTimes;
         long dy = (yValue < 1) ? 1 : yValue;
 
         // 鼠标左移
@@ -1100,7 +1159,7 @@ void SimulateTask::simulateKeyDelayPressMs(short vkey, size_t pressMs, size_t de
 
 void SimulateTask::changeEnableOnlyLongestMapping(){
     // 如果启用最长组合键优先模式, 就使用 已排序的, 否则使用未排序的
-    AssistFuncWindow::getEnableOnlyLongestMapping()
+    ConfigService::getGlobalUserConfig().SYSTEM_enableOnlyLongestMapping
         ? handleMultiBtnVector = handleMultiBtnVectorSorted
         : handleMultiBtnVector = handleMultiBtnVectorUnsort;
 

@@ -1,5 +1,4 @@
-#ifndef CUSTOMLISTVIEW_H
-#define CUSTOMLISTVIEW_H
+#pragma once
 
 #include<QListView>
 #include<QStandardItemModel>
@@ -21,25 +20,22 @@ protected:
             return;
         }
 
-        // 获取模型项
         QStandardItemModel* model = qobject_cast<QStandardItemModel*>(this->model());
-        if (!model) {
-            QListView::mousePressEvent(event);
-            return;
+        if (model) {
+            QStandardItem* item = model->itemFromIndex(index);
+            emit itemClicked(item);
         }
 
-        QStandardItem* item = model->itemFromIndex(index);
-
-        emit itemClicked(item);
+        // 必须调用 base class
+        QListView::mousePressEvent(event);
     }
 
-    void mouseReleaseEvent(QMouseEvent *e) override {
-        e->accept(); // 阻止默认行为
-    }
+    // void mouseReleaseEvent(QMouseEvent *e) override {
+    //     e->accept(); // 阻止默认行为
+    // }
 
-    void mouseDoubleClickEvent(QMouseEvent *e) override {
-        e->accept(); // 阻止默认行为
-    }
+    // void mouseDoubleClickEvent(QMouseEvent *e) override {
+    //     e->accept(); // 阻止默认行为
+    // }
 };
 
-#endif // CUSTOMLISTVIEW_H

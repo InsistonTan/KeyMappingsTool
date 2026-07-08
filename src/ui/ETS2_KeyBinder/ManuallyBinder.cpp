@@ -1,5 +1,6 @@
-#include "manuallybinder.h"
-#include "ui_manuallybinder.h"
+#include "ManuallyBinder.h"
+#include "common/StringConstants.h"
+#include "ui_ManuallyBinder.h"
 #include <QMessageBox>
 
 using namespace std;
@@ -67,7 +68,7 @@ void ManuallyBinder::on_pushButton_clicked() {
 
     actionEffect.insert_or_assign(keyIndex, !ui->comboBox_3->currentIndex()); // 添加按键索引和状态
 
-    QString keyName = "\"按键" + QString::number(keyIndex + 1) + " " + ui->comboBox_3->currentText() + "\""; // 按键名称
+    QString keyName = "\"" + StringConstants::btnString + QString::number(keyIndex + 1) + " " + ui->comboBox_3->currentText() + "\""; // 按键名称
     if (ui->lineEdit->text().isEmpty()) {
         ui->lineEdit->setText(keyName); // 设置文本框内容
     } else {

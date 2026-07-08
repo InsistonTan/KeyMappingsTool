@@ -1,9 +1,8 @@
-#ifndef ASSISTFUNCWORKER_H
-#define ASSISTFUNCWORKER_H
+#pragma once
 
 #include <QObject>
 #include <windows.h>  // 包含 DWORD 的定义
-#include"scs-telemetry-common.hpp"
+#include "SCS_Telemetry/scs-telemetry-common.hpp"
 
 class AssistFuncWorker : public QObject
 {
@@ -26,5 +25,3 @@ public:
 
     scsTelemetryMap_t* readETS2Data();
 };
-
-#endif // ASSISTFUNCWORKER_H

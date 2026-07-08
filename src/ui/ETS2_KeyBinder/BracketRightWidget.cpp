@@ -1,4 +1,4 @@
-#include "bracketrightwidget.h"
+#include "BracketRightWidget.h"
 #include <QPainter>
 
 BracketRightWidget::BracketRightWidget(QWidget* parent) : QWidget(parent) {

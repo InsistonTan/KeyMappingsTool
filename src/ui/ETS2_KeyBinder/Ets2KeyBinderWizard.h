@@ -1,18 +1,18 @@
-#ifndef ETS2KEYBINDERWIZARD_H
-#define ETS2KEYBINDERWIZARD_H
+#pragma once
 
 // 参考开源项目：https://github.com/Sab1e-GitHub/ETS2-KeyBinder
 // 参考开源项目：https://github.com/InsistonTan/KeyMappingsTool
 
-#include "BigKey.hpp"
-#include "global.h"
-#include "showkeystate.h"
-#include <QDir>
-#include <QStandardPaths>
-#include <QWizard>
+#include "common/BigKey.hpp"
+#include "common/Global.h"
+#include "ui/ETS2_KeyBinder/ShowKeyState.h"
 #include <dinput.h>
 #include <string.h>
 #include <windows.h>
+
+#include <QDir>
+#include <QStandardPaths>
+#include <QWizard>
 
 // 枚举类型定义
 enum class BindingType
@@ -137,8 +137,8 @@ private:
                            QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/American Truck Simulator/profiles"};
     QString selectedProfilePath; // 选择的配置文件路径
 
-    QList<QPair<QString, QDateTime>> steamProfileFolders;
-    QList<QPair<QString, QDateTime>> profileFolders; // 所有配置文件列表
+    QVector<QPair<QString, QDateTime>> steamProfileFolders;
+    QVector<QPair<QString, QDateTime>> profileFolders; // 所有配置文件列表
 
     std::map<BindingType, QPushButton*> uiBtnMap;
 
@@ -176,4 +176,3 @@ private:
     bool tryAutoSelectGameInputTypeAndProfile(QPair<QString, QDateTime> profileFolder, bool isSteamProfile);
 };
 
-#endif // ETS2KEYBINDERWIZARD_H

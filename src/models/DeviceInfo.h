@@ -1,5 +1,4 @@
-#ifndef DEVICE_INFO_H
-#define DEVICE_INFO_H
+#pragma once
 
 #include <string>
 
@@ -35,5 +34,3 @@ public:
         return pid;
     }
 };
-
-#endif // DEVICE_INFO_H

@@ -1,10 +1,15 @@
 #include "AssistFuncWorker.h"
-#include<QThread>
-#include<QCoreApplication>
+#include "common/Global.h"
+#include "common/StringConstants.h"
 #include <tchar.h>
+
+#include <QThread>
+#include <QCoreApplication>
 #include <cctype>
-#include<QTimer>
-#include"global.h"
+#include <QTimer>
+
+#include <services/LogService.h>
+
 
 #define MAPPING_FILE_NAME SCS_PLUGIN_MMF_NAME
 #define SHARED_MEMORY_SIZE (3 * 1024)
@@ -30,7 +35,7 @@ scsTelemetryMap_t* AssistFuncWorker::readETS2Data(){
 
         if (hMapFile == nullptr) {
             if(!isWarningLogShow){
-                pushToQueue(parseWarningLog("无法打开共享内存:" + QString(MAPPING_FILE_NAME) + ", 欧卡2可能未运行, 将等待欧卡2运行..."));
+                LogService::parseWarningLog(StringConstants::openETS2ShareMemoryFailed.arg(QString(MAPPING_FILE_NAME)));
                 isWarningLogShow = true;
             }
             QThread::msleep(1000);
@@ -48,7 +53,7 @@ scsTelemetryMap_t* AssistFuncWorker::readETS2Data(){
         return nullptr;
     }
 
-    pushToQueue(parseSuccessLog("打开共享内存:" + QString(MAPPING_FILE_NAME) + "成功!"));
+    LogService::parseSuccessLog(StringConstants::openETS2ShareMemorySuccess.arg(QString(MAPPING_FILE_NAME)));
 
     // 映射到进程地址空间
     byte* bytes = (byte*)MapViewOfFile(
@@ -60,12 +65,12 @@ scsTelemetryMap_t* AssistFuncWorker::readETS2Data(){
 
 
     if (bytes == nullptr) {
-        pushToQueue(parseErrorLog("从共享内存获取数据失败!"));
+        LogService::parseErrorLog(StringConstants::readDataFromETS2ShareMemoryFailed);
         CloseHandle(hMapFile);
         return nullptr;
     }
 
-    pushToQueue(parseSuccessLog("从共享内存获取数据成功!"));
+    LogService::parseSuccessLog(StringConstants::readDataFromETS2ShareMemorySuccess);
 
     return (scsTelemetryMap_t*)bytes;
 }
@@ -99,61 +104,11 @@ void simulateKeyPress(short scanCode, bool isKeyRelease) {
 
         SendInput(1, &input, sizeof(INPUT));
     }
-    // else{
-    //     // 模拟鼠标移动操作
-    //     // 构造鼠标事件
-    //     INPUT input = {0};
-    //     input.type = INPUT_MOUSE;
-    //     input.mi.dwFlags = MOUSEEVENTF_MOVE;  // 相对移动
-    //     // 鼠标左移
-    //     if(scanCode == -1){
-    //         input.mi.dx = -MOUSE_X_SPEED;
-    //         input.mi.dy = 0;
-    //     }
-    //     // 鼠标上移
-    //     else if(scanCode == -2){
-    //         input.mi.dx = 0;
-    //         input.mi.dy = -MOUSE_Y_SPEED;
-    //     }
-    //     // 鼠标右移
-    //     else if(scanCode == -3){
-    //         input.mi.dx = MOUSE_X_SPEED;
-    //         input.mi.dy = 0;
-    //     }
-    //     // 鼠标下移
-    //     else if(scanCode == -4){
-    //         input.mi.dx = 0;
-    //         input.mi.dy = MOUSE_Y_SPEED;
-    //     }
-    //     // 鼠标左键长按
-    //     // else if(scanCode == -5){
-    //     //     input.mi.dwFlags = isMouseLeftHolding ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
-    //     // }
-    //     // // 鼠标右键长按
-    //     // else if(scanCode == -6){
-    //     //     input.mi.dwFlags = isMouseRightHolding ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
-    //     // }
-
-    //     // 鼠标左键点击
-    //     else if(scanCode == -7){
-    //         input.mi.dwFlags = !isKeyRelease ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
-    //     }
-    //     // 鼠标右键点击
-    //     else if(scanCode == -8){
-    //         input.mi.dwFlags = !isKeyRelease ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
-    //     }else{
-    //         // 其它无效操作不模拟
-    //         return;
-    //     }
-
-
-    //     // 发送鼠标事件
-    //     SendInput(1, &input, sizeof(INPUT));
-    // }
-
 }
 
 void AssistFuncWorker::doWork(){
+    LogService::parseSuccessLog(StringConstants::ets2AssistFuncWorkerStart);
+
     // 从共享内存读取遥测数据
     scsTelemetryMap_t* bytes = readETS2Data();
 
@@ -173,7 +128,7 @@ void AssistFuncWorker::doWork(){
         // qDebug("手刹:%d, 油门:%.4f", handbrakeResult, acceleratorResult);
         // qDebug("lightsParking:%d, lightsBeamLow:%d, lightsBeamHigh:%d, lightsBeacon:%d, lightsBrake:%d, lightsReverse:%d, lightsHazard:%d", bytes->truck_b.lightsParking, bytes->truck_b.lightsBeamLow, bytes->truck_b.lightsBeamHigh, bytes->truck_b.lightsBeacon, bytes->truck_b.lightsBrake, bytes->truck_b.lightsReverse, bytes->truck_b.lightsHazard);
         if(handbrakeResult == 1 && acceleratorResult > 0.5f){
-            pushToQueue("当前手刹为启用状态, 且油门大于50%, 正在模拟空格键解除手刹...");
+            LogService::pushToLogQueue(StringConstants::releasingHandBrake);
 
             // 模拟空格键按下
             simulateKeyPress(0x39, false);
@@ -191,9 +146,7 @@ void AssistFuncWorker::doWork(){
         QCoreApplication::processEvents();
     }
 
-
-    //qDebug("finished");
-    //pushToQueue("欧卡2辅助功能线程结束");
+    LogService::parseWarningLog(StringConstants::ets2AssistFuncWorkerFinished);
 
     emit workFinished();
 }

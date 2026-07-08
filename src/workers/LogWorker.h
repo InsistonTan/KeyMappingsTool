@@ -1,7 +1,7 @@
-#ifndef LOGWORKER_H
-#define LOGWORKER_H
+#pragma once
 
-#include "global.h"
+#include "qcoreapplication.h"
+#include "services/LogService.h"
 #include <QThread>
 
 // 日志获取线程
@@ -13,16 +13,18 @@ public:
     // 线程执行体
     void run() override{
         while(true){
-            auto size = getQueueSize();
+            auto size = LogService::getLogQueueSize();
             for(int i=0; i < size; i++){
-                auto log = popQueue();
+                auto log = LogService::popLogQueue();
                 if(!log.isEmpty()){
                     emit updateLogSignal(log);
                 }
             }
 
             QThread::msleep(150);
+
+            // 响应 QT事件
+            QCoreApplication::processEvents();
         }
     }
 };
-#endif // LOGWORKER_H

@@ -1,1 +1,26 @@
-IDI_ICON1 ICON "wheel_icon_64x64_2.ico"
+#include <windows.h>
+
+IDI_ICON1 ICON "app.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,3,0,0
+ PRODUCTVERSION 1,3,0,0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404B0"
+        BEGIN
+            VALUE "CompanyName", "InsistonTan"
+            VALUE "FileDescription", "KeyMappingsTool"
+            VALUE "FileVersion", "1.3.0"
+            VALUE "ProductName", "KeyMappingsTool"
+            VALUE "LegalCopyright", "Copyright (C) 2025 InsistonTan"
+            VALUE "OriginalFilename", "KeyMappingsTool.exe"
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0804, 1200
+    END
+END

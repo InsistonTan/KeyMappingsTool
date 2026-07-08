@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="128"
+   height="128"
+   viewBox="0 0 128 128"
+   fill="none"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="icon_ffb_simulate_修改.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs5" />
+  <sodipodi:namedview
+     id="namedview5"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="6.3125"
+     inkscape:cx="63.920792"
+     inkscape:cy="64"
+     inkscape:window-width="1920"
+     inkscape:window-height="1010"
+     inkscape:window-x="-6"
+     inkscape:window-y="-6"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg5" />
+  <!-- 外圈：方向盘 -->
+  <circle
+     cx="64"
+     cy="64"
+     r="46"
+     stroke="#60A5FA"
+     stroke-width="6"
+     id="circle1"
+     style="stroke-width:2.5;stroke-dasharray:none" />
+  <!-- 内圈 -->
+  <circle
+     cx="64"
+     cy="64"
+     r="20"
+     stroke="#93C5FD"
+     stroke-width="4"
+     id="circle2"
+     style="stroke-width:2.5;stroke-dasharray:none" />
+  <!-- 力反馈旋转箭头 -->
+  <path
+     d="M64 18            A46 46 0 0 1 110 64"
+     stroke="#3B82F6"
+     stroke-width="6"
+     stroke-linecap="round"
+     id="path2"
+     style="stroke-width:2.5;stroke-dasharray:none" />
+  <path
+     d="M110 64            A46 46 0 0 1 64 110"
+     stroke="#3B82F6"
+     stroke-width="6"
+     stroke-linecap="round"
+     id="path3"
+     style="stroke-width:2.5;stroke-dasharray:none" />
+  <!-- 动态力波纹（模拟反馈震动） -->
+  <path
+     d="M20 64            C28 56, 36 56, 44 64            C52 72, 60 72, 68 64"
+     stroke="#38BDF8"
+     stroke-width="4"
+     stroke-linecap="round"
+     opacity="0.9"
+     id="path4"
+     style="stroke-width:2.5;stroke-dasharray:none" />
+  <path
+     d="M60 64            C68 56, 76 56, 84 64            C92 72, 100 72, 108 64"
+     stroke="#38BDF8"
+     stroke-width="4"
+     stroke-linecap="round"
+     opacity="0.6"
+     id="path5"
+     style="stroke-width:2.5;stroke-dasharray:none" />
+  <!-- 中心力点 -->
+  <circle
+     cx="64.158424"
+     cy="63.366333"
+     fill="#60a5fa"
+     id="circle5"
+     style="stroke-width:0.894389"
+     r="5.3663363" />
+</svg>

@@ -1,8 +1,7 @@
-#ifndef SHOWKEYSTATE_H
-#define SHOWKEYSTATE_H
+#pragma once
 
-#include "BigKey.hpp"
-#include "global.h"
+#include "common/BigKey.hpp"
+#include "common/Global.h"
 #include <QWidget>
 
 namespace Ui {
@@ -27,4 +26,3 @@ private:
     size_t keyCount = DINPUT_MAX_BUTTONS; // 按键数量
 };
 
-#endif // SHOWKEYSTATE_H

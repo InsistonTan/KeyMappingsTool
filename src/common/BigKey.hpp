@@ -5,11 +5,10 @@
 #define ENABLE_QT false
 #endif
 
-#include <algorithm>
+#include <bitset>
 #include <cmath>
 #include <deque>
 #include <iostream>
-#include <regex>
 #include <stdexcept>
 #include <stdint.h>
 #include <string>
@@ -35,8 +34,8 @@ class BigKey {
     const friend BigKey operator^(const BigKey&, const BigKey&);  // 按位异或重载
     const friend BigKey operator~(BigKey&);                       // 取反重载
 
-    const friend BigKey operator>>(const BigKey&, size_t);  // 右移重载
-    const friend BigKey operator<<(const BigKey&, size_t);  // 左移重载
+    //const friend BigKey operator>>(const BigKey&, size_t);  // 右移重载
+    //const friend BigKey operator<<(const BigKey&, size_t);  // 左移重载
 
     friend BigKey operator&=(BigKey&, const BigKey&);  // 按位与重载
     friend BigKey operator|=(BigKey&, const BigKey&);  // 按位或重载
@@ -60,6 +59,14 @@ class BigKey {
     friend QDebug operator<<(QDebug dbg, const BigKey& p);  // 调试重载   （注意，不是返回引用）
 #endif
 
+private:
+#define BIGKEY_NUMBER 3  // 128位按键值，使用数组存储
+#define BIGKEY_TYPE_INTERNAL uint64_t  // 内部存储类型
+
+#define BIGKEY_MAX_BUTTONS (BIGKEY_NUMBER * (sizeof(BIGKEY_TYPE_INTERNAL) * 8))
+
+    BIGKEY_TYPE_INTERNAL key[BIGKEY_NUMBER];  // 128位按键值，使用数组存储
+
 public:
     BigKey();
     BigKey(const BigKey&);                //
@@ -68,6 +75,76 @@ public:
     BigKey(BigKey&&) noexcept;            // 移动构造
     BigKey operator=(const BigKey&);      // 赋值函数
     BigKey operator=(BigKey&&) noexcept;  // 移动赋值
+
+    // 为了解决 在使用 << 时, 编译器报: Use of overloaded operator '>>' is ambiguous
+    BigKey operator<<(size_t num2){
+        BigKey num1 = *this;
+        if (num2 == 0) {
+            return num1;  // 如果左移的位数为0，直接返回原值
+        }
+
+        BigKey temp1(num1);
+        BigKey temp2(num1);
+
+        if (num2 >= sizeof(BIGKEY_TYPE_INTERNAL) * 8) {
+            // 如果左移的位数大于64位，则需要分段处理
+            size_t num = num2 / (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+            temp1.clear();
+            for (int i = BIGKEY_NUMBER - 1; i >= num; i--) {
+                temp1.key[i] = num1.key[i - num];  // 左移
+            }
+            num2 = num2 % (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+            temp2 = temp1;
+        }
+        if (num2 == 0) {
+            return temp1;  // 如果左移的位数为0，直接返回原值
+        }
+
+        temp1.key[0] = temp2.key[0] << num2;  // 左移
+        for (int i = 1; i < BIGKEY_NUMBER; i++) {
+            temp1.key[i] = (temp2.key[i] << num2);
+            {
+                BIGKEY_TYPE_INTERNAL temp3 = temp2.key[i - 1] >> (sizeof(BIGKEY_TYPE_INTERNAL) * 8 - num2);
+                temp1.key[i] |= temp3;
+            }
+        }
+
+        return temp1;
+    }
+    BigKey operator>>(size_t num2){
+        BigKey num1 = *this;
+        if (num2 == 0) {
+            return num1;  // 如果右移的位数为0，直接返回原值
+        }
+
+        BigKey temp1(num1);
+        BigKey temp2(num1);
+
+        if (num2 >= sizeof(BIGKEY_TYPE_INTERNAL) * 8) {
+            // 如果右移的位数大于64位，则需要分段处理
+            size_t num = num2 / (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+            temp1.clear();
+            for (int i = 0; i < BIGKEY_NUMBER - num; i++) {
+                temp1.key[i] = num1.key[i + num];  // 右移
+            }
+            num2 = num2 % (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+            temp2 = temp1;
+        }
+        if (num2 == 0) {
+            return temp1;  // 如果右移的位数为0，直接返回原值
+        }
+
+        temp1.key[BIGKEY_NUMBER - 1] = temp2.key[BIGKEY_NUMBER - 1] >> num2;  // 右移
+        for (int i = BIGKEY_NUMBER - 2; i >= 0; i--) {
+            temp1.key[i] = (temp2.key[i] >> num2);
+            {
+                BIGKEY_TYPE_INTERNAL temp3 = temp2.key[i + 1] << (sizeof(BIGKEY_TYPE_INTERNAL) * 8 - num2);
+                temp1.key[i] |= temp3;
+            }
+        }
+
+        return temp1;
+    }
 
     // 类型转换
     operator bool() const;  // 转换为bool类型
@@ -84,14 +161,6 @@ public:
     };
 
 #define BIGKEY_ZERO BigKey::ZERO()
-
-private:
-#define BIGKEY_NUMBER 3  // 128位按键值，使用数组存储
-#define BIGKEY_TYPE_INTERNAL uint64_t  // 内部存储类型
-
-#define BIGKEY_MAX_BUTTONS (BIGKEY_NUMBER * (sizeof(BIGKEY_TYPE_INTERNAL) * 8))
-
-    BIGKEY_TYPE_INTERNAL key[BIGKEY_NUMBER];  // 128位按键值，使用数组存储
 };
 
 inline BigKey::BigKey()  // 默认构造函数
@@ -142,74 +211,75 @@ inline BigKey::operator bool() const {
 }
 
 // 左移重载
-inline const BigKey operator<<(const BigKey& num1, size_t num2) {
-    if (num2 == 0) {
-        return num1;  // 如果左移的位数为0，直接返回原值
-    }
+// inline const BigKey operator<<(const BigKey& num1, size_t num2) {
+//     if (num2 == 0) {
+//         return num1;  // 如果左移的位数为0，直接返回原值
+//     }
 
-    BigKey temp1(num1);
-    BigKey temp2(num1);
+//     BigKey temp1(num1);
+//     BigKey temp2(num1);
 
-    if (num2 >= sizeof(BIGKEY_TYPE_INTERNAL) * 8) {
-        // 如果左移的位数大于64位，则需要分段处理
-        size_t num = num2 / (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
-        temp1.clear();
-        for (int i = BIGKEY_NUMBER - 1; i >= num; i--) {
-            temp1.key[i] = num1.key[i - num];  // 左移
-        }
-        num2 = num2 % (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
-        temp2 = temp1;
-    }
-    if (num2 == 0) {
-        return temp1;  // 如果左移的位数为0，直接返回原值
-    }
+//     if (num2 >= sizeof(BIGKEY_TYPE_INTERNAL) * 8) {
+//         // 如果左移的位数大于64位，则需要分段处理
+//         size_t num = num2 / (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+//         temp1.clear();
+//         for (int i = BIGKEY_NUMBER - 1; i >= num; i--) {
+//             temp1.key[i] = num1.key[i - num];  // 左移
+//         }
+//         num2 = num2 % (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+//         temp2 = temp1;
+//     }
+//     if (num2 == 0) {
+//         return temp1;  // 如果左移的位数为0，直接返回原值
+//     }
 
-    temp1.key[0] = temp2.key[0] << num2;  // 左移
-    for (int i = 1; i < BIGKEY_NUMBER; i++) {
-        temp1.key[i] = (temp2.key[i] << num2);
-        {
-            BIGKEY_TYPE_INTERNAL temp3 = temp2.key[i - 1] >> (sizeof(BIGKEY_TYPE_INTERNAL) * 8 - num2);
-            temp1.key[i] |= temp3;
-        }
-    }
+//     temp1.key[0] = temp2.key[0] << num2;  // 左移
+//     for (int i = 1; i < BIGKEY_NUMBER; i++) {
+//         temp1.key[i] = (temp2.key[i] << num2);
+//         {
+//             BIGKEY_TYPE_INTERNAL temp3 = temp2.key[i - 1] >> (sizeof(BIGKEY_TYPE_INTERNAL) * 8 - num2);
+//             temp1.key[i] |= temp3;
+//         }
+//     }
 
-    return temp1;
-}
+//     return temp1;
+// }
 
 // 右移重载
-inline const BigKey operator>>(const BigKey& num1, size_t num2) {
-    if (num2 == 0) {
-        return num1;  // 如果右移的位数为0，直接返回原值
-    }
+// inline const BigKey operator>>(const BigKey& num1, size_t num2) {
+//     if (num2 == 0) {
+//         return num1;  // 如果右移的位数为0，直接返回原值
+//     }
 
-    BigKey temp1(num1);
-    BigKey temp2(num1);
+//     BigKey temp1(num1);
+//     BigKey temp2(num1);
 
-    if (num2 >= sizeof(BIGKEY_TYPE_INTERNAL) * 8) {
-        // 如果右移的位数大于64位，则需要分段处理
-        size_t num = num2 / (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
-        temp1.clear();
-        for (int i = 0; i < BIGKEY_NUMBER - num; i++) {
-            temp1.key[i] = num1.key[i + num];  // 右移
-        }
-        num2 = num2 % (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
-        temp2 = temp1;
-    }
-    if (num2 == 0) {
-        return temp1;  // 如果右移的位数为0，直接返回原值
-    }
+//     if (num2 >= sizeof(BIGKEY_TYPE_INTERNAL) * 8) {
+//         // 如果右移的位数大于64位，则需要分段处理
+//         size_t num = num2 / (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+//         temp1.clear();
+//         for (int i = 0; i < BIGKEY_NUMBER - num; i++) {
+//             temp1.key[i] = num1.key[i + num];  // 右移
+//         }
+//         num2 = num2 % (sizeof(BIGKEY_TYPE_INTERNAL) * 8);
+//         temp2 = temp1;
+//     }
+//     if (num2 == 0) {
+//         return temp1;  // 如果右移的位数为0，直接返回原值
+//     }
 
-    temp1.key[BIGKEY_NUMBER - 1] = temp2.key[BIGKEY_NUMBER - 1] >> num2;  // 右移
-    for (int i = BIGKEY_NUMBER - 2; i >= 0; i--) {
-        temp1.key[i] = (temp2.key[i] >> num2);
-        {
-            BIGKEY_TYPE_INTERNAL temp3 = temp2.key[i + 1] << (sizeof(BIGKEY_TYPE_INTERNAL) * 8 - num2);
-            temp1.key[i] |= temp3;
-        }
-    }
+//     temp1.key[BIGKEY_NUMBER - 1] = temp2.key[BIGKEY_NUMBER - 1] >> num2;  // 右移
+//     for (int i = BIGKEY_NUMBER - 2; i >= 0; i--) {
+//         temp1.key[i] = (temp2.key[i] >> num2);
+//         {
+//             BIGKEY_TYPE_INTERNAL temp3 = temp2.key[i + 1] << (sizeof(BIGKEY_TYPE_INTERNAL) * 8 - num2);
+//             temp1.key[i] |= temp3;
+//         }
+//     }
 
-    return temp1;
-}
+//     return temp1;
+// }
+
 
 inline BigKey operator&=(BigKey& num1, const BigKey& num2) {
     for (int i = 0; i < BIGKEY_NUMBER; i++) {

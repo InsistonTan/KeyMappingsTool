@@ -1,11 +1,23 @@
 <RCC>
-    <qresource prefix="/icon">
-        <file>wheel_icon.png</file>
-    </qresource>
     <qresource prefix="/">
         <file>ETS2_KeyBinder/2_SelectInputDevice.jpg</file>
         <file>ETS2_KeyBinder/1_DisableSteamInput.jpg</file>
         <file>ETS2_KeyBinder/ConnectTip_WuLing.jpg</file>
         <file>ETS2_KeyBinder/ConnectTip_WuLing_Wipers.jpg</file>
+        <file>icons/icon_checkbox_checked.svg</file>
+        <file>icons/icon_arrow_down.svg</file>
+        <file>icons/icon_arrow_right.svg</file>
+        <file>icons/icon_ffb_simulate.svg</file>
+        <file>icons/icon_keymapping.svg</file>
+        <file>icons/icon_log.svg</file>
+        <file>icons/icon_settings.svg</file>
+        <file>icons/icon_about.svg</file>
+        <file>icons/icon_support.svg</file>
+        <file>icons/icon_steerwheel.svg</file>
+        <file>icons/icon_pedal.svg</file>
+        <file>icons/icon_gamepad.svg</file>
+        <file>icons/icon_keyboard.svg</file>
+        <file>images/donate_wechat.jpg</file>
+        <file>app.ico</file>
     </qresource>
 </RCC>

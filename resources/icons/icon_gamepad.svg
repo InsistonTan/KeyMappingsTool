@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 128 128"
+   fill="none"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="icon_gamepad - 副本.svg"
+   width="128"
+   height="128"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs6" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="5.1940207"
+     inkscape:cx="62.090626"
+     inkscape:cy="64.882298"
+     inkscape:window-width="1920"
+     inkscape:window-height="1010"
+     inkscape:window-x="-6"
+     inkscape:window-y="-6"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <!-- 外形：握把间距加大（核心修改点） -->
+  <path
+     d="m 11.461268,57.275416 c 0,-20.985682 16.501526,-34.340207 51.338082,-34.340207 34.836557,0 55.00508,13.354525 55.00508,34.340207 0,20.985682 -3.40059,45.629414 -18.26114,41.00872 C 94.290832,96.650952 96.829975,88.307626 94.996472,82.584258 91.329466,71.137522 70.133361,74.44552 64.632853,74.44552 59.132344,74.44552 36.396006,71.715109 32.729,83.161845 30.895497,88.885213 30.794756,97.899077 25.294247,98.669194 10.767908,100.703 11.461268,78.261098 11.461268,57.275416 Z"
+     stroke="#60a5fa"
+     stroke-width="2.33785"
+     id="path1"
+     sodipodi:nodetypes="sssssssss" />
+  <!-- 左摇杆 -->
+  <circle
+     cx="29.12064"
+     cy="52.715492"
+     r="7"
+     stroke="#38bdf8"
+     stroke-width="2.5"
+     id="circle1" />
+  <!-- 右摇杆 -->
+  <circle
+     cx="79.902267"
+     cy="61.49712"
+     r="7"
+     stroke="#38bdf8"
+     stroke-width="2.5"
+     id="circle2" />
+  <!-- D-pad（左侧保持稳定） -->
+  <rect
+     x="56.494411"
+     y="29.080574"
+     width="12.264089"
+     height="12.07156"
+     rx="2.0440147"
+     stroke="#93c5fd"
+     stroke-width="1.68992"
+     id="rect2" />
+  <path
+     d="m 47.609186,55.962645 v 12 m -6,-6 h 12"
+     stroke="#93c5fd"
+     stroke-width="2.5"
+     id="path2" />
+  <!-- ABXY（右侧） -->
+  <circle
+     cx="98"
+     cy="44"
+     r="2.8"
+     fill="#93c5fd"
+     id="circle3" />
+  <circle
+     cx="104"
+     cy="50"
+     r="2.8"
+     fill="#93c5fd"
+     id="circle4" />
+  <circle
+     cx="98"
+     cy="56"
+     r="2.8"
+     fill="#93c5fd"
+     id="circle5" />
+  <circle
+     cx="91.560318"
+     cy="50.137905"
+     r="2.8"
+     fill="#93c5fd"
+     id="circle6" />
+</svg>

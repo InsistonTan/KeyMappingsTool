@@ -1,7 +1,8 @@
-#ifndef FORCEFEEDBACKWORKER_H
-#define FORCEFEEDBACKWORKER_H
-#include "ForceFeedbackSettingsWindow.h"
+#pragma once
+
+#include "qmutex.h"
 #include "dinput.h"
+#include "models/UserConfig.h"
 #include <QObject>
 #include <QMutex>
 
@@ -15,7 +16,11 @@ class ForceFeedbackWorker : public QObject
 
 private:
     volatile bool isWorkerRunning = false;
-    ForceFeedbackSettingsWindow* forceFeedbackSettings;
+
+    // 已初始化的设备列表(转向轴设备, 油门设备, 刹车设备)
+    QVector<LPDIRECTINPUTDEVICE8> initedDeviceList;
+    // initedDeviceList的锁
+    QMutex mutex_initedDeviceList;
 
     QString throttleAxis = ""; // 油门所在的轴
     QString throttleAxisDeviceName = ""; // 油门轴的设备名称
@@ -31,12 +36,19 @@ private:
     double acceleration_100km_time_s = default_acceleration_100km_time_s;// 百公里加速所需时间(秒)
     int stop_100km_dis_m = default_stop_100km_dis_m;// 百公里刹停所需距离(米)
     double maxSpeed_m_s = default_maxSpeed_km_h * 1000.0 / 3600.0;// 车辆最高时速(m/s)
-    double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
+    // 回正力强度-车速曲线的查找表;
+    // key: 车速百分比 * 1000;
+    // value: 回正力强度百分比
+    QHash<int, double> springGainLUT;
+    // 转向阻尼强度-车速曲线的查找表;
+    // key: 车速百分比 * 1000;
+    // value: 转向阻尼强度百分比
+    QHash<int, double> dampingGainLUT;
+    //double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
+    //bool isConstantForceMode = false;// 是否为恒定力反馈模式
+    //double constantCorrectiveForceGain = default_constant_corrective_force_gain;// 恒定回正力强度
+    //double constantDampingGain = default_constant_damping_gain;// 恒定转向阻尼强度
 
-    //QMutex mutexConstantForce;
-    bool isConstantForceMode = false;// 是否为恒定力反馈模式
-    double constantCorrectiveForceGain = default_constant_corrective_force_gain;// 恒定回正力强度
-    double constantDampingGain = default_constant_damping_gain;// 恒定转向阻尼强度
 
     // 油门踏板的数值范围
     DIPROPRANGE throttleValueRange;
@@ -46,9 +58,9 @@ private:
     double maxThrottleAxisA = 0;// 最大油门加速度
     double maxBrakeA = 0;// 最大刹车加速度
 
-    LPDIRECTINPUT8 g_pDirectInput2 = NULL;
-    LPDIRECTINPUTDEVICE8 g_pDevice2 = NULL;// 输入设备
-    QString lastSteerDeviceName = "";// 上一个转向设备
+
+    // 已初始化的转向轴设备实例
+    LPDIRECTINPUTDEVICE8 pSteeringWheelAxisDeviceInstance = nullptr;
 
     LPDIRECTINPUTEFFECT g_pSpringForce = NULL; // 弹簧效果
     LPDIRECTINPUTEFFECT g_pDamper = NULL;       // 阻尼效果
@@ -60,23 +72,39 @@ private:
     LONG springEffectValue = 0;// 弹簧效果系数(0-10000)
     LONG damperEffectValue = 0;// 阻尼效果系数(0-10000)
 
+    // 初始化
     void init();
 
-    // 初始化 DirectInput
-    bool initDirectInput2();
-    // 打开选择的设备
-    bool openDiDevice2(QString deviceName, HWND hWnd);
+    // 检查设备是否已连接
+    bool checkDevicesConnected();
+
     // 创建力回馈效果
     bool createDynamicEffects(QString steerWheelAxis);
     // 根据车速更新力回馈
     void updateForceFeedback(double speed_m_s, double totalA);
     // 关闭资源
     void cleanup();
-    // 获取设备状态信息
-    QList<MappingRelation*> getInputState2();
+
+    // 获取已初始化设备列表的快照
+    QVector<LPDIRECTINPUTDEVICE8> getInitedDeviceListSnapshot(){
+        QMutexLocker locker(&mutex_initedDeviceList);
+        return initedDeviceList;
+    }
+
+    double getMaxSpeed_m_s(int maxSpeed_km_h){
+        return maxSpeed_km_h * 1000.0 / 3600.0;
+    }
+
+    double getMaxThrottleAxisA(double acceleration_100km_time_s){
+        return 100.0 * 1000 / 3600 / acceleration_100km_time_s;
+    }
+
+    double getmaxBrakeA(double stop_100km_dis_m){
+        return -771.6 / (2 * stop_100km_dis_m);
+    }
 
 public:
-    explicit ForceFeedbackWorker(ForceFeedbackSettingsWindow* forceFeedbackSettings);
+    explicit ForceFeedbackWorker();
 
 signals:
     void workFinished();
@@ -90,5 +118,3 @@ public slots:
     // 力反馈模拟的设置改变
     void settingsChangeSlot();
 };
-
-#endif // FORCEFEEDBACKWORKER_H

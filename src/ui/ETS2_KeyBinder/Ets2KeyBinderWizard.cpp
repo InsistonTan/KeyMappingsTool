@@ -1,9 +1,12 @@
 // 参考开源项目：https://github.com/Sab1e-GitHub/ETS2-KeyBinder
 // 参考开源项目：https://github.com/InsistonTan/KeyMappingsTool
 
-#include "ets2keybinderwizard.h"
+#include "ui/ETS2_KeyBinder/Ets2KeyBinderWizard.h"
 #include "manuallybinder.h"
-#include "ui_ets2keybinderwizard.h"
+#include "common/Global.h"
+#include "common/StringConstants.h"
+#include "services/DirectInputService.h"
+#include "ui_Ets2KeyBinderWizard.h"
 #include <QDateTime>
 #include <QDebug>
 #include <QFileInfo>
@@ -84,12 +87,14 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
         {BindingType::gearsel2on, ui->pushButton_23},
     };
 
-    diDeviceList.clear();
+    // 不再允许DirectInputService外操作设备列表
+    //diDeviceList.clear();
     ui->comboBox->clear();
 
-    this->initDirectInput(); // 初始化DirectInput
-    this->scanDevice();      // 重新扫描
+    DirectInputService::initDirectInput(); // 初始化DirectInput
+    DirectInputService::scanDevice();      // 重新扫描
     // 设备不为空
+    auto diDeviceList = DirectInputService::getDeviceInfoListSnapshot();
     if (!diDeviceList.empty()) {
         ui->comboBox->setPlaceholderText("");
         for (auto item : diDeviceList) {
@@ -116,9 +121,9 @@ ETS2KeyBinderWizard::ETS2KeyBinderWizard(QWidget* parent) : QWizard(parent), ui(
             if (gameJoyPosNameList.contains(gameDeviceName.data())) {
                 ui->comboBox_2->setCurrentText(gameDeviceName.data());
             }
-            diDeviceList.clear();
+            //diDeviceList.clear();
             ui->comboBox->clear();
-            this->scanDevice(); // 重新扫描
+            DirectInputService::scanDevice(); // 重新扫描
 
             // 游戏控制设备不为空
             if (!diDeviceList.empty()) {
@@ -233,16 +238,17 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
     }
 
     QFile file(globalControlsFilePath);
-    QString errorMsg = "\n\n文件路径：\n" + globalControlsFilePath + "\n\n请返回第一步，确定已禁用Steam输入";
+
+    QString errorMsg = StringConstants::error_globalControlsFileError.arg(globalControlsFilePath);;
     if (!file.exists()) {
         qDebug() << "全局配置文件不存在：" << file.fileName();
-        QMessageBox::critical(this, "错误", "游戏全局配置文件不存在！" + errorMsg);
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_globalControlsFileNotExists + errorMsg);
         this->restart(); // 返回第一步
         return QStringList();
     }
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件：" << file.fileName();
-        QMessageBox::critical(this, "错误", "打开游戏全局配置文件失败！" + errorMsg);
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_globalControlsFileOpenFailed + errorMsg);
         this->restart(); // 返回第一步
         return QStringList();
     }
@@ -267,13 +273,13 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
     // 读取配置文件列表
     QFile profileFile(selectedProfilePath);
     if (!profileFile.exists()) {
-        QMessageBox::critical(this, "错误", "游戏配置文件不存在！文件路径：\n" + selectedProfilePath);
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_gameProfileNotExists.arg(selectedProfilePath));
         return QStringList();
     }
 
     if (!profileFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件:" << profileFile.fileName();
-        QMessageBox::critical(this, "错误", "打开游戏配置文件失败！文件路径：\n" + selectedProfilePath);
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_gameProfileOpenFailed.arg(selectedProfilePath));
         return QStringList();
     }
 
@@ -298,7 +304,7 @@ QStringList ETS2KeyBinderWizard::getDeviceNameGameList() {
 }
 
 bool ETS2KeyBinderWizard::hasLastDevInCurrentDeviceList(std::string lastDeviceName) {
-    for (auto item : diDeviceList) {
+    for (auto item : DirectInputService::getDeviceInfoListSnapshot()) {
         if (item.name == lastDeviceName) {
             return true;
         }
@@ -311,9 +317,13 @@ bool ETS2KeyBinderWizard::backupProfile() {
     QFile selectedProfileFile(selectedProfilePath);
     if (!selectedProfileFile.exists()) {
         qDebug() << "配置文件不存在：" << selectedProfilePath;
-        QMessageBox::critical(this, "错误",
-                              "备份游戏配置文件失败：该文件不存在！参考路径：\n\n" + steamProfiles[ui->comboBox_4->currentIndex()]
-                                  + "/xxxxxx/controls.sii\n" + profiles[ui->comboBox_4->currentIndex()] + "/xxxxxx/controls.sii\n");
+        QMessageBox::critical(
+            this,
+            StringConstants::error,
+            StringConstants::error_backupProfileFailed + StringConstants::error_GameFileNotExists.arg(
+                steamProfiles[ui->comboBox_4->currentIndex()],
+                profiles[ui->comboBox_4->currentIndex()])
+        );
         return false;
     }
 
@@ -352,16 +362,19 @@ void ETS2KeyBinderWizard::readControlsSii(const QString& controlsFilePath) {
     // 检查文件是否存在
     if (!QFileInfo::exists(controlsFilePath)) {
         qDebug() << "配置文件不存在：" << controlsFilePath;
-        QMessageBox::critical(this, "错误",
-                              "修改游戏配置文件失败：该文件不存在！参考路径：\n" + steamProfiles[ui->comboBox_4->currentIndex()]
-                                  + "/xxxxxx/controls.sii\n" + profiles[ui->comboBox_4->currentIndex()] + "/xxxxxx/controls.sii\n");
+        QMessageBox::critical(
+            this,
+            StringConstants::error,
+            StringConstants::error_writePrifileFailed + StringConstants::error_GameFileNotExists.arg(
+                steamProfiles[ui->comboBox_4->currentIndex()],
+                profiles[ui->comboBox_4->currentIndex()]));
         return;
     }
 
     // 打开文件并读取内容
     if (!controlsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件：" << controlsFilePath;
-        QMessageBox::critical(this, "错误", "打开游戏配置文件失败！文件路径：\n" + controlsFilePath);
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_gameProfileOpenFailed.arg(controlsFilePath));
         return;
     }
 
@@ -400,16 +413,19 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     // 检查文件是否存在
     if (!QFileInfo::exists(controlsFilePath)) {
         qDebug() << "配置文件不存在：" << controlsFilePath;
-        QMessageBox::critical(this, "错误",
-                              "修改游戏配置文件失败：该文件不存在！参考路径：\n" + steamProfiles[ui->comboBox_4->currentIndex()]
-                                  + "/xxxxxx/controls.sii\n" + profiles[ui->comboBox_4->currentIndex()] + "/xxxxxx/controls.sii\n");
+        QMessageBox::critical(
+            this,
+            StringConstants::error,
+            StringConstants::error_writePrifileFailed + StringConstants::error_GameFileNotExists.arg(
+            steamProfiles[ui->comboBox_4->currentIndex()],
+            profiles[ui->comboBox_4->currentIndex()]));
         return;
     }
 
     // 打开文件并读取内容
     if (!controlsFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "无法打开文件：" << controlsFilePath;
-        QMessageBox::critical(this, "错误", "打开游戏配置文件失败！文件路径：\n" + controlsFilePath);
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_gameProfileOpenFailed.arg(controlsFilePath));
         return;
     }
 
@@ -441,7 +457,7 @@ void ETS2KeyBinderWizard::modifyControlsSii(const QString& controlsFilePath, Bin
     if (modified) {
         if (!controlsFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
             qDebug() << "无法写入文件：" << controlsFilePath;
-            QMessageBox::critical(this, "错误", "无法写入游戏配置文件！文件路径：\n" + controlsFilePath);
+            QMessageBox::critical(this, StringConstants::error, StringConstants::error_gameProfileWriteFailed.arg(controlsFilePath));
             return;
         }
 
@@ -507,7 +523,7 @@ QString ETS2KeyBinderWizard::convertToUiString(const QString& ets2BtnStrOriginal
                 trimmedPart = trimmedPart.trimmed(); // 去掉末尾空格
             }
             if (trimmedPart.startsWith("!")) {
-                uiStr += "不";
+                uiStr += StringConstants::noString;
                 trimmedPart.remove(0, 1); // 去掉前面的 !
             }
             if (trimmedPart.startsWith("joy")) {
@@ -515,43 +531,43 @@ QString ETS2KeyBinderWizard::convertToUiString(const QString& ets2BtnStrOriginal
                 if (joyParts.size() == 2) {
                     if (joyParts[1].startsWith("b")) {            // 按钮
                         QString buttonIndex = joyParts[1].mid(1); // 去掉 "b"
-                        uiStr += "按钮" + buttonIndex + "+";
+                        uiStr += StringConstants::btnString2 + buttonIndex + BUTTON_NAME_COMBINE_SPLIT;
                     } else if (joyParts[1].startsWith("pov")) { // POV
                         QString povDirection = joyParts[1];     // 如 "pov1_up"
-                        uiStr += povDirection + "+";
+                        uiStr += povDirection + BUTTON_NAME_COMBINE_SPLIT;
                     }
                 }
             } else if (trimmedPart.startsWith("keyboard")) {
                 QStringList keyboardParts = trimmedPart.split(".");
                 if (keyboardParts.size() == 2) {
-                    uiStr += "键盘";
+                    uiStr += StringConstants::keyboard;
                     QString keyName = keyboardParts[1]; // 键名
                     if (keyName == "enter") {
-                        uiStr += "回车+";
+                        uiStr += StringConstants::enterKey + BUTTON_NAME_COMBINE_SPLIT;
                     } else if (keyName == "space") {
-                        uiStr += "空格+";
+                        uiStr += StringConstants::spaceKey + BUTTON_NAME_COMBINE_SPLIT;
                     } else {
-                        uiStr += keyName + "+";
+                        uiStr += keyName + BUTTON_NAME_COMBINE_SPLIT;
                     }
                 }
             }
         }
         // 去掉最后一个加号
-        if (!uiStr.isEmpty() && uiStr.endsWith("+")) {
+        if (!uiStr.isEmpty() && uiStr.endsWith(BUTTON_NAME_COMBINE_SPLIT)) {
             uiStr.chop(1);
         }
-        uiStr += " 或 "; // 每个按键组合之间用 "或" 分隔
+        uiStr += " " + StringConstants::orString + " "; // 每个按键组合之间用 "或" 分隔
     }
     // 去掉最后的 " 或 "
-    if (uiStr.endsWith(" 或 ")) {
+    if (uiStr.endsWith(" " + StringConstants::orString + " ")) {
         uiStr.chop(3);
     }
     return uiStr;
 }
 
 // 列出目录下的所有配置文件及其最后修改日期
-QList<QPair<QString, QDateTime>> listFoldersWithModificationDates(const QDir& directory) {
-    QList<QPair<QString, QDateTime>> folderInfo;
+QVector<QPair<QString, QDateTime>> listFoldersWithModificationDates(const QDir& directory) {
+    QVector<QPair<QString, QDateTime>> folderInfo;
 
     if (!directory.exists()) {
         qDebug() << "路径" << directory.absolutePath() << "不存在！";
@@ -577,13 +593,13 @@ void ETS2KeyBinderWizard::updateUserProfile() {
     profileFolders = listFoldersWithModificationDates(profiles[ui->comboBox_4->currentIndex()]);
 
     // 合并两个配置文件列表
-    QList<QPair<QString, QDateTime>> allProfileFolders = steamProfileFolders + profileFolders;
+    QVector<QPair<QString, QDateTime>> allProfileFolders = steamProfileFolders + profileFolders;
 
     ui->comboBox_3->clear();
     this->button(QWizard::NextButton)->setEnabled(true); // 允许点击下一步
     if (allProfileFolders.isEmpty()) {
         qDebug() << "没有找到任何配置文件！";
-        QMessageBox::critical(this, "错误", "没有找到任何游戏配置文件夹");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_gameProfileFolderNotExists);
 
         // 没有找到配置文件就禁止点击下一步
         this->button(QWizard::NextButton)->setEnabled(false);
@@ -606,7 +622,7 @@ bool ETS2KeyBinderWizard::initDirectInput() {
     HINSTANCE hInstance = GetModuleHandle(NULL);
     if (FAILED(DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&pDirectInput, NULL))) {
         qDebug() << "DirectInput 初始化失败！";
-        QMessageBox::critical(nullptr, "错误", "初始化DirectInput： 初始化失败！");
+        QMessageBox::critical(nullptr, StringConstants::error, StringConstants::initDirectInputErrorMsg);
         return false;
     }
 
@@ -615,6 +631,7 @@ bool ETS2KeyBinderWizard::initDirectInput() {
 
 // 打开选择的设备
 bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
+    auto diDeviceList = DirectInputService::getDeviceInfoListSnapshot();
     if (deviceIndex < 0 || deviceIndex >= diDeviceList.size()) {
         return false;
     }
@@ -626,39 +643,55 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
 
     // 新设备
     lastDeviceIndex = deviceIndex;
-    if (pDevice) {
-        pDevice->Unacquire();
-        pDevice->Release();
-        pDevice = nullptr;
-    }
 
-    // 创建设备实例
-    if (FAILED(pDirectInput->CreateDevice(diDeviceList[deviceIndex].guidInstance, &pDevice, NULL))) {
-        qDebug() << "设备创建失败！";
-        QMessageBox::warning(this, "警告", "初始化设备： 设备创建失败！");
+    // 设备名称
+    QString deviceName = diDeviceList[deviceIndex].name.data();
+
+    // 统一使用DirectInputService来初始化设备
+    DirectInputService::openDiDevice({deviceName});
+
+    // 获取已初始化的设备
+    pDevice = DirectInputService::getInitedDevice(deviceName);
+
+    // 初始化设备失败
+    if(pDevice == nullptr){
         return false;
     }
 
-    if (FAILED(pDevice->SetDataFormat(&c_dfDIJoystick2))) {
-        qDebug() << "设置数据格式失败！";
-        QMessageBox::warning(this, "警告", "初始化设备： 设置数据格式失败！");
-        return false;
-    }
+    // if (pDevice) {
+    //     pDevice->Unacquire();
+    //     pDevice->Release();
+    //     pDevice = nullptr;
+    // }
 
-    // 设置非独占模式(只有在施加力反馈时需要设置独占模式)
-    if (FAILED(pDevice->SetCooperativeLevel(GetForegroundWindow(), DISCL_BACKGROUND | DISCL_NONEXCLUSIVE))) {
-        qDebug() << "设置非独占模式失败！";
-        QMessageBox::warning(this, "警告", "初始化设备： 设置非独占模式失败！");
-        return false;
-    }
+    // // 创建设备实例
+    // if (FAILED(pDirectInput->CreateDevice(diDeviceList[deviceIndex].guidInstance, &pDevice, NULL))) {
+    //     qDebug() << "设备创建失败！";
+    //     QMessageBox::warning(this, "警告", "初始化设备： 设备创建失败！");
+    //     return false;
+    // }
 
-    // 获取控制器能力
-    capabilities.dwSize = sizeof(DIDEVCAPS);
-    if (FAILED(pDevice->GetCapabilities(&capabilities))) {
-        qDebug() << "获取设备能力失败！";
-        QMessageBox::warning(this, "警告", "初始化设备： 获取设备能力失败！");
-        return false;
-    }
+    // if (FAILED(pDevice->SetDataFormat(&c_dfDIJoystick2))) {
+    //     qDebug() << "设置数据格式失败！";
+    //     QMessageBox::warning(this, "警告", "初始化设备： 设置数据格式失败！");
+    //     return false;
+    // }
+
+    // // 设置非独占模式(只有在施加力反馈时需要设置独占模式)
+    // if (FAILED(pDevice->SetCooperativeLevel(GetForegroundWindow(), DISCL_BACKGROUND | DISCL_NONEXCLUSIVE))) {
+    //     qDebug() << "设置非独占模式失败！";
+    //     QMessageBox::warning(this, "警告", "初始化设备： 设置非独占模式失败！");
+    //     return false;
+    // }
+
+    // // 获取控制器能力
+    // capabilities.dwSize = sizeof(DIDEVCAPS);
+    // if (FAILED(pDevice->GetCapabilities(&capabilities))) {
+    //     qDebug() << "获取设备能力失败！";
+    //     QMessageBox::warning(this, "警告", "初始化设备： 获取设备能力失败！");
+    //     return false;
+    // }
+
     // 获取按钮数量
     qDebug() << "按钮数量：" << capabilities.dwButtons;
 
@@ -666,14 +699,17 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
 }
 
 void ETS2KeyBinderWizard::scanDevice() {
-    if (pDirectInput == nullptr) {
-        return;
-    }
+    // 统一使用DirrectInputService::scanDevice();
+    // 本函数已无效
 
-    if (FAILED(pDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY))) {
-        QMessageBox::warning(nullptr, "警告", "扫描硬件设备列表失败！");
-        return;
-    }
+    // if (pDirectInput == nullptr) {
+    //     return;
+    // }
+
+    // if (FAILED(pDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumDevicesCallback, NULL, DIEDFL_ATTACHEDONLY))) {
+    //     QMessageBox::warning(nullptr, "警告", "扫描硬件设备列表失败！");
+    //     return;
+    // }
 }
 
 // 生成映射文件
@@ -693,15 +729,16 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
         return false;
     }
     QString hblightKeyStr, lighthornKeyStr;
+    auto btnString = StringConstants::btnString;
     for (auto item : hblight) {
         if (item.second) {
-            hblightKeyStr += "按键" + QString::number(item.first) + "+";
+            hblightKeyStr += btnString + QString::number(item.first) + BUTTON_NAME_COMBINE_SPLIT;
         }
     }
     hblightKeyStr.chop(1); // 去掉最后一个 +
     for (auto item : lighthorn) {
         if (item.second) {
-            lighthornKeyStr += "按键" + QString::number(item.first) + "+";
+            lighthornKeyStr += btnString + QString::number(item.first) + BUTTON_NAME_COMBINE_SPLIT;
         }
     }
     lighthornKeyStr.chop(1); // 去掉最后一个 +
@@ -721,8 +758,9 @@ bool ETS2KeyBinderWizard::generateMappingFile(ActionEffect hblight, ActionEffect
 
 bool ETS2KeyBinderWizard::checkHardwareDeviceAndMsgBox(BindingType bindingType) {
     if (deviceName.empty() || isDeviceReady == false) {
-        QMessageBox box(QMessageBox::Warning, "设备连接异常",
-                        "请返回第3步，将设备连接到电脑，\n在“硬件控制设备”下拉框选择设备\n" + MEG_BOX_LINE + "\n或者进行手动绑定？");
+        QMessageBox box(QMessageBox::Warning,
+                        StringConstants::deviceConnectError,
+                        StringConstants::error_deviceConnectErrorMsg.arg(MEG_BOX_LINE));
         box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
         box.setDefaultButton(QMessageBox::Ok);
         box.exec();
@@ -748,7 +786,7 @@ void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& mes
     keyState[0] = getKeyState(); // 获取按键状态，第一次获取为0，应该是BUG
 
     // 1、将拨杆拨到关闭位置
-    QMessageBox box(QMessageBox::Information, "单操作绑定", message);
+    QMessageBox box(QMessageBox::Information, StringConstants::singleActionBinding, message);
     box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     box.setDefaultButton(QMessageBox::Ok);
     box.exec();
@@ -763,15 +801,15 @@ void ETS2KeyBinderWizard::oneKeyBind(BindingType bindingType, const QString& mes
         }
     }
     if (keyStateEffect.size() < 1) {
-        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_changedBtnNotFound);
         return;
     }
     if (keyStateEffect.size() > 1) {
-        QMessageBox::critical(this, "错误", "找到多个按键按下！请重新操作！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_foundMultiBtnPressed);
         return;
     }
     // 2、确定是否绑定
-    box.setText("是否绑定？");
+    box.setText(StringConstants::confirmBinding);
     int ret = box.exec();
     if (ret == QMessageBox::Ok) {
         backupProfile(); // 备份配置文件
@@ -813,7 +851,7 @@ void fixMultiKeyBind(std::map<BindingType, ActionEffect> *actionEffectMap){
 }
 
 void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actionEffectMap) {
-    QMessageBox box(QMessageBox::Information, "多操作绑定", "是否绑定？");
+    QMessageBox box(QMessageBox::Information, StringConstants::multiActionBinding, StringConstants::confirmBinding);
     box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     int ret = box.exec();
     if (ret == QMessageBox::Ok) {
@@ -830,7 +868,7 @@ void ETS2KeyBinderWizard::multiKeyBind(std::map<BindingType, ActionEffect> actio
                 modifyControlsSii(selectedProfilePath, item.first, ets2BtnStr);
             }
         } else {
-            QMessageBox::critical(this, "错误", "还未选择游戏输入设备, 请返回第三步选择");
+            QMessageBox::critical(this, StringConstants::error, StringConstants::error_notSelectDevice);
             // 返回第三步(不使用setCurrentId()跳转)
             this->restart();
             this->next();
@@ -877,11 +915,11 @@ bool hasSameKeyState(std::vector<BigKey> keyStates) {
 
 // 1、示廓灯&近光灯
 void ETS2KeyBinderWizard::on_pushButton_clicked() {
-    QString messageTitle = "示廓灯&近光灯";
+    QString messageTitle = StringConstants::positionLightsAndLowbeam;
     QStringList messages = {
-        "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n关闭灯光",
-        "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n示廓灯",
-        "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n近光灯",
+        StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::closeLight,
+        StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::positionLights,
+        StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::lowbeam,
     };
     std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
     if (keyStates.empty()) {
@@ -890,7 +928,7 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
 
     // 检查每个按键直接是否有一样的
     if (hasSameKeyState(keyStates)) {
-        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_someActionNotFoundChangedBtn);
         return;
     }
 
@@ -912,11 +950,11 @@ void ETS2KeyBinderWizard::on_pushButton_clicked() {
 
 // 2、远光灯&灯光喇叭
 void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
-    QString messageTitle = "远光灯&灯光喇叭";
+    QString messageTitle = StringConstants::highbeamAndHeadlightFlash;
     QStringList messages = {
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭灯光",
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n远光灯",
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n灯光喇叭",
+        StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::closeLight,
+        StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::highbeam,
+        StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::headlightFlash,
     };
     std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
     if (keyStates.empty()) {
@@ -935,15 +973,17 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
         }
     }
     if (actionEffectMap[BindingType::hblight].size() < 1 || actionEffectMap[BindingType::lighthorn].size() < 1) {
-        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_someActionNotFoundChangedBtn);
         return;
     }
     if (keyStates[1] == keyStates[2]) {
-        QMessageBox box(QMessageBox::Information, "提示", "远光灯和灯光喇叭的按键相同\n" + MEG_BOX_LINE + "\n您是想绑定：",
+        QMessageBox box(QMessageBox::Information,
+                        StringConstants::info,
+                        StringConstants::highbeamAndHeadlightFlashHasSameKey + MEG_BOX_LINE + StringConstants::whichKeyToBindingYouWant,
                         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
         box.setDefaultButton(QMessageBox::Cancel);
-        box.setButtonText(QMessageBox::Yes, "远光灯");
-        box.setButtonText(QMessageBox::No, "灯光喇叭");
+        box.setButtonText(QMessageBox::Yes, StringConstants::highbeam);
+        box.setButtonText(QMessageBox::No, StringConstants::headlightFlash);
         box.exec();
         if (box.clickedButton() == box.button(QMessageBox::Cancel)) {
             return; // 取消操作
@@ -960,7 +1000,7 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
         modifyControlsSii(selectedProfilePath, BindingType::hblight, "keyboard.k?0");
         modifyControlsSii(selectedProfilePath, BindingType::lighthorn, "keyboard.j?0");
 
-        QMessageBox box(QMessageBox::Information, "远光灯&灯光喇叭", "");
+        QMessageBox box(QMessageBox::Information, StringConstants::highbeamAndHeadlightFlash, "");
 #if defined(INDEPENDENT_MODE)
         box.setText("游戏不支持开关类型的远光灯绑定，已生成配置文件 \"" + MAPPING_FILE_NAME + "\"\n"
                     + "请打开“KeyMappingsTool”使用此配置文件，间接实现拨杆映射。\n\n配置文件路径：\n" + QDir::homePath()
@@ -976,14 +1016,7 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
         }
 #else
         // 此组件合并至 KeyMappingsTool 中，不再单独使用，所以不需要提示用户打开 KeyMappingsTool
-        box.setText("游戏不支持开关类型的远光灯绑定\n\n"
-                    "请回到主界面\n"
-                    "选择设备：“"
-                    + QString::fromStdString(deviceName)
-                    + "”\n"
-                      "选择映射：“映射键盘”\n"
-                      "配置文件：\""
-                    + MAPPING_FILE_NAME + "\"");
+        box.setText(StringConstants::error_notSupportThisHighbeam.arg(QString::fromStdString(deviceName), MAPPING_FILE_NAME));
         box.setStandardButtons(QMessageBox::Yes);
         box.exec();
 #endif
@@ -992,11 +1025,11 @@ void ETS2KeyBinderWizard::on_pushButton_2_clicked() {
 
 // 3、左转向灯&右转向灯
 void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
-    QString messageTitle = "左转向灯&右转向灯";
+    QString messageTitle = StringConstants::leftAndRightSignal;
     QStringList messages = {
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭灯光",
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n左转向灯",
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n右转向灯",
+        StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::closeLight,
+        StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::leftTurnSignal,
+        StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::rightTurnSignal,
     };
     std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
     if (keyStates.empty()) {
@@ -1005,7 +1038,7 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
 
     // 检查每个按键直接是否有一样的
     if (hasSameKeyState(keyStates)) {
-        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_someActionNotFoundChangedBtn);
         return;
     }
 
@@ -1027,24 +1060,24 @@ void ETS2KeyBinderWizard::on_pushButton_3_clicked() {
 
 // 4、雨刮器
 void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
-    QString messageTitle = "雨刮器";
-    QString messageTitle1 = "3档雨刮器";
-    QString messageTitle2 = "4档雨刮器(3档+点动)";
+    QString messageTitle = StringConstants::wiper;
+    QString messageTitle1 = StringConstants::level3Wiper;
+    QString messageTitle2 = StringConstants::level4Wiper;
     QStringList messages = {
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭位置",
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器1档",
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器2档",
-        "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器3档",
+        StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::closePosition,
+        StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel1,
+        StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel2,
+        StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel3,
     };
-    QMessageBox box(QMessageBox::Information, messageTitle, "您要绑定 " + messageTitle1 + " 还是 " + messageTitle2);
-    QPushButton* threeWipersButton = box.addButton("3档", QMessageBox::YesRole);
-    QPushButton* fourWipersButton = box.addButton("4档", QMessageBox::NoRole);
-    QPushButton* cancelButton = box.addButton("取消", QMessageBox::RejectRole);
+    QMessageBox box(QMessageBox::Information, messageTitle, StringConstants::wantToBindWhichKey.arg(messageTitle1, messageTitle2));
+    QPushButton* threeWipersButton = box.addButton(StringConstants::level3, QMessageBox::YesRole);
+    QPushButton* fourWipersButton = box.addButton(StringConstants::level4, QMessageBox::NoRole);
+    QPushButton* cancelButton = box.addButton(StringConstants::btnText_cancel, QMessageBox::RejectRole);
     box.exec();
     if (box.clickedButton() == cancelButton) {
         return; // 取消操作
     } else if (box.clickedButton() == fourWipersButton) {
-        messages.append("请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刮器4档（点动）");
+        messages.append(StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel4);
         messageTitle1 = messageTitle2;
     }
 
@@ -1055,7 +1088,7 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
 
     // 检查每个按键直接是否有一样的
     if (hasSameKeyState(keyStates)) {
-        QMessageBox::critical(this, "错误", "部分操作没有找到变化的按键！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_someActionNotFoundChangedBtn);
         return;
     }
 
@@ -1100,10 +1133,10 @@ void ETS2KeyBinderWizard::on_pushButton_4_clicked() {
 
 // 5、档位开关1
 void ETS2KeyBinderWizard::on_pushButton_18_clicked() {
-    QString messageTitle = "档位开关1";
+    QString messageTitle = StringConstants::gearSwitch1;
     QStringList messages = {
-        "档位开关1拨到：\n" + MEG_BOX_LINE + "\n低档位",
-        "档位开关1拨到：\n" + MEG_BOX_LINE + "\n高档位",
+        StringConstants::gearSwitch1 + StringConstants::toggle + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::lowLevel,
+        StringConstants::gearSwitch1 + StringConstants::toggle + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::highLevel,
     };
     std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
     if (keyStates.empty()) {
@@ -1121,7 +1154,7 @@ void ETS2KeyBinderWizard::on_pushButton_18_clicked() {
         }
     }
     if (actionEffectMap[BindingType::gearsel1off].size() < 1) {
-        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_someActionNotFoundChangedBtn);
         return;
     }
     multiKeyBind(actionEffectMap); // 多按键绑定
@@ -1129,10 +1162,10 @@ void ETS2KeyBinderWizard::on_pushButton_18_clicked() {
 
 // 6、档位开关2
 void ETS2KeyBinderWizard::on_pushButton_19_clicked() {
-    QString messageTitle = "档位开关2";
+    QString messageTitle = StringConstants::gearSwitch2;
     QStringList messages = {
-        "档位开关2拨到：\n" + MEG_BOX_LINE + "\n低档位",
-        "档位开关2拨到：\n" + MEG_BOX_LINE + "\n高档位",
+        StringConstants::gearSwitch2 + StringConstants::toggle + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::lowLevel,
+        StringConstants::gearSwitch2 + StringConstants::toggle + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::highLevel,
     };
     std::vector<BigKey> keyStates = getMultiKeyState(messageTitle, messages);
     if (keyStates.empty()) {
@@ -1150,7 +1183,7 @@ void ETS2KeyBinderWizard::on_pushButton_19_clicked() {
         }
     }
     if (actionEffectMap[BindingType::gearsel2off].size() < 1) {
-        QMessageBox::critical(this, "错误", "没有找到变化的按键！");
+        QMessageBox::critical(this, StringConstants::error, StringConstants::error_someActionNotFoundChangedBtn);
         return;
     }
     multiKeyBind(actionEffectMap); // 多按键绑定
@@ -1288,88 +1321,112 @@ void ETS2KeyBinderWizard::modifyControlsSii_Slot(BindingType bindingType, Action
 
 // 关闭灯光
 void ETS2KeyBinderWizard::on_pushButton_5_clicked() {
-    oneKeyBind(BindingType::lightoff, "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n关闭灯光");
+    oneKeyBind(BindingType::lightoff, StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::closeLight);
 }
 
 // 示廊灯
 void ETS2KeyBinderWizard::on_pushButton_6_clicked() {
-    oneKeyBind(BindingType::lightpark, "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n示廊灯");
+    oneKeyBind(BindingType::lightpark, StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::positionLights);
 }
 
 // 近光灯
 void ETS2KeyBinderWizard::on_pushButton_7_clicked() {
-    oneKeyBind(BindingType::lighton, "请将拨杆拧到：\n" + MEG_BOX_LINE + "\n近光灯");
+    oneKeyBind(BindingType::lighton, StringConstants::toggleStalk + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::lowbeam);
 }
 
 // 左转向灯
 void ETS2KeyBinderWizard::on_pushButton_8_clicked() {
-    oneKeyBind(BindingType::lblinkerh, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n左转向灯");
+    oneKeyBind(BindingType::lblinkerh, StringConstants::toggleStalk2 + "：\n" + MEG_BOX_LINE + "\n" + StringConstants::leftTurnSignal);
 }
 
 // 右转向灯
 void ETS2KeyBinderWizard::on_pushButton_9_clicked() {
-    oneKeyBind(BindingType::rblinkerh, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n右转向灯");
+    oneKeyBind(BindingType::rblinkerh, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::rightTurnSignal);
 }
 
 // 关闭雨刷
 void ETS2KeyBinderWizard::on_pushButton_10_clicked() {
-    oneKeyBind(BindingType::wipers0, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n关闭雨刷");
+    oneKeyBind(BindingType::wipers0, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::closeWiper);
 }
 
 // 雨刷1档
 void ETS2KeyBinderWizard::on_pushButton_11_clicked() {
-    oneKeyBind(BindingType::wipers1, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷1档");
+    oneKeyBind(BindingType::wipers1, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel1);
 }
 
 // 雨刷2档
 void ETS2KeyBinderWizard::on_pushButton_12_clicked() {
-    oneKeyBind(BindingType::wipers2, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷2档");
+    oneKeyBind(BindingType::wipers2, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel2);
 }
 
 // 雨刷3档
 void ETS2KeyBinderWizard::on_pushButton_13_clicked() {
-    oneKeyBind(BindingType::wipers3, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷3档");
+    oneKeyBind(BindingType::wipers3, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel3);
 }
 
 // 雨刮4档（点动）
 void ETS2KeyBinderWizard::on_pushButton_24_clicked() {
-    oneKeyBind(BindingType::wipers4, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n雨刷4档（点动）");
+    oneKeyBind(BindingType::wipers4, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::wiperLevel4);
 }
 
 // 远光灯
 void ETS2KeyBinderWizard::on_pushButton_14_clicked() {
-    oneKeyBind(BindingType::hblight, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n远光灯");
+    oneKeyBind(BindingType::hblight, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::highbeam);
 }
 
 // 灯光喇叭
 void ETS2KeyBinderWizard::on_pushButton_15_clicked() {
-    oneKeyBind(BindingType::lighthorn, "请将拨杆拨到：\n" + MEG_BOX_LINE + "\n灯光喇叭");
+    oneKeyBind(BindingType::lighthorn, StringConstants::toggleStalk2 + MEG_BOX_LINE + "\n" + StringConstants::headlightFlash);
 }
 
 // 12、档位开关1关闭
 void ETS2KeyBinderWizard::on_pushButton_20_clicked() {
-    oneKeyBind(BindingType::gearsel1off, "请将档位开关1拨到：\n" + MEG_BOX_LINE + "\n低档位");
+    oneKeyBind(BindingType::gearsel1off, StringConstants::please
+                                             + StringConstants::gearSwitch1
+                                             + StringConstants::toggle
+                                             + "：\n"
+                                             + MEG_BOX_LINE
+                                             + "\n"
+                                             + StringConstants::lowLevel);
 }
 
 // 13、档位开关1打开
 void ETS2KeyBinderWizard::on_pushButton_21_clicked() {
-    oneKeyBind(BindingType::gearsel1on, "请将档位开关1拨到：\n" + MEG_BOX_LINE + "\n高档位");
+    oneKeyBind(BindingType::gearsel1on, StringConstants::please
+                                            + StringConstants::gearSwitch1
+                                            + StringConstants::toggle
+                                            + "：\n"
+                                            + MEG_BOX_LINE
+                                            + "\n"
+                                            + StringConstants::highLevel);
 }
 
 // 14、档位开关2关闭
 void ETS2KeyBinderWizard::on_pushButton_22_clicked() {
-    oneKeyBind(BindingType::gearsel2off, "请将档位开关2拨到：\n" + MEG_BOX_LINE + "\n低档位");
+    oneKeyBind(BindingType::gearsel2off, StringConstants::please
+                                             + StringConstants::gearSwitch2
+                                             + StringConstants::toggle
+                                             + "：\n"
+                                             + MEG_BOX_LINE
+                                             + "\n"
+                                             + StringConstants::lowLevel);
 }
 
 // 15、档位开关2打开
 void ETS2KeyBinderWizard::on_pushButton_23_clicked() {
-    oneKeyBind(BindingType::gearsel2on, "请将档位开关2拨到：\n" + MEG_BOX_LINE + "\n高档位");
+    oneKeyBind(BindingType::gearsel2on, StringConstants::please
+                                            + StringConstants::gearSwitch2
+                                            + StringConstants::toggle
+                                            + "：\n"
+                                            + MEG_BOX_LINE
+                                            + "\n"
+                                            + StringConstants::highLevel);
 }
 
 // 接线提示
 void ETS2KeyBinderWizard::on_pushButton_17_clicked() {
     QLabel* labelImage = new QLabel(this, Qt::Dialog | Qt::WindowCloseButtonHint);
-    labelImage->setWindowTitle("接线提示-五菱宏光-转向灯拨杆");
+    labelImage->setWindowTitle(StringConstants::wiringTipTurnSignalStalk);
 
     QString imagePath = ":/ETS2_KeyBinder/ConnectTip_WuLing.jpg";
 
@@ -1391,7 +1448,7 @@ void ETS2KeyBinderWizard::on_pushButton_17_clicked() {
 
 void ETS2KeyBinderWizard::on_pushButton_25_clicked() {
     QLabel* labelImage = new QLabel(this, Qt::Dialog | Qt::WindowCloseButtonHint);
-    labelImage->setWindowTitle("接线提示-五菱宏光-雨刮拨杆");
+    labelImage->setWindowTitle(StringConstants::wiringTipWiper);
 
     QString imagePath = ":/ETS2_KeyBinder/ConnectTip_WuLing_Wipers.jpg";
 
@@ -1433,7 +1490,7 @@ void ETS2KeyBinderWizard::tryAutoSelectGameInputTypeAndProfile(){
         }
     }
 
-    QMessageBox::warning(this, "匹配失败", "自动匹配 游戏输入类型和游戏配置文件 失败!       \n\n请手动选择");
+    QMessageBox::warning(this, StringConstants::matchGameProfileFailed, StringConstants::error_matchGameProfileFailed);
 }
 
 bool ETS2KeyBinderWizard::tryAutoSelectGameInputTypeAndProfile(QPair<QString, QDateTime> profileFolder, bool isSteamProfile){
@@ -1494,7 +1551,10 @@ bool ETS2KeyBinderWizard::tryAutoSelectGameInputTypeAndProfile(QPair<QString, QD
             ui->comboBox_3->setCurrentText(profileName);
             on_comboBox_3_activated(ui->comboBox_3->currentIndex());
 
-            QMessageBox::information(this, "匹配成功", "自动匹配 游戏输入类型和游戏配置文件 成功! \n\n游戏输入类型: " + inputType + "\n\n游戏配置文件: " + profileName);
+            QMessageBox::information(
+                this,
+                StringConstants::matchGameProfileSuccess,
+                StringConstants::matchGameProfileSuccessMsg.arg(inputType, profileName));
 
             return true;
         }

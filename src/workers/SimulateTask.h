@@ -1,15 +1,14 @@
-#ifndef SIMULATE_TASK_H
-#define SIMULATE_TASK_H
+#pragma once
 
-#include<mapping_relation.h>
+#include "models/MappingRelation.h"
+#include "models/UserConfig.h"
+#include <windows.h>
+#include <ViGEm/Client.h>
+#include "common/KeyMap.h"
+#include "common/Global.h"
+
 #include<QThread>
-#include<windows.h>
-#include<ViGEm/Client.h>
-#include<key_map.h>
-#include "global.h"
 
-#define MAX_STR 255
-#define MAX_BUF 2048
 #define MOUSE_X_SPEED 6
 #define MOUSE_Y_SPEED 6
 
@@ -18,7 +17,7 @@
 #define XBOX_TRIGGER_SPEED 250
 
 // 方向盘轴模拟键盘按键时, 轴的内部死区
-#define AXIS_VALID_PERCENT 0.03
+//#define AXIS_VALID_PERCENT 0.03
 
 // 模拟释放按键的延迟时间ms
 #define RELEASE_DELAY_MS 100
@@ -29,20 +28,22 @@
 class SimulateTask : public QObject {
     Q_OBJECT
 private:
-    //hid_device *handle;// 当前设备的连接句柄
-    std::vector<MappingRelation*> mappingList;// 已配置的按键映射列表
-    std::map<std::string, QString> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
-    static std::vector<MappingRelation> handleMultiBtnVector;// 当前在使用的 设备组合键映射列表
-    static std::vector<MappingRelation> handleMultiBtnVectorUnsort;// 未排序的 设备组合键映射列表
-    static std::vector<MappingRelation> handleMultiBtnVectorSorted;// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
+    UserConfig userConfig;// 用户配置
+    QVector<LPDIRECTINPUTDEVICE8> readDataNeedInitedDeviceList;// 目标设备列表, 代表从这些设备读取数据
+    QVector<MappingRelation> mappingList;// 已配置的按键映射列表
+    QMap<QString, QString> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
 
-    std::map<std::string, QString> keyHoldingMap;// 记录按键一直按着的map; key: 设备-按键名称, value: 键盘扫描码
+    inline static std::vector<MappingRelation> handleMultiBtnVector = {};// 当前在使用的 设备组合键映射列表
+    inline static std::vector<MappingRelation> handleMultiBtnVectorUnsort = {};// 未排序的 设备组合键映射列表
+    inline static std::vector<MappingRelation> handleMultiBtnVectorSorted = {};// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)
 
-    std::map<std::string, TriggerTypeEnum> keyTriggerTypeMap;// 记录按键触发模式的map; key: 设备-按键名称, value: 键盘扫描码
+    QMap<QString, QString> keyHoldingMap;// 记录按键一直按着的map; key: 设备-按键名称, value: 键盘扫描码
 
-    std::map<std::string, MappingType> keyMappingTypeMap;// 记录按键映射类型的map; key: 设备-按键名称, value: 键盘扫描码
+    QMap<QString, TriggerTypeEnum> keyTriggerTypeMap;// 记录按键触发模式的map; key: 设备-按键名称, value: 键盘扫描码
 
-    std::vector<std::string> rotateAxisList;// 记录需要反转的轴
+    QMap<QString, MappingType> keyMappingTypeMap;// 记录按键映射类型的map; key: 设备-按键名称, value: 键盘扫描码
+
+    std::vector<QString> rotateAxisList;// 记录需要反转的轴
 
     bool isMouseLeftHolding = false;// 鼠标左键一直按着
     bool isMouseRightHolding = false;// 鼠标右键一直按着
@@ -54,12 +55,18 @@ private:
     bool needStartVirtualXbox = false;// 是否需要启动虚拟xbox手柄
 
 public:
-    SimulateTask(std::vector<MappingRelation*> mappingList);
+    // 构造函数
+    SimulateTask(QVector<MappingRelation> mappingList, const QVector<LPDIRECTINPUTDEVICE8>& readDataNeedInitedDeviceList);
+
     // 辅助功能-最长组合键优先模式发生改动
     static void changeEnableOnlyLongestMapping();
+
 public slots:
     // 工作任务
     void doWork();
+
+    // 设置改动的slot
+    void settingsChangedSlot();
 
 signals:
     // 任务结束信号
@@ -70,18 +77,21 @@ signals:
     void pauseClickSignal();
 
 protected:
-    QList<MappingRelation*> handleResult(QList<MappingRelation*> res);
+    // 处理设备数据结果, 整理数据
+    void handleResult(QVector<MappingRelation>& res);
 
-    bool isAxisRotate(std::string btnName);
+    // 是否反转轴
+    bool isAxisRotate(QString btnName);
 
-    bool isMappingValid(MappingRelation* mapping){
+    // 映射是否有效
+    bool isMappingValid(const MappingRelation& mapping){
         // 键盘按键值是否有效
         bool isKeyboardValueValid = false;
 
-        auto valueList = mapping->keyboard_value.split(KEYBOARD_COMBINE_KEY_SPE);
+        auto valueList = mapping.keyboard_value.split(KEYBOARD_COMBINE_KEY_SPE);
         int validCounter = 0;
         if(valueList.size() > 0){
-            for(auto value : valueList){
+            for(const auto& value : valueList){
                 bool ok;
                 int valueInt = value.toInt(&ok);
                 if(ok && valueInt != 0){
@@ -94,22 +104,40 @@ protected:
             }
         }
 
-        return mapping != nullptr && !mapping->dev_btn_name.empty() && isKeyboardValueValid;
+        return mapping.valid && !mapping.dev_btn_name.isEmpty() && isKeyboardValueValid;
     }
 
-    void addMappingToHandleMap(MappingRelation* mapping);
+    // 添加映射到 按键模拟需要用的设备按键对应键盘扫描码map
+    void addMappingToHandleMap(const MappingRelation& mapping);
 
-    QList<std::string> getBtnStrListFromHandleMap(std::string btnStr);
+    // 获取按键名称列表
+    QVector<QString> getBtnStrListFromHandleMap(QString btnStr);
 
-    bool isCurrentKeyHolding(std::string ketStr);
+    // 按键是否一直在按下
+    bool isCurrentKeyHolding(QString ketStr);
 
-    // 模拟按键操作
+    ///
+    /// \brief simulateKeyPress 模拟按键操作
+    /// \param vkey 按键的硬件扫描码
+    /// \param isKeyRelease 是否是松开按键, false代表按下按键, true代表松开按键
+    ///
     void simulateKeyPress(short vkey, bool isKeyRelease);
+    ///
+    /// \brief simulateKeyPressMs 模拟按键按下和自动松开
+    /// \param vkey 按键值
+    /// \param pressMs 按键按下的持续时间, 超过持续时间自动松开按键
+    ///
     void simulateKeyPressMs(short vkey, size_t pressMs);
+    ///
+    /// \brief simulateKeyDelayPressMs 按键等待一段时间后才按下, 之后自动松开按键
+    /// \param vkey 按键
+    /// \param pressMs 按键按下的持续时间, 持续时间结束后自动松开按键
+    /// \param delayMs 按键按下的延迟时间, 延迟时间结束才会按下按键
+    ///
     void simulateKeyDelayPressMs(short vkey, size_t pressMs, size_t delayMs);
 
     // 释放指定位置的所有按键
-    void releaseAllKey(QList<MappingRelation*> pressBtnList);
+    void releaseAllKey(const QVector<MappingRelation>& pressBtnList);
 
     // 关闭HID设备
     void closeDevice();
@@ -118,13 +146,27 @@ protected:
     bool initXboxController();
     // 关闭xbox控制器
     void closeXboxController();
-    // 模拟xbox按键操作
+
+    ///
+    /// \brief simulateXboxKeyPress 模拟xbox按键操作
+    /// \param inputType xbox输入的类型, 按键或者轴
+    /// \param inputValue1 按键值 或者 轴的值
+    /// \param inputValue2 备用
+    /// \param isRelease 是否是松开按键, false代表按下按键, true代表松开按键
+    ///
     void simulateXboxKeyPress(XboxInputType inputType, int inputValue1, int inputValue2, bool isRelease);
+    ///
+    /// \brief simulateXboxKeyPressMs 模拟xbox按键操作并自动松开按键
+    /// \param pressMs 按键按下的持续时间, 超过持续时间自动松开按键
+    ///
     void simulateXboxKeyPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs);
+    ///
+    /// \brief simulateXboxKeyDelayPressMs 延迟按下xbox按键, 且自动松开按键
+    /// \param delayMs 按键按下的延迟时间, 延迟时间结束才会按下按键
+    ///
     void simulateXboxKeyDelayPressMs(XboxInputType inputType, int inputValue1, int inputValue2, size_t pressMs, size_t delayMs);
 
     // 根据设置的内部死区, 计算出xbox轴的最终值
     int calXboxSingleAxisFinalValue(double innerDeadAreaPer, double devAxisDataPer, int xboxAxisMaxValue, int xboxAxisMinValue, bool isDecrease);
 };
 
-#endif // SIMULATE_TASK_H

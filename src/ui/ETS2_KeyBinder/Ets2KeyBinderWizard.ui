@@ -13,6 +13,12 @@
   <property name="windowTitle">
    <string>欧卡2/美卡-特殊按键绑定向导（实验性）</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget{
+background-color:#1a1f2a;
+color:#E5E7EB;
+}</string>
+  </property>
   <property name="wizardStyle">
    <enum>QWizard::WizardStyle::ModernStyle</enum>
   </property>
@@ -56,7 +62,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../resource.qrc">:/ETS2_KeyBinder/1_DisableSteamInput.jpg</pixmap>
+       <pixmap resource="../../../resources/resource.qrc">:/ETS2_KeyBinder/1_DisableSteamInput.jpg</pixmap>
       </property>
      </widget>
     </item>
@@ -180,7 +186,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../resource.qrc">:/ETS2_KeyBinder/2_SelectInputDevice.jpg</pixmap>
+       <pixmap resource="../../../resources/resource.qrc">:/ETS2_KeyBinder/2_SelectInputDevice.jpg</pixmap>
       </property>
      </widget>
     </item>
@@ -453,8 +459,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>398</width>
-         <height>571</height>
+         <width>332</width>
+         <height>489</height>
         </rect>
        </property>
        <layout class="QGridLayout" name="gridLayout_8">
@@ -985,12 +991,12 @@
   <customwidget>
    <class>BracketRightWidget</class>
    <extends>QWidget</extends>
-   <header location="global">bracketrightwidget.h</header>
+   <header location="global">ui/ETS2_KeyBinder/BracketRightWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../resource.qrc"/>
+  <include location="../../../resources/resource.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -1,7 +1,6 @@
-#ifndef MANUALLYBINDER_H
-#define MANUALLYBINDER_H
+#pragma once
 
-#include "ets2keybinderwizard.h"
+#include "ui/ETS2_KeyBinder/Ets2KeyBinderWizard.h"
 #include <QDialog>
 #include <map>
 
@@ -56,4 +55,3 @@ private:
     ActionEffect actionEffect; // 动作效果
 };
 
-#endif // MANUALLYBINDER_H

@@ -27,7 +27,10 @@ SOFTWARE.
 
 //
 // Represents the desired target type for the emulated device.
-//  
+//
+
+#include <minwindef.h>
+
 typedef enum _VIGEM_TARGET_TYPE
 {
     // 

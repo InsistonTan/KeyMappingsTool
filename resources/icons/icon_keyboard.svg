@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 128 128"
+   fill="none"
+   version="1.1"
+   id="svg17"
+   sodipodi:docname="icon_keyboard - 副本.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs17" />
+  <sodipodi:namedview
+     id="namedview17"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="6.3125"
+     inkscape:cx="63.920792"
+     inkscape:cy="64"
+     inkscape:window-width="1920"
+     inkscape:window-height="1010"
+     inkscape:window-x="-6"
+     inkscape:window-y="-6"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg17" />
+  <!-- 外壳 -->
+  <rect
+     x="10.158466"
+     y="33.346584"
+     width="107.68309"
+     height="61.306828"
+     rx="7.9765234"
+     stroke="#60a5fa"
+     stroke-width="2.53841"
+     id="rect1" />
+  <!-- 功能行 -->
+  <rect
+     x="15.841584"
+     y="39.861385"
+     width="96"
+     height="8"
+     rx="3"
+     stroke="#38bdf8"
+     stroke-width="2.5"
+     id="rect2" />
+  <!-- 第一行键 -->
+  <rect
+     x="16"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect3" />
+  <rect
+     x="28"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect4" />
+  <rect
+     x="40"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect5" />
+  <rect
+     x="52"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect6" />
+  <rect
+     x="64"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect7" />
+  <rect
+     x="76"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect8" />
+  <rect
+     x="88"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect9" />
+  <rect
+     x="100"
+     y="54"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#93c5fd"
+     stroke-width="2"
+     id="rect10" />
+  <!-- 第二行 -->
+  <rect
+     x="22"
+     y="70"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#38BDF8"
+     stroke-width="2"
+     id="rect11" />
+  <rect
+     x="34"
+     y="70"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#38BDF8"
+     stroke-width="2"
+     id="rect12" />
+  <rect
+     x="46"
+     y="70"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#38BDF8"
+     stroke-width="2"
+     id="rect13" />
+  <rect
+     x="58"
+     y="70"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#38BDF8"
+     stroke-width="2"
+     id="rect14" />
+  <rect
+     x="70"
+     y="70"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#38BDF8"
+     stroke-width="2"
+     id="rect15" />
+  <rect
+     x="82"
+     y="70"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#38BDF8"
+     stroke-width="2"
+     id="rect16" />
+  <rect
+     x="94.079208"
+     y="69.89109"
+     width="10"
+     height="10"
+     rx="2"
+     stroke="#38bdf8"
+     stroke-width="2"
+     id="rect16-9" />
+  <!-- space -->
+  <rect
+     x="36"
+     y="84"
+     width="56"
+     height="6"
+     rx="3"
+     stroke="#60A5FA"
+     stroke-width="2.5"
+     id="rect17" />
+</svg>
