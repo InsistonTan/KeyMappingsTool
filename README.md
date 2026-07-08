@@ -21,7 +21,7 @@
 ### 编译
 - 1.clone或下载本项目源码
 - 2.QT Creator打开本项目的 CMakeLists.txt 文件
-  - 如果 QT Creator 没有自动识别到 MSVC v143(2022)编译器, 需要手动配置)
+  - 如果 QT Creator 没有自动识别到 MSVC v143(2022)编译器, 需要手动配置
   - 如果是使用 Visual Studio, 需要手动配置QT6.x MSVC2022的安装位置, 否则无法识别Qt框架的头文件
 - 3.执行cmake
 - 4.编译运行
