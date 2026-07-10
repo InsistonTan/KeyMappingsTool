@@ -361,13 +361,13 @@ bool ForceFeedbackWorker::playDynamicEffects()
     }
 
     if(hr != DI_OK){
-        Global::showErrorMsgBoxAndPushToLog("请求转向轴设备失败!");
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::acquireSteeringDeviceFailed);
         return false;
     }
 
     // 开启力反馈效果
     if(g_pSpringForce->Start(1, 0) != DI_OK || g_pDamper->Start(1, 0) != DI_OK){
-        Global::showErrorMsgBoxAndPushToLog("开启回正力/阻尼效果失败!");
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::playEffectsFailed);
         return false;
     }
 

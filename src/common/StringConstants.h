@@ -399,4 +399,7 @@ public:
 
     qstr showMainWindow = QStringLiteral("显示窗口");
     qstr quit = QStringLiteral("退出");
+
+    qstr acquireSteeringDeviceFailed = QStringLiteral("请求转向轴设备失败, 无法开启力反馈效果!");
+    qstr playEffectsFailed = QStringLiteral("开启回正力/阻尼效果失败!");
 };
