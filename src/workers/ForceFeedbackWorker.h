@@ -48,7 +48,7 @@ private:
     // 转向阻尼强度-车速曲线的查找表;
     // key: 车速百分比 * 1000;
     // value: 转向阻尼强度百分比
-    QHash<int, double> dampingGainLUT;
+    QHash<int, double> damperGainLUT;
 
     // (废弃)
     //double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度

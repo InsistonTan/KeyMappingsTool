@@ -71,12 +71,12 @@ void ForceFeedbackWorker::init(){
     }
     // 生成 转向阻尼强度曲线的查找表
     // 该表总共1001个值(0-1000)
-    dampingGainLUT.clear();
+    damperGainLUT.clear();
     for(int x = 0; x <= 1000; x++){
         // 根据x轴值, 获取y轴值
         double y = CurveEditor::getYAxisLogicalValue(userConfig.SYSTEM_forceFeedbackSettings_dampingCurve, x/10.0);
         // y轴值是强度百分比*100, 所以需要 y/100 才是百分比
-        dampingGainLUT.insert(x, y/100.0);
+        damperGainLUT.insert(x, y/100.0);
     }
 
     // 最大油门加速度
@@ -381,7 +381,7 @@ void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double totalA){
 
     // 根据查找表, 找到强度系数百分比, 再乘以强度最大值, 再乘以最大强度百分比 得到实际强度系数
     springEffectValue = (LONG)(springGainLUT.value(((int)(speedPer*1000))) * DI_FFNOMINALMAX * maxSpringGain);
-    damperEffectValue = (LONG)(dampingGainLUT.value(((int)(speedPer*1000))) * DI_FFNOMINALMAX * maxDamperGain);
+    damperEffectValue = (LONG)(damperGainLUT.value(((int)(speedPer*1000))) * DI_FFNOMINALMAX * maxDamperGain);
 
     // 值检验
     if(springEffectValue < 0){
