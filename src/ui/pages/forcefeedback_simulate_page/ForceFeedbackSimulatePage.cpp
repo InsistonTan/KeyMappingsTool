@@ -95,7 +95,7 @@ void ForceFeedbackSimulatePage::init()
     ffbSimWidgetLayout->setSpacing(16);
     // 控件
     QLabel* ffbSimText = new QLabel(StringConstants::ffbSimSwitchText, this);
-    ffbSimText->setStyleSheet("font:14px bold;");
+    ffbSimText->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
     ffbSimSwitch = new WinUISwitch(this);
     ffbSimWidgetLayout->addWidget(ffbSimText);
     ffbSimWidgetLayout->addStretch();
@@ -133,7 +133,7 @@ void ForceFeedbackSimulatePage::init()
     // 控件
     // 标题
     QLabel* axisSettingsGroupTitle = new QLabel(StringConstants::axisSettings, axisSettingsGroup);
-    axisSettingsGroupTitle->setStyleSheet(QString("font: 14px bold;color:%1;").arg(Theme::textColor()));
+    axisSettingsGroupTitle->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
     // 转向轴设置
     steeringAxisNameLabel = new QLabel(StringConstants::notSet, axisSettingsGroup);
     setSteeringAxisBtn = new QPushButton(StringConstants::setSteringAxisBtn, axisSettingsGroup);
@@ -188,7 +188,7 @@ void ForceFeedbackSimulatePage::init()
     speedDownLineEdit = new QLineEdit(carSettingsGroup);
     maxSpeedLineEdit = new QLineEdit(carSettingsGroup);
     // 设置样式
-    carSettingsGroupTitle->setStyleSheet(QString("font: 14px bold;color:%1;").arg(Theme::textColor()));
+    carSettingsGroupTitle->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
     Theme::setLineEditStyleSheet(speedUpLineEdit);
     Theme::setLineEditStyleSheet(speedDownLineEdit);
     Theme::setLineEditStyleSheet(maxSpeedLineEdit);
@@ -218,7 +218,7 @@ void ForceFeedbackSimulatePage::init()
     springGainLineEdit = new QLineEdit(gainSettingsGroup);
     damperGainLineEdit = new QLineEdit(gainSettingsGroup);
     // 设置样式
-    gainSettingsGrouppTitle->setStyleSheet(QString("font: 14px bold;color:%1;").arg(Theme::textColor()));
+    gainSettingsGrouppTitle->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
     Theme::setLineEditStyleSheet(springGainLineEdit);
     Theme::setLineEditStyleSheet(damperGainLineEdit);
     springGainLineEdit->setFixedWidth(fixedWidthLineEdit);
@@ -245,7 +245,7 @@ void ForceFeedbackSimulatePage::init()
     ffbCurveWidgetLayout->setSpacing(12);
     // 控件
     QLabel* ffbCurveWidgetTitle = new QLabel(StringConstants::ffbCurveSettings, ffbCurveWidget);
-    ffbCurveWidgetTitle->setStyleSheet(QString("font: 14px bold;color:%1;").arg(Theme::textColor()));
+    ffbCurveWidgetTitle->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
     QLabel* ffbCurveActionDesc = new QLabel(StringConstants::ffbCurveActionDesc, ffbCurveWidget);
     // 曲线编辑器
     springCurve = new CurveEditor(StringConstants::titleSpeed, StringConstants::titleSpringGain, this);

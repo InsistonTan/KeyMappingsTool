@@ -93,7 +93,7 @@ void HomePage::initUI()
     // 设备选择下拉框
     deviceBox = new MultiSelectComboBox();
     // 设置样式
-    Theme::setComboBoxStyleSheet(deviceBox, 200);
+    Theme::setComboBoxStyleSheet(deviceBox, 210);
 
     // 刷新按钮
     refreshDeviceListBtn = new QPushButton(StringConstants::refresh);
@@ -123,7 +123,7 @@ void HomePage::initUI()
 
     // 配置选择 下拉框
     cfgBox = new NoWheelComboBox();
-    Theme::setComboBoxStyleSheet(cfgBox, 130);
+    Theme::setComboBoxStyleSheet(cfgBox, 150);
     cfgBox->addItem(StringConstants::blankMappings);
     connect(cfgBox, &QComboBox::activated, this, [=](){
         // 全局映射正在运行, 不能切换映射配置
@@ -503,8 +503,6 @@ void HomePage::loadLastDeviceFile()
         }
     }
 
-    // 更新已选择设备label
-    updateSelectedDeviceLabel();
 }
 
 void HomePage::scanMappingFile()
@@ -640,53 +638,6 @@ bool HomePage::hasLastDevInCurrentDeviceList(QString lastDeviceName)
     }
 
     return false;
-}
-
-void HomePage::updateSelectedDeviceLabel()
-{
-    //QString labelText = "";
-
-    // int num = currentSelectedDeviceList.size();
-
-    // selectedDevicesLabelHeader->setText(
-    //     StringConstants::selectedDeviceCount
-    //     + ": "
-    //     + (num == 0
-    //         ? "<b style='color: rgb(160, 0, 0);'>0</b>"
-    //         : "<b style='color: rgb(0, 160, 0);'>"+QString::number(num)+"</b>")
-    //     );
-
-
-    // if(currentSelectedDeviceList.size() == 0){
-    //     selectedDevicesLabelHeader->setText(StringConstants::selectedDevice + "(<b style='color: rgb(160, 0, 0);'>0</b>):");
-    //     selectedDevicesLabel->setText(StringConstants::hasNone);
-    //     selectedDevicesLabel->setStyleSheet("");
-    //     selectedDevicesLabel->setToolTip("");
-    // }else{
-    //     for(const auto& str : currentSelectedDeviceList){
-    //         labelText.append(str).append(", ");
-    //     }
-    //     int index = labelText.lastIndexOf(", ");
-    //     if(index >= 0){
-    //         labelText = labelText.left(index);
-    //     }
-
-    //     selectedDevicesLabelHeader->setText(QString(StringConstants::selectedDevice + "(<b style='color: rgb(0, 160, 0);'>") + std::to_string(currentSelectedDeviceList.size()).data() + "</b>):");
-
-    //     // 获取 QFontMetrics 对象
-    //     QFontMetrics metrics(selectedDevicesLabel->font());
-    //     int labelHeight = selectedDevicesLabel->height(); // 标签高度（像素）
-    //     int lineHeight = metrics.height(); // 单行高度
-    //     int maxLines = labelHeight/lineHeight; // 计算最大行数
-    //     // 设置省略模式
-    //     selectedDevicesLabel->setText(
-    //         metrics.elidedText(labelText, Qt::ElideLeft,
-    //                            selectedDevicesLabel->width() * maxLines));
-
-    //     selectedDevicesLabel->setStyleSheet("QLabel{color: rgb(0, 160, 0);}");
-    //     selectedDevicesLabel->setToolTip(labelText.replace(", ", "<br>"));
-    // }
-
 }
 
 void HomePage::clearMappingsArea()

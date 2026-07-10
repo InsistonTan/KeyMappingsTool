@@ -133,7 +133,7 @@ public:
     qstr selectDir = QStringLiteral("选择目录");
     qstr bindingGuide = QStringLiteral("绑定向导");
     qstr ETS2_installDir = QStringLiteral("欧卡2安装目录");
-    qstr autoReleaseHandBrakeDesc = QStringLiteral("需要先选择欧卡2安装目录, 然后游戏内手刹的键盘按键设置成'空格'");
+    qstr autoReleaseHandBrakeDesc = QStringLiteral("踩下油门将会自动解除手刹, 需要先选择欧卡2安装目录, 然后游戏内手刹的键盘按键设置成'空格'");
     qstr autoReleaseHandBrake = QStringLiteral("欧卡2自动解除手刹");
     qstr ETS2_keyBinderDesc = QStringLiteral("通过修改游戏配置, 支持绑定: 近光灯, 转向灯, 雨刷等等");
     qstr ETS2_keyBinder = QStringLiteral("欧卡2/美卡-原生按键绑定");
@@ -360,8 +360,8 @@ public:
     qstr setSteringAxisBtn = QStringLiteral("点击后转动方向盘");
     qstr axisSettings = QStringLiteral("设置转向/油门/刹车");
     qstr titleSpeed = QStringLiteral("车速百分比");
-    qstr titleSpringGain = QStringLiteral("回正力强度系数百分比");
-    qstr titleDampingGain = QStringLiteral("转向阻尼强度系数百分比");
+    qstr titleSpringGain = QStringLiteral("回正力强度系数");
+    qstr titleDampingGain = QStringLiteral("转向阻尼强度系数");
     qstr carParamsSettings = QStringLiteral("设置游戏内车辆参数");
     qstr gainSettings = QStringLiteral("设置力反馈最大强度");
     qstr springMaxGain = QStringLiteral("回正力最大强度");

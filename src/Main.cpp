@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <csignal>
+#include <QOperatingSystemVersion>
 
 //错误信号处理函数
 void signalHandler(int signal);
@@ -40,10 +41,24 @@ int main(int argc, char *argv[])
     // 隐藏窗口
     Global::hideWindow = new Global::HiddenHostWindow();
 
+
     // 设置全局字体
-    QFont font("Segoe UI");
-    font.setPointSize(9);
+    QFont font;
+    if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows11){
+        font.setFamilies({
+            "Segoe UI"
+        });
+    }
+    else{
+        font.setFamilies({
+            "Segoe UI",
+            "Microsoft YaHei UI"
+        });
+    }
+    font.setPointSizeF(9.0);
+    font.setWeight(QFont::Normal);
     qApp->setFont(font);
+
     qApp->setStyleSheet(QString("QWidget{color:%1;}").arg(Theme::textColor()));
 
     try{

@@ -88,7 +88,7 @@ private:
     // lastDeviceName 是否在当前设备列表
     bool hasLastDevInCurrentDeviceList(QString lastDeviceName);
     // (已弃用)更新已选择设备的label
-    void updateSelectedDeviceLabel();
+    //void updateSelectedDeviceLabel();
     // 清空配置列表界面
     void clearMappingsArea();
     // 映射列表区域新增一条映射;
