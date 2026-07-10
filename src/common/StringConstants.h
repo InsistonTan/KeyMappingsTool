@@ -365,7 +365,7 @@ public:
     qstr carParamsSettings = QStringLiteral("设置游戏内车辆参数");
     qstr gainSettings = QStringLiteral("设置力反馈最大强度");
     qstr springMaxGain = QStringLiteral("回正力最大强度");
-    qstr springMaxGainDesc = QStringLiteral("数值范围: 0到1, 该数值不应设置过大");
+    qstr springMaxGainDesc = QStringLiteral("数值范围: 0到1");
     qstr damperMaxGain = QStringLiteral("转向阻尼最大强度");
     qstr sdamperMaxGainDesc = QStringLiteral("数值范围: 0到1");
     qstr speedUp100km_h = QStringLiteral("百公里加速(单位:秒)");
