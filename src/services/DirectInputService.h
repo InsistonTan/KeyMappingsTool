@@ -40,8 +40,10 @@ public:
     static bool scanDevice();
 
     // 根据设备名称 打开设备(初始化设备);
-    // interruptWhenError = true, 代表当deviceNameList中的某个设备初始化失败时, 函数直接return, 不再初始化剩下的设备
-    static bool openDiDevice(QVector<QString> deviceNameList, bool interruptWhenError = true);
+    // interruptWhenError = true, 代表当deviceNameList中的某个设备初始化失败时, 函数直接return, 不再初始化剩下的设备;
+    // cooperativeLevel 默认使用: 后台+非独占模式;
+    static bool openDiDevice(QVector<QString> deviceNameList, bool interruptWhenError = true, DWORD cooperativeLevel = DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
+    static LPDIRECTINPUTDEVICE8 openDiDevice(HWND hWnd, QString deviceName, DWORD cooperativeLevel = DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
 
     // 获取设备状态数据;
     // QVector<MappingRelation>& out : 外部传入的用来存储结果的对象的引用;
@@ -70,7 +72,7 @@ public:
     static void cleanupDirectInput();
 
     // 检测是否支持力反馈
-    static bool checkIsSupportForceFeedback(QString deviceName);
+    static bool checkIsSupportForceFeedback(LPDIRECTINPUTDEVICE8 device);
 
     // 设备是否已经初始化
     static bool isDeviceInited(QString deviceName);

@@ -9,6 +9,8 @@
 
 #include <QThread>
 #include <QCoreApplication>
+#include <qcontainerfwd.h>
+#include <qwindowdefs_win.h>
 #include <thread>
 
 #define FORCE_GAIN 1 // 力反馈的整体强度系数(0-1), 影响整体的力反馈强度
@@ -23,171 +25,6 @@
 #define STATIC_DAMPER_PER 1 // 车辆静止状态下, 方向盘的阻尼系数(0-1)
 #define STATIC_SPRING_PER 0.05 // 车辆静止状态下, 方向盘的弹簧(回正力)系数(0-1)
 #define LOW_SPEED_SPRING_PER 0.1 // 车辆低速状态下, 方向盘的弹簧(回正力)系数(0-1)
-
-
-// 创建力回馈效果
-bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
-    bool res1 = false, res2 = false;
-
-    DWORD axes[1];
-    if(steerWheelAxis == StringConstants::axisX){
-        axes[0] = DIJOFS_X;
-    }else if(steerWheelAxis == StringConstants::axisY){
-        axes[0] = {DIJOFS_Y};
-    }else if(steerWheelAxis == StringConstants::axisZ){
-        axes[0] = {DIJOFS_Z};
-    }else if(steerWheelAxis == StringConstants::axisRX){
-        axes[0] = {DIJOFS_RX};
-    }else if(steerWheelAxis == StringConstants::axisRY){
-        axes[0] = {DIJOFS_RY};
-    }else if(steerWheelAxis == StringConstants::axisRZ){
-        axes[0] = {DIJOFS_RZ};
-    }else if(steerWheelAxis == StringConstants::axisS1){
-        axes[0] = {DIJOFS_SLIDER(0)};
-    }else if(steerWheelAxis == StringConstants::axisS2){
-        axes[0] = {DIJOFS_SLIDER(1)};
-    }
-
-    if(g_pSpringForce == NULL){
-        // 设置弹簧效果的系数
-        diSpringCondition = {0, (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), 0, 0, 0};
-
-        diSpring = {sizeof(DIEFFECT)};
-        diSpring.dwFlags = DIEFF_CARTESIAN | DIEFF_OBJECTOFFSETS;
-        diSpring.dwDuration = INFINITE;
-        diSpring.dwSamplePeriod = 0;
-        diSpring.dwGain = DI_FFNOMINALMAX * FORCE_GAIN;
-        diSpring.dwTriggerButton = DIEB_NOTRIGGER;
-        diSpring.dwTriggerRepeatInterval = INFINITE;
-        diSpring.cAxes = 1;
-
-        diSpring.rgdwAxes = axes;
-        diSpring.rglDirection = new LONG[1]{ 0 };
-        diSpring.lpEnvelope = NULL;
-        diSpring.cbTypeSpecificParams = sizeof(DICONDITION);
-        diSpring.lpvTypeSpecificParams = &diSpringCondition;
-        diSpring.dwStartDelay = 0;
-
-        // 创建效果
-        HRESULT hr1 = pSteeringWheelAxisDeviceInstance->CreateEffect(GUID_Spring, &diSpring, &g_pSpringForce, NULL);
-
-        res1 = SUCCEEDED(hr1);
-    }else{
-        res1 = true;
-    }
-
-    if(g_pDamper == NULL){
-        // Condition
-        diDamperCondition = {0, (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), (LONG)(DI_FFNOMINALMAX * FORCE_GAIN), 0, 0, 0};
-
-        // 阻尼（Damper）
-        diDamper = {sizeof(DIEFFECT)};
-        diDamper.dwFlags = DIEFF_CARTESIAN | DIEFF_OBJECTOFFSETS;
-        diDamper.dwDuration = INFINITE;
-        diDamper.dwSamplePeriod = 0;
-        diDamper.dwGain = DI_FFNOMINALMAX  * FORCE_GAIN;
-        diDamper.dwTriggerButton = DIEB_NOTRIGGER;
-        diDamper.dwTriggerRepeatInterval = INFINITE;
-        diDamper.cAxes = 1;
-
-        diDamper.rgdwAxes = axes;
-        diDamper.rglDirection = new LONG[1]{ 0 };
-        diDamper.lpEnvelope = NULL;
-        diDamper.cbTypeSpecificParams = sizeof(DICONDITION);
-        diDamper.lpvTypeSpecificParams = &diDamperCondition;
-        diDamper.dwStartDelay = 0;
-
-        // 创建效果
-        HRESULT hr2 = pSteeringWheelAxisDeviceInstance->CreateEffect(GUID_Damper, &diDamper, &g_pDamper, NULL);
-
-        res2 = SUCCEEDED(hr2);
-    }else{
-        res2 = true;
-    }
-
-    return res1 && res2;
-}
-
-// 根据车速更新力回馈
-void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double totalA){
-    //double speedKmh = speed_m_s * 3.6; // 车速, 单位 km/h
-
-    // 当前车辆处于非静止状态
-    // if(speedKmh > 3){
-    //     // 对弹簧效果根据车速进行分段式处理
-    //     // 回正力缓慢增加
-    //     if(speedKmh < 30){
-    //         springEffectValue += (LONG)(totalA * DI_FFNOMINALMAX * 0.0001);
-    //     }else{
-    //         // 回正力较快速增加
-    //         springEffectValue += (LONG)(totalA * DI_FFNOMINALMAX * 0.0003);
-    //     }
-
-    //     // 阻尼效果
-    //     damperEffectValue -= (LONG)(totalA * DI_FFNOMINALMAX * 0.001);
-    // }else{
-    //     springEffectValue = (LONG)(DI_FFNOMINALMAX * STATIC_SPRING_PER);
-    //     damperEffectValue = (LONG)(DI_FFNOMINALMAX * STATIC_DAMPER_PER);
-    // }
-
-     double speedPer = speed_m_s / maxSpeed_m_s;// 当前车速百分比
-
-    // 根据查找表, 找到强度系数百分比, 再乘以最大值, 得到实际强度系数
-    springEffectValue = (int)(springGainLUT.value(((int)(speedPer*1000))) * DI_FFNOMINALMAX);
-    damperEffectValue = (int)(dampingGainLUT.value(((int)(speedPer*1000))) * DI_FFNOMINALMAX);
-
-    // 值检验
-    if(springEffectValue < 0){
-        springEffectValue = 0;
-    }
-    else if (springEffectValue > DI_FFNOMINALMAX){
-        springEffectValue = DI_FFNOMINALMAX;
-    }
-
-    if(damperEffectValue < 0){
-        damperEffectValue = 0;
-    }
-    else if (damperEffectValue > DI_FFNOMINALMAX){
-        damperEffectValue = DI_FFNOMINALMAX;
-    }
-
-
-    // 弹簧效果强度系数  // 与静止状态的强度系数相比, 取较大值; 再与最大强度系数比, 取较小值
-    // diSpringCondition.lPositiveCoefficient =
-    //     std::min((LONG)(DI_FFNOMINALMAX),
-    //              std::max((LONG)(springEffectValue * userConfig.SYSTEM_forceFeedbackSettings_maxForceFeedbackGain),
-    //                       (LONG)(DI_FFNOMINALMAX * STATIC_SPRING_PER)));;
-    // diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
-    // // 阻尼效果强度系数
-    // diDamperCondition.lPositiveCoefficient =
-    //     std::min((LONG)(DI_FFNOMINALMAX), std::max(damperEffectValue, (LONG)0));
-    // diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
-
-    // 弹簧效果强度系数
-    // 方向盘向右转动的回正力系数
-    diSpringCondition.lPositiveCoefficient = springEffectValue;
-    // 方向盘向左转动的回正力系数
-    diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
-    // 阻尼效果强度系数
-    diDamperCondition.lPositiveCoefficient = damperEffectValue;
-    diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
-
-    // 更新回正力
-    if (g_pSpringForce) {
-        g_pSpringForce->SetParameters(&diSpring, DIEP_TYPESPECIFICPARAMS | DIEP_START);
-    }
-
-    // 更新阻尼
-    if (g_pDamper) {
-        g_pDamper->SetParameters(&diDamper, DIEP_TYPESPECIFICPARAMS | DIEP_START);
-    }
-}
-
-// 关闭资源
-void ForceFeedbackWorker::cleanup() {
-    if (g_pSpringForce) g_pSpringForce->Release();
-    if (g_pDamper) g_pDamper->Release();
-}
 
 ForceFeedbackWorker::ForceFeedbackWorker()
 {
@@ -213,6 +50,11 @@ void ForceFeedbackWorker::init(){
     acceleration_100km_time_s = userConfig.SYSTEM_forceFeedbackSettings_acceleration_100km_time_s;
     stop_100km_dis_m = userConfig.SYSTEM_forceFeedbackSettings_stop_100km_dis_m;
     maxSpeed_m_s = getMaxSpeed_m_s(userConfig.SYSTEM_forceFeedbackSettings_maxSpeed_km_h);
+
+    maxSpringGain = userConfig.SYSTEM_forceFeedbackSettings_maxSpringGain;
+    maxDamperGain = userConfig.SYSTEM_forceFeedbackSettings_maxDamperGain;
+
+
     // maxForceFeedbackGain = userConfig.SYSTEM_forceFeedbackSettings_maxForceFeedbackGain;
     // isConstantForceMode = userConfig.SYSTEM_forceFeedbackSettings_isConstantForceMode;
     // constantCorrectiveForceGain = userConfig.SYSTEM_forceFeedbackSettings_constantCorrectiveForceGain;
@@ -242,28 +84,25 @@ void ForceFeedbackWorker::init(){
     // 最大刹车加速度
     maxBrakeA = getmaxBrakeA(stop_100km_dis_m);
 
-    // 各个轴的数值范围
-    auto axisValueRangeMap = DirectInputService::getAxisValueRangeMap();
-    // 油门踏板的数值范围
-    this->throttleValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(throttleAxisDeviceName, throttleAxis));
-    // 刹车踏板的数值范围
-    this->brakeValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(brakeAxisDeviceName, brakeAxis));
 
     if(isWorkerRunning){
+        // 释放旧的设备
+        for(auto& d : initedDeviceList){
+            d->Unacquire();
+            d->Release();
+        }
         // 检查设备
-        if(!checkDevicesConnected()){
+        if(checkDevicesConnected() == false){
             isWorkerRunning = false;
         }
 
         // 如果还在运行, 根据新的配置信息重新创建力反馈效果
         if(isWorkerRunning){
-            if(!createDynamicEffects(this->steeringWheelAxis)){
+            if(createDynamicEffects(this->steeringWheelAxis) == false){
                 Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_createEffectsErrorMsg);
                 isWorkerRunning = false;
-            }else{
-                // 开启力反馈效果
-                g_pSpringForce->Start(1, 0);
-                g_pDamper->Start(1, 0);
+            }else if(playDynamicEffects() == false){
+                isWorkerRunning = false;
             }
         }
     }
@@ -271,27 +110,40 @@ void ForceFeedbackWorker::init(){
 
 bool ForceFeedbackWorker::checkDevicesConnected()
 {
-    // 转向设备为空
-    if(steeringWheelAxisDeviceName.isEmpty()){
+    //auto userConfig = ConfigService::get(ConfigService::GetSource::FFBSim);
+
+    // 转向未设置
+    if(steeringWheelAxisDeviceName.isEmpty())
+    {
         Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_WheelDeviceEmptyErrorMsg);
+        return false;
+    }
+    // 检查油门轴和刹车轴设备
+    if(throttleAxisDeviceName.isEmpty() || brakeAxisDeviceName.isEmpty()){
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceEmptyErrorMsg);
         return false;
     }
 
     // 扫描设备
     DirectInputService::scanDevice();
 
-    // 打开转向设备失败
-    if(DirectInputService::openDiDevice({steeringWheelAxisDeviceName}) == false){
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_WheelDeviceOpenErrorMsg);
-        return false;
-    }
+    // 用后台独占模式初始化转向设备, 并获取已初始化的转向轴设备实例 DISCL_EXCLUSIVE | DISCL_BACKGROUND  DISCL_FOREGROUND
+    pSteeringWheelAxisDeviceInstance = DirectInputService::openDiDevice(Global::getHideWindowHWnd(),
+                                                                        steeringWheelAxisDeviceName,
+                                                                        DISCL_EXCLUSIVE | DISCL_BACKGROUND);
 
-    // 获取已初始化的转向轴设备实例
-    pSteeringWheelAxisDeviceInstance = DirectInputService::getInitedDevice(steeringWheelAxisDeviceName);
     if(pSteeringWheelAxisDeviceInstance == nullptr){
         Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_WheelDeviceOpenErrorMsg);
         return false;
     }
+
+    // 检查设备是否支持力反馈
+    if(DirectInputService::checkIsSupportForceFeedback(pSteeringWheelAxisDeviceInstance) == false)
+    {
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_steeringWheelDeviceErrorMsg.arg(steeringWheelAxisDeviceName));
+        return false;
+    }
+
 
     // 加锁
     QMutexLocker locker(&mutex_initedDeviceList);
@@ -301,30 +153,289 @@ bool ForceFeedbackWorker::checkDevicesConnected()
     // 添加设备到列表
     initedDeviceList.append(pSteeringWheelAxisDeviceInstance);
 
-    // 检查油门轴和刹车轴设备
-    // 设备为空
-    if(throttleAxisDeviceName.isEmpty() || brakeAxisDeviceName.isEmpty()){
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceEmptyErrorMsg);
-        return false;
-    }
-    // 设备连接失败
-    if(DirectInputService::openDiDevice({throttleAxisDeviceName, brakeAxisDeviceName}) == false){
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceOpenErrorMsg);
-        return false;
-    }else{
-        auto pThrottleAxisDevice = DirectInputService::getInitedDevice(throttleAxisDeviceName);
-        auto pBrakeAxisDevice = DirectInputService::getInitedDevice(brakeAxisDeviceName);
-        if(pThrottleAxisDevice == nullptr || pBrakeAxisDevice == nullptr){
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceGetInstanceErrorMsg);
+    // 防止相同设备重复初始化
+    if(throttleAxisDeviceName != steeringWheelAxisDeviceName){
+        QVector<QString> deviceNameList = {throttleAxisDeviceName};
+        if(brakeAxisDeviceName != throttleAxisDeviceName){
+            deviceNameList.append(brakeAxisDeviceName);
+        }
+
+        // 油门轴和刹车轴设备连接失败
+        if(DirectInputService::openDiDevice(deviceNameList) == false){
+            Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceOpenErrorMsg);
             return false;
         }else{
-            // 添加到已初始化设备列表
-            initedDeviceList.append(pThrottleAxisDevice);
-            initedDeviceList.append(pBrakeAxisDevice);
+            for(auto& deviceName : deviceNameList){
+                auto initedDevice = DirectInputService::getInitedDevice(deviceName);
+                if(initedDevice == nullptr){
+                    Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceGetInstanceErrorMsg);
+                    return false;
+                }else{
+                    // 添加到已初始化设备列表
+                    initedDeviceList.append(initedDevice);
+                }
+            }
         }
     }
 
+
+    // 获取设备轴的数值范围map
+    auto axisValueRangeMap = DirectInputService::getAxisValueRangeMap();
+
+    // 获取不到转向轴的数值范围
+    auto steeringAxisKey = Global::getBtnOrAxisFullName(steeringWheelAxisDeviceName, steeringWheelAxis);
+    if(axisValueRangeMap.contains(steeringAxisKey) == false)
+    {
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_steeringAxisRangeErrorMsg);
+        return false;
+    }
+
+    // 获取不到油门踏板的数值范围
+    auto throttleAxisKey = Global::getBtnOrAxisFullName(throttleAxisDeviceName, throttleAxis);
+    if(axisValueRangeMap.contains(throttleAxisKey) == false)
+    {
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleAxisRangeErrorMsg);
+        return false;
+    }
+
+    // 获取不到刹车踏板的数值范围
+    auto brakeAxisKey = Global::getBtnOrAxisFullName(brakeAxisDeviceName, brakeAxis);
+    if(axisValueRangeMap.contains(brakeAxisKey) == false)
+    {
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_brakeAxisRangeErrorMsg);
+        return false;
+    }
+
+    // 油门踏板的数值范围
+    this->throttleValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(throttleAxisDeviceName, throttleAxis));
+    // 刹车踏板的数值范围
+    this->brakeValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(brakeAxisDeviceName, brakeAxis));
+
     return true;
+}
+
+// 枚举设备支持的力反馈效果回调
+BOOL CALLBACK EnumEffectsCallback(const DIEFFECTINFO *pdei, VOID *pvRef){
+    qDebug() << "Effect:" << QString::fromWCharArray(pdei->tszName);
+
+    //qDebug() << "GUID:" << pdei->guid.guid.Data1;
+
+    return DIENUM_CONTINUE;
+}
+
+// 创建力回馈效果
+bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
+    // 枚举设备支持的力反馈效果
+    // pSteeringWheelAxisDeviceInstance->EnumEffects(
+    //     EnumEffectsCallback,
+    //     nullptr,
+    //     DIEFT_ALL
+    //     );
+
+    bool res1 = false, res2 = false;
+
+    DWORD axes[1];
+    if(steerWheelAxis == StringConstants::axisX){
+        axes[0] = DIJOFS_X;
+    }else if(steerWheelAxis == StringConstants::axisY){
+        axes[0] = {DIJOFS_Y};
+    }else if(steerWheelAxis == StringConstants::axisZ){
+        axes[0] = {DIJOFS_Z};
+    }else if(steerWheelAxis == StringConstants::axisRX){
+        axes[0] = {DIJOFS_RX};
+    }else if(steerWheelAxis == StringConstants::axisRY){
+        axes[0] = {DIJOFS_RY};
+    }else if(steerWheelAxis == StringConstants::axisRZ){
+        axes[0] = {DIJOFS_RZ};
+    }else if(steerWheelAxis == StringConstants::axisS1){
+        axes[0] = {DIJOFS_SLIDER(0)};
+    }else if(steerWheelAxis == StringConstants::axisS2){
+        axes[0] = {DIJOFS_SLIDER(1)};
+    }
+
+    if(g_pSpringForce != NULL){
+        g_pSpringForce->Release();
+        g_pSpringForce = NULL;
+    }
+
+    // 创建弹簧效果
+    if(g_pSpringForce == NULL){
+        // 结构说明
+        // typedef struct DICONDITION {
+        //     LONG lOffset;          // 弹簧中心位置
+        //     LONG lPositiveCoefficient; // 正方向弹簧系数
+        //     LONG lNegativeCoefficient; // 负方向弹簧系数
+        //     LONG lPositiveSaturation;  // 正方向最大力
+        //     LONG lNegativeSaturation;  // 负方向最大力
+        //     LONG lDeadBand;            // 死区
+        // } DICONDITION
+
+        // 设置弹簧效果的系数
+        diSpringCondition = {0, 3000, 3000, DI_FFNOMINALMAX, DI_FFNOMINALMAX, 0};
+
+        // 结构说明
+        // typedef struct DIEFFECT {
+        //     DWORD dwSize;                       // 结构体大小，必须初始化为 sizeof(DIEFFECT)
+        //     DWORD dwFlags;                      // 关键标志，组合使用：• 坐标系：DIEFF_CARTESIAN（笛卡尔）、DIEFF_POLAR（极坐标）、DIEFF_SPHERICAL（球坐标）三选一。• 对象标识：DIEFF_OBJECTIDS（使用对象 ID）或 DIEFF_OBJECTOFFSETS（使用数据偏移量，如 DIJOFS_X）二选一。
+        //     DWORD dwDuration;                   // 效果总持续时间（微秒），INFINITE 表示无限
+        //     DWORD dwSamplePeriod;               // 采样周期（微秒），0 表示使用设备默认
+        //     DWORD dwGain;                       // 全局增益（0~10000），10000 为最大强度
+        //     DWORD dwTriggerButton;              // 触发按钮标识，DIEB_NOTRIGGER 表示无按钮触发
+        //     DWORD dwTriggerRepeatInterval;      // 触发重复间隔（微秒），INFINITE 表示不重复
+        //     DWORD cAxes;                        // 效果涉及的轴数量
+        //     LPDWORD rgdwAxes;                   // 指向轴标识符数组（如 { DIJOFS_X }）
+        //     LPLONG rglDirection;                // 指向方向数组，坐标类型由 dwFlags 指定
+        //     LPDIENVELOPE lpEnvelope;            // 包络线指针（淡入淡出），NULL 表示无包络
+        //     DWORD cbTypeSpecificParams;         // 类型特定参数结构体的大小（字节）
+        //     LPVOID lpvTypeSpecificParams;       // 指向类型特定参数结构体的指针
+        //     DWORD dwStartDelay;                 // 启动延迟时间（微秒），0 表示无延迟
+        // } DIEFFECT, *LPDIEFFECT;
+
+        diSpringEffect = {sizeof(DIEFFECT)};
+        diSpringEffect.dwFlags = DIEFF_CARTESIAN | DIEFF_OBJECTOFFSETS;
+        diSpringEffect.dwDuration = INFINITE;
+        diSpringEffect.dwSamplePeriod = 0;
+        diSpringEffect.dwGain = DI_FFNOMINALMAX;
+        diSpringEffect.dwTriggerButton = DIEB_NOTRIGGER;
+        diSpringEffect.dwTriggerRepeatInterval = INFINITE;
+        diSpringEffect.cAxes = 1;
+
+        diSpringEffect.rgdwAxes = axes;
+        LONG dir = 0;
+        diSpringEffect.rglDirection = &dir;
+        diSpringEffect.lpEnvelope = NULL;
+        diSpringEffect.cbTypeSpecificParams = sizeof(DICONDITION);
+        diSpringEffect.lpvTypeSpecificParams = &diSpringCondition;
+        diSpringEffect.dwStartDelay = 0;
+
+        // 创建效果
+        HRESULT hr1 = pSteeringWheelAxisDeviceInstance->CreateEffect(GUID_Spring, &diSpringEffect, &g_pSpringForce, NULL);
+
+        res1 = SUCCEEDED(hr1);
+    }
+
+
+    if(g_pDamper != NULL){
+        g_pDamper->Release();
+        g_pDamper = NULL;
+    }
+
+    // 创建阻尼效果
+    if(g_pDamper == NULL){
+        // Condition
+        diDamperCondition = {0, 3000, 3000, DI_FFNOMINALMAX, DI_FFNOMINALMAX, 0};
+
+        // 阻尼（Damper）
+        diDamperEffect = {sizeof(DIEFFECT)};
+        diDamperEffect.dwFlags = DIEFF_CARTESIAN | DIEFF_OBJECTOFFSETS;
+        diDamperEffect.dwDuration = INFINITE;
+        diDamperEffect.dwSamplePeriod = 0;
+        diDamperEffect.dwGain = DI_FFNOMINALMAX;
+        diDamperEffect.dwTriggerButton = DIEB_NOTRIGGER;
+        diDamperEffect.dwTriggerRepeatInterval = INFINITE;
+        diDamperEffect.cAxes = 1;
+
+        diDamperEffect.rgdwAxes = axes;
+        LONG dir = 0;
+        diDamperEffect.rglDirection = &dir;
+        diDamperEffect.lpEnvelope = NULL;
+        diDamperEffect.cbTypeSpecificParams = sizeof(DICONDITION);
+        diDamperEffect.lpvTypeSpecificParams = &diDamperCondition;
+        diDamperEffect.dwStartDelay = 0;
+
+        // 创建效果
+        HRESULT hr2 = pSteeringWheelAxisDeviceInstance->CreateEffect(GUID_Damper, &diDamperEffect, &g_pDamper, NULL);
+
+        res2 = SUCCEEDED(hr2);
+    }
+
+    return res1 && res2;
+}
+
+bool ForceFeedbackWorker::playDynamicEffects()
+{
+    HRESULT hr = pSteeringWheelAxisDeviceInstance->Acquire();
+    if(hr != DI_OK){
+        pSteeringWheelAxisDeviceInstance->Unacquire();
+        hr = pSteeringWheelAxisDeviceInstance->Acquire();
+    }
+
+    if(hr != DI_OK){
+        Global::showErrorMsgBoxAndPushToLog("请求转向轴设备失败!");
+        return false;
+    }
+
+    // 开启力反馈效果
+    if(g_pSpringForce->Start(1, 0) != DI_OK || g_pDamper->Start(1, 0) != DI_OK){
+        Global::showErrorMsgBoxAndPushToLog("开启回正力/阻尼效果失败!");
+        return false;
+    }
+
+    return true;
+}
+
+// 根据车速更新力回馈
+void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double totalA){
+    // 当前车速百分比
+    double speedPer = speed_m_s / maxSpeed_m_s;
+
+    // 根据查找表, 找到强度系数百分比, 再乘以强度最大值, 再乘以最大强度百分比 得到实际强度系数
+    springEffectValue = (LONG)(springGainLUT.value(((int)(speedPer*1000))) * DI_FFNOMINALMAX * maxSpringGain);
+    damperEffectValue = (LONG)(dampingGainLUT.value(((int)(speedPer*1000))) * DI_FFNOMINALMAX * maxDamperGain);
+
+    // 值检验
+    if(springEffectValue < 0){
+        springEffectValue = 0;
+    }
+    else if (springEffectValue > DI_FFNOMINALMAX){
+        springEffectValue = DI_FFNOMINALMAX;
+    }
+
+    if(damperEffectValue < 0){
+        damperEffectValue = 0;
+    }
+    else if (damperEffectValue > DI_FFNOMINALMAX){
+        damperEffectValue = DI_FFNOMINALMAX;
+    }
+
+    //qDebug() << "springEffectValue: " << springEffectValue << "speed_m_s: " << speed_m_s << ", maxSpeed_m_s: " <<  maxSpeed_m_s << ", speedPer: " << speedPer << ", springGainLUT.value:" << springGainLUT.value(((int)(speedPer*1000)));
+    //qDebug() << "speedPer: " << speedPer << ", springEffectValue: " << springEffectValue << ", damperEffectValue: " << damperEffectValue;
+
+    // 弹簧效果强度系数
+    // 方向盘向右转动的回正力系数
+    diSpringCondition.lPositiveCoefficient = springEffectValue;
+    // 方向盘向左转动的回正力系数
+    diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
+
+    // 阻尼效果强度系数
+    diDamperCondition.lPositiveCoefficient = damperEffectValue;
+    diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
+
+
+    // (弃用)
+    // 更新恒定力强度增益
+    // 恒定力(代替弹簧力)强度增益
+    // diConstantEffect.dwGain = springEffectValue;
+    // if(g_pConstantForce){
+    //     g_pConstantForce->SetParameters(&diConstantEffect, DIEP_GAIN);
+    // }
+
+    // 更新回正力
+    if (g_pSpringForce) {
+        //g_pSpringForce->SetParameters(&diSpring, DIEP_GAIN);
+        g_pSpringForce->SetParameters(&diSpringEffect, DIEP_TYPESPECIFICPARAMS | DIEP_START);
+    }
+
+    // 更新阻尼
+    if (g_pDamper) {
+        g_pDamper->SetParameters(&diDamperEffect, DIEP_TYPESPECIFICPARAMS | DIEP_START);
+    }
+}
+
+// 关闭资源
+void ForceFeedbackWorker::cleanup() {
+    if (g_pSpringForce) g_pSpringForce->Release();
+    if (g_pDamper) g_pDamper->Release();
 }
 
 
@@ -337,20 +448,18 @@ void ForceFeedbackWorker::doWork(){
     isWorkerRunning = true;
 
     // 检查方向盘设备是否连接
-    if(checkDevicesConnected()){
+    if(checkDevicesConnected() == false){
         LogService::parseErrorLog(StringConstants::ffbSimulateThread_initDevicesErrorMsg);
         isWorkerRunning = false;
+        emit startFFBSimResult(false, StringConstants::ffbSimulateThread_initDevicesErrorMsg);
     }
 
     if(isWorkerRunning){
-        if(!createDynamicEffects(this->steeringWheelAxis)){
+        if(createDynamicEffects(this->steeringWheelAxis) == false || playDynamicEffects() == false){
             Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_createEffectsErrorMsg);
             isWorkerRunning = false;
+            emit startFFBSimResult(false, StringConstants::ffbSimulateThread_createEffectsErrorMsg);
         }else{
-            // 开启力反馈效果
-            g_pSpringForce->Start(1, 0);
-            g_pDamper->Start(1, 0);
-
             LogService::parseSuccessLog(StringConstants::ffbSimulateThread_successMsg);
         }
     }
@@ -363,8 +472,8 @@ void ForceFeedbackWorker::doWork(){
     // 本轮执行的开始时间
     auto currentExcuteTime = clock::now();
 
-    // 执行频率
-    auto excuteFrequency = 100;
+    // 执行频率 hz
+    auto excuteFrequency = 200;
     // 每轮执行的最大时间 毫秒
     auto each_mstime = 1000 / excuteFrequency;
 
@@ -378,39 +487,14 @@ void ForceFeedbackWorker::doWork(){
             currentExcuteTime = now;
         }
 
-        // 恒定力回馈模式
-        // if(this->isConstantForceMode){
-        //     // 弹簧效果强度系数
-        //     diSpringCondition.lPositiveCoefficient = (LONG)(DI_FFNOMINALMAX * this->constantCorrectiveForceGain);
-        //     diSpringCondition.lNegativeCoefficient = diSpringCondition.lPositiveCoefficient;
-        //     // 阻尼效果强度系数
-        //     diDamperCondition.lPositiveCoefficient = (LONG)(DI_FFNOMINALMAX * this->constantDampingGain);
-        //     diDamperCondition.lNegativeCoefficient = diDamperCondition.lPositiveCoefficient;
-
-        //     // 释放锁
-        //     //mutexConstantForce.unlock();
-
-        //     // 更新回正力
-        //     if (g_pSpringForce) {
-        //         g_pSpringForce->SetParameters(&diSpring, DIEP_TYPESPECIFICPARAMS | DIEP_START);
-        //     }
-
-        //     // 更新阻尼
-        //     if (g_pDamper) {
-        //         g_pDamper->SetParameters(&diDamper, DIEP_TYPESPECIFICPARAMS | DIEP_START);
-        //     }
-
-        //     // sleep
-        //     QThread::msleep(200);
-
-        //     // 处理事件队列
-        //     QCoreApplication::processEvents();
-
-        //     continue;
-        // }
+        // 激活设备
+        pSteeringWheelAxisDeviceInstance->Acquire();
+        if(FAILED(pSteeringWheelAxisDeviceInstance->Poll())){
+            pSteeringWheelAxisDeviceInstance->Acquire();
+        }
 
         // 获取设备状态数据, 只获取轴数据, 不获取按键数据
-        DirectInputService::getInputState(res, getInitedDeviceListSnapshot(), false, true);
+        DirectInputService::getInputState(res, initedDeviceList, false, true);
 
         double totalA = 0.0;// 总的加速度
 
@@ -457,12 +541,11 @@ void ForceFeedbackWorker::doWork(){
             }
         }
 
-
         // 添加到总的加速度
         totalA += groundA + airA;
 
         // 根据总的加速度 计算出当前速度
-        currentV += totalA * cycleTimeOfEachRound;
+        currentV += totalA * each_mstime/1000;
 
         // 车速达到上限
         if(currentV >= this->maxSpeed_m_s){

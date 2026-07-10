@@ -461,6 +461,7 @@ void HomePage::initData()
         // 下拉框有这个文件, 并且加载的配置不为空, 自动选择这个配置文件
         if(cfgBox->findText(baseName) != -1 && getMappingListActualSize() > 0){
             cfgBox->setCurrentText(baseName);
+            ConfigService::currentMappingFileName = baseName;
         }
     }
 

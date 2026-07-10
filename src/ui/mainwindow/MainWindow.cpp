@@ -64,8 +64,9 @@ MainWindow::MainWindow(QMainWindow *parent)
     : QMainWindow(parent)
 {
     // 默认窗口大小
-    this->setBaseSize(1300, 850);
+    this->resize(1000, 650);
     this->setWindowTitle(Global::APP_NAME);
+    this->setWindowIcon(QIcon(":/app.ico"));
 
     // 绘制主窗口界面UI
     paintMainWindowUI();
@@ -73,9 +74,8 @@ MainWindow::MainWindow(QMainWindow *parent)
     // 当前exe程序所在路径
     QString exePath = QCoreApplication::applicationDirPath();
 
-    // 当前为开发环境
     if(exePath.toLower().contains("build") && (exePath.toLower().contains("release") || exePath.toLower().contains("debug"))){
-        qDebug() << "当前为开发环境, 不记录启动日志";
+        qDebug() << "当前为开发环境, 不记录日志";
     }else{
         QTimer::singleShot(0,this, [this](){
             // 记录启动日志
@@ -84,7 +84,6 @@ MainWindow::MainWindow(QMainWindow *parent)
             checkUpdate(Global::CHECK_UPDATE_API);
         });
     }
-
 }
 
 void MainWindow::init(){

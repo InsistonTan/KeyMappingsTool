@@ -1,7 +1,7 @@
 #include "common/Global.h"
 #include "common/StringConstants.h"
 #include "services/MessageBoxService.h"
-#include "ui/mainwindow/mainwindow.h"
+#include "ui/mainwindow/MainWindow.h"
 #include "services/ConfigService.h"
 
 #include <QApplication>
@@ -21,6 +21,7 @@ void createTrayIcon(QApplication* app, MainWindow* mainWindow);
 void showMainWIndow(MainWindow* w);
 
 
+
 int main(int argc, char *argv[])
 {
     // 设置全局异常处理器
@@ -32,21 +33,12 @@ int main(int argc, char *argv[])
     std::signal(SIGILL,  signalHandler);
     std::signal(SIGABRT, signalHandler);
 
-
-    QFile crashLog(Global::getCrashLogPath());
-    if(crashLog.exists()){
-        crashLog.remove();
-    }
-    // 崩溃日志钩子
-    qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &, const QString &msg){
-        QFile f(Global::getCrashLogPath());
-        if (f.open(QIODevice::Append)) {
-            f.write(msg.toUtf8() + "\n");
-        }
-    });
-
+    // 设置支持非整数倍dpi缩放（如150%）
+    QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 
     QApplication a(argc, argv);
+    // 隐藏窗口
+    Global::hideWindow = new Global::HiddenHostWindow();
 
     // 设置全局字体
     QFont font("Segoe UI");
@@ -67,6 +59,8 @@ int main(int argc, char *argv[])
 
         // 创建主窗口
         MainWindow w;
+
+        //Global::g_mainWindow = &w;
 
         // 创建系统托盘图标
         createTrayIcon(&a, &w);

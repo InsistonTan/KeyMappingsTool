@@ -214,8 +214,11 @@ void SettingsPage::init()
 
     // 绑定事件
     bindingSiganlsToSlots();
-    // 更新ui
-    updateUI();
+
+    QTimer::singleShot(1000, this, [this](){
+        // 更新ui
+        updateUI();
+    });
 
     // 欧卡2自动解除手刹
     if(ConfigService::get().ETS2_enableAutoCancelHandbrake){
@@ -386,19 +389,19 @@ void SettingsPage::bindingSiganlsToSlots()
 
     // 虚拟xbox手柄-摇杆内部死区
     connect(xboxJoyStickDeadZoneLineEdit, &QLineEdit::editingFinished, this, [this](){
-        // 获取输入框文本并转化成double
-        bool ok;
-        double value = xboxJoyStickDeadZoneLineEdit->text().toDouble(&ok);
-
-        // 内容校验
-        if (!ok || value < -1 || value > 1) {
-            xboxJoyStickDeadZoneLineEdit->setText("");
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
-            return;
-        }
-
         // 修改
         modifySetting([=](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 获取输入框文本并转化成double
+            bool ok;
+            double value = xboxJoyStickDeadZoneLineEdit->text().toDouble(&ok);
+
+            // 内容校验
+            if (!ok || value < -1 || value > 1) {
+                xboxJoyStickDeadZoneLineEdit->setText(QString::number(cfg.xboxJoystickInnerDeadAreaValue));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
+                return;
+            }
+
             cfg.xboxJoystickInnerDeadAreaValue = value;
             needSaveToFile = true;
             needSendSignal = true;
@@ -406,19 +409,19 @@ void SettingsPage::bindingSiganlsToSlots()
     });
     // 虚拟xbox手柄-扳机内部死区
     connect(xboxTriggerDeadZoneLineEdit, &QLineEdit::editingFinished, this, [this](){
-        // 获取输入框文本并转化成double
-        bool ok;
-        double value = xboxTriggerDeadZoneLineEdit->text().toDouble(&ok);
-
-        // 内容校验
-        if (!ok || value < -1 || value > 1) {
-            xboxTriggerDeadZoneLineEdit->setText("");
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
-            return;
-        }
-
         // 修改
         modifySetting([=](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 获取输入框文本并转化成double
+            bool ok;
+            double value = xboxTriggerDeadZoneLineEdit->text().toDouble(&ok);
+
+            // 内容校验
+            if (!ok || value < -1 || value > 1) {
+                xboxTriggerDeadZoneLineEdit->setText(QString::number(cfg.xboxTriggerInnerDeadAreaValue));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
+                return;
+            }
+
             cfg.xboxTriggerInnerDeadAreaValue = value;
             needSaveToFile = true;
             needSendSignal = true;
@@ -426,19 +429,19 @@ void SettingsPage::bindingSiganlsToSlots()
     });
     // 轴映射键盘按键-转向轴内部死区
     connect(wheelAxisDeadZoneLineEdit, &QLineEdit::editingFinished, this, [this](){
-        // 获取输入框文本并转化成double
-        bool ok;
-        double value = wheelAxisDeadZoneLineEdit->text().toDouble(&ok);
-
-        // 内容校验
-        if (!ok || value < 0 || value > 1) {
-            wheelAxisDeadZoneLineEdit->setText("");
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
-            return;
-        }
-
         // 修改
         modifySetting([=](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 获取输入框文本并转化成double
+            bool ok;
+            double value = wheelAxisDeadZoneLineEdit->text().toDouble(&ok);
+
+            // 内容校验
+            if (!ok || value < 0 || value > 1) {
+                wheelAxisDeadZoneLineEdit->setText(QString::number(cfg.steeringAxisInnerDeadZone));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
+                return;
+            }
+
             cfg.steeringAxisInnerDeadZone = value;
             needSaveToFile = true;
             needSendSignal = true;
@@ -446,19 +449,19 @@ void SettingsPage::bindingSiganlsToSlots()
     });
     // 轴映射键盘按键-踏板轴内部死区
     connect(pedalAxisDeadZoneLineEdit, &QLineEdit::editingFinished, this, [this](){
-        // 获取输入框文本并转化成double
-        bool ok;
-        double value = pedalAxisDeadZoneLineEdit->text().toDouble(&ok);
-
-        // 内容校验
-        if (!ok || value < 0 || value > 1) {
-            pedalAxisDeadZoneLineEdit->setText("");
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
-            return;
-        }
-
         // 修改
         modifySetting([=](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 获取输入框文本并转化成double
+            bool ok;
+            double value = pedalAxisDeadZoneLineEdit->text().toDouble(&ok);
+
+            // 内容校验
+            if (!ok || value < 0 || value > 1) {
+                pedalAxisDeadZoneLineEdit->setText(QString::number(cfg.pedalAxisInnerDeadZone));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
+                return;
+            }
+
             cfg.pedalAxisInnerDeadZone = value;
             needSaveToFile = true;
             needSendSignal = true;
@@ -505,19 +508,19 @@ void SettingsPage::bindingSiganlsToSlots()
 
     // 模拟鼠标移动-速率
     connect(mouseSpeedLineEdit, &QLineEdit::editingFinished, this, [this](){
-        // 获取输入框文本并转化成double
-        bool ok;
-        double value = mouseSpeedLineEdit->text().toDouble(&ok);
-
-        // 内容校验
-        if (!ok || value <= 0) {
-            mouseSpeedLineEdit->setText("");
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
-            return;
-        }
-
         // 修改
         modifySetting([=](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 获取输入框文本并转化成double
+            bool ok;
+            double value = mouseSpeedLineEdit->text().toDouble(&ok);
+
+            // 内容校验
+            if (!ok || value <= 0) {
+                mouseSpeedLineEdit->setText(QString::number(cfg.mouseMoveSpeedTimes));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
+                return;
+            }
+
             cfg.mouseMoveSpeedTimes = value;
             needSaveToFile = true;
             needSendSignal = true;

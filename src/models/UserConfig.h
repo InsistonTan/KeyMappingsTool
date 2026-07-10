@@ -89,6 +89,8 @@ public:
     double SYSTEM_forceFeedbackSettings_acceleration_100km_time_s = default_acceleration_100km_time_s;// 百公里加速所需时间(秒)
     int SYSTEM_forceFeedbackSettings_stop_100km_dis_m = default_stop_100km_dis_m;// 百公里刹停所需距离(米)
     int SYSTEM_forceFeedbackSettings_maxSpeed_km_h = default_maxSpeed_km_h;// 车辆最高时速(km/h)
+    double SYSTEM_forceFeedbackSettings_maxSpringGain = default_max_forcefeedback_gain;// 最大回正力强度
+    double SYSTEM_forceFeedbackSettings_maxDamperGain = default_max_forcefeedback_gain;// 最大阻尼强度
     //double SYSTEM_forceFeedbackSettings_maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
     //bool SYSTEM_forceFeedbackSettings_isConstantForceMode = false;// 是否为恒定力反馈模式
     //double SYSTEM_forceFeedbackSettings_constantCorrectiveForceGain = default_constant_corrective_force_gain;// 恒定回正力强度
@@ -115,5 +117,35 @@ public:
     static void readAssistFuncSettingsFromJson(QJsonObject jsonObj, UserConfig& out);
 
 private:
-
+    // 默认的回正力-车速曲线
+    inline static const QVector<CurveEditor::BezierLogicalPoint> defaultSpringPoints = {
+        {
+            {0, 0}, // 主点
+            {0, 0}, // in
+            {25.4, 53}, // out
+        },
+        {
+            {100, 55}, // 主点
+            {78.8, 41}, // in
+            {100, 55}, // out
+        },
+        };
+    // 默认的转向阻尼-车速曲线
+    inline static const QVector<CurveEditor::BezierLogicalPoint> defaultDampingPoints = {
+        {
+            {0, 50}, // 主点
+            {0, 50}, // in
+            {3.4, 31.333333}, // out
+        },
+        {
+            {19.2, 19}, // 主点
+            {14.2, 19}, // in
+            {26.4, 13.333333}, // out
+        },
+        {
+            {100,80}, // 主点
+            {69.6, 46}, // in
+            {100, 79.666666}, // out
+        },
+        };
 };

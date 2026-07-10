@@ -35,6 +35,9 @@ private:
     QLabel* brakeAxisNameLabel;
     QPushButton* setBrakeAxisBtn;
     QCheckBox* isReverseBrakeCheckBox;
+    // 最大力反馈强度
+    QLineEdit* springGainLineEdit;
+    QLineEdit* damperGainLineEdit;
     // 车辆参数
     QLineEdit* speedUpLineEdit;
     QLineEdit* speedDownLineEdit;
@@ -46,41 +49,6 @@ private:
 
     // 是否显示全局设置
     bool showGlobalSettings = true;
-
-    // 默认的回正力-车速曲线
-    QVector<CurveEditor::BezierLogicalPoint> defaultSpringPoints = {
-        {
-            {0,0}, // 主点
-            {0-CurveEditor::dis, 0}, // in
-            {0+CurveEditor::dis, 0}, // out
-            false, // 不显示 in
-            true // 显示 out
-        },
-        {
-            {100,100}, // 主点
-            {100-CurveEditor::dis, 100}, // in
-            {100+CurveEditor::dis, 100}, // out
-            true, // 显示 in
-            false // 不显示 out
-        },
-    };
-    // 默认的转向阻尼-车速曲线
-    QVector<CurveEditor::BezierLogicalPoint> defaultDampingPoints = {
-        {
-            {0,0}, // 主点
-            {0-CurveEditor::dis, 0}, // in
-            {0+CurveEditor::dis, 0}, // out
-            false, // 不显示 in
-            true // 显示 out
-        },
-        {
-            {100,100}, // 主点
-            {100-CurveEditor::dis, 100}, // in
-            {100+CurveEditor::dis, 100}, // out
-            true, // 显示 in
-            false // 不显示 out
-        },
-    };
 
     // 力反馈模拟当前是否正在运行
     bool isFFBSimRunning = false;
@@ -117,4 +85,7 @@ public slots:
     void currentSelectedMappingFileChangedSlot(){
         updateUI();
     }
+
+    // 开启力反馈模拟是否成功的slot
+    void startFFBSimResultSlot(bool result, QString msg);
 };

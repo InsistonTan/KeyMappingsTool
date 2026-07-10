@@ -36,6 +36,11 @@ private:
     double acceleration_100km_time_s = default_acceleration_100km_time_s;// 百公里加速所需时间(秒)
     int stop_100km_dis_m = default_stop_100km_dis_m;// 百公里刹停所需距离(米)
     double maxSpeed_m_s = default_maxSpeed_km_h * 1000.0 / 3600.0;// 车辆最高时速(m/s)
+
+    // 最大强度
+    double maxSpringGain = default_max_forcefeedback_gain;
+    double maxDamperGain = default_max_forcefeedback_gain;
+
     // 回正力强度-车速曲线的查找表;
     // key: 车速百分比 * 1000;
     // value: 回正力强度百分比
@@ -44,6 +49,8 @@ private:
     // key: 车速百分比 * 1000;
     // value: 转向阻尼强度百分比
     QHash<int, double> dampingGainLUT;
+
+    // (废弃)
     //double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
     //bool isConstantForceMode = false;// 是否为恒定力反馈模式
     //double constantCorrectiveForceGain = default_constant_corrective_force_gain;// 恒定回正力强度
@@ -62,12 +69,15 @@ private:
     // 已初始化的转向轴设备实例
     LPDIRECTINPUTDEVICE8 pSteeringWheelAxisDeviceInstance = nullptr;
 
-    LPDIRECTINPUTEFFECT g_pSpringForce = NULL; // 弹簧效果
-    LPDIRECTINPUTEFFECT g_pDamper = NULL;       // 阻尼效果
-    DIEFFECT diSpring = { 0 };// 弹簧效果参数 DIEFFECT
-    DIEFFECT diDamper = { 0 };// 阻尼效果参数 DIEFFECT
-    DICONDITION diSpringCondition = {0};// 弹簧效果参数 DICONDITION
-    DICONDITION diDamperCondition = {0};// 阻尼效果参数 DICONDITION
+    LPDIRECTINPUTEFFECT g_pConstantForce = NULL; // 恒定力效果实例, 使用恒定力代替弹簧力
+    LPDIRECTINPUTEFFECT g_pSpringForce = NULL; // 弹簧效果实例
+    LPDIRECTINPUTEFFECT g_pDamper = NULL;       // 阻尼效果实例
+    DIEFFECT diConstantEffect = { 0 };// 恒定力效果参数 DIEFFECT
+    DIEFFECT diSpringEffect = { 0 };// 弹簧效果参数 DIEFFECT
+    DIEFFECT diDamperEffect = { 0 };// 阻尼效果参数 DIEFFECT
+    DICONSTANTFORCE diConstantsCondition;// 恒定力系数
+    DICONDITION diSpringCondition = {0};// 弹簧效果系数参数 DICONDITION
+    DICONDITION diDamperCondition = {0};// 阻尼效果系数参数 DICONDITION
 
     LONG springEffectValue = 0;// 弹簧效果系数(0-10000)
     LONG damperEffectValue = 0;// 阻尼效果系数(0-10000)
@@ -80,6 +90,8 @@ private:
 
     // 创建力回馈效果
     bool createDynamicEffects(QString steerWheelAxis);
+    // 播放力反馈效果
+    bool playDynamicEffects();
     // 根据车速更新力回馈
     void updateForceFeedback(double speed_m_s, double totalA);
     // 关闭资源
@@ -107,7 +119,10 @@ public:
     explicit ForceFeedbackWorker();
 
 signals:
+    // 线程结束信号
     void workFinished();
+    // 力反馈模拟开启的结果信息, 成功 result = true, 否则 = false
+    void startFFBSimResult(bool result, QString msg);
 
 public slots:
     void doWork();

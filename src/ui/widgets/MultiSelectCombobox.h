@@ -169,7 +169,7 @@ private slots:
         realClickItem = nullptr;
     }
 
-private:
+protected:
     // 绘制下拉框显示的文本
     void paintEvent(QPaintEvent *e) override
     {
@@ -251,6 +251,16 @@ private:
             return true;
         }
         return QComboBox::eventFilter(watched, event);
+    }
+
+    // 禁用滚轮
+    void wheelEvent(QWheelEvent *e) override
+    {
+        if (!view()->isVisible()) {
+            e->ignore();
+            return;
+        }
+        QComboBox::wheelEvent(e);
     }
 
     // 自定义下拉选项委托

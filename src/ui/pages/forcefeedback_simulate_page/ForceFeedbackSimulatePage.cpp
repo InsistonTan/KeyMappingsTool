@@ -206,6 +206,36 @@ void ForceFeedbackSimulatePage::init()
 
 
     // ================================
+    // 设置力反馈最大强度
+    // ================================
+    QFrame* gainSettingsGroup = new QFrame(this);
+    Theme::setQFrameStyleSheet(gainSettingsGroup);
+    QVBoxLayout* gainSettingsGroupLayout = new QVBoxLayout(gainSettingsGroup);
+    gainSettingsGroupLayout->setContentsMargins(16, 12, 0, 12);
+    // 控件
+    // 标题
+    QLabel* gainSettingsGrouppTitle = new QLabel(StringConstants::gainSettings, gainSettingsGroup);
+    springGainLineEdit = new QLineEdit(gainSettingsGroup);
+    damperGainLineEdit = new QLineEdit(gainSettingsGroup);
+    // 设置样式
+    gainSettingsGrouppTitle->setStyleSheet(QString("font: 14px bold;color:%1;").arg(Theme::textColor()));
+    Theme::setLineEditStyleSheet(springGainLineEdit);
+    Theme::setLineEditStyleSheet(damperGainLineEdit);
+    springGainLineEdit->setFixedWidth(fixedWidthLineEdit);
+    damperGainLineEdit->setFixedWidth(fixedWidthLineEdit);
+    // 布局内容
+    gainSettingsGroupLayout->addWidget(gainSettingsGrouppTitle);
+    gainSettingsGroupLayout->addWidget(Global::createSettingsItem(gainSettingsGroup,
+                                                                  StringConstants::springMaxGain,
+                                                                  springGainLineEdit,
+                                                                  new QLabel(StringConstants::springMaxGainDesc, gainSettingsGroup)));
+    gainSettingsGroupLayout->addWidget(Global::createSettingsItem(gainSettingsGroup,
+                                                                  StringConstants::damperMaxGain,
+                                                                  damperGainLineEdit,
+                                                                  new QLabel(StringConstants::sdamperMaxGainDesc, gainSettingsGroup)));
+
+
+    // ================================
     // 自定义力反馈曲线区域
     // ================================
     QFrame* ffbCurveWidget = new QFrame(this);
@@ -232,6 +262,7 @@ void ForceFeedbackSimulatePage::init()
     contentLayout->addWidget(ffbSimWidget);
     contentLayout->addWidget(axisSettingsGroup);
     contentLayout->addWidget(carSettingsGroup);
+    contentLayout->addWidget(gainSettingsGroup);
     contentLayout->addWidget(ffbCurveWidget);
 
 
@@ -243,19 +274,22 @@ void ForceFeedbackSimulatePage::init()
     // 绑定事件
     bindingEvents();
 
-    // 更新ui
-    updateUI();
+    // 两秒后开启力反馈模拟
+    QTimer::singleShot(1000, this, [this](){
+        // 更新ui
+        updateUI();
+    });
 
-    // 是否开启了力反馈模拟
-    if(ConfigService::get().SYSTEM_enableForceFeedback && isFFBSimRunning == false){
-        // 两秒后开启力反馈模拟
-        QTimer::singleShot(2000, [this](){
-            // 检查力反馈参数
-            if(validateForceFeedbackParams(ConfigService::get())){
-                startForceFeedback();
-            }
-        });
-    }
+    // // 是否开启了力反馈模拟
+    // if(ConfigService::get().SYSTEM_enableForceFeedback && isFFBSimRunning == false){
+    //     // 两秒后开启力反馈模拟
+    //     QTimer::singleShot(3000, this, [this](){
+    //         // 检查力反馈参数
+    //         if(validateForceFeedbackParams(ConfigService::get())){
+    //             startForceFeedback();
+    //         }
+    //     });
+    // }
 }
 
 template<typename Func>
@@ -533,6 +567,9 @@ void ForceFeedbackSimulatePage::bindingEvents()
                 cfg.SYSTEM_forceFeedbackSettings_acceleration_100km_time_s = value;
                 needSaveToFile = true;
                 needSendSignal = true;
+            }else{
+                speedUpLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_acceleration_100km_time_s));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
             }
         });
     });
@@ -548,6 +585,9 @@ void ForceFeedbackSimulatePage::bindingEvents()
                 cfg.SYSTEM_forceFeedbackSettings_stop_100km_dis_m = value;
                 needSaveToFile = true;
                 needSendSignal = true;
+            }else{
+                speedDownLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_stop_100km_dis_m));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
             }
         });
     });
@@ -563,9 +603,50 @@ void ForceFeedbackSimulatePage::bindingEvents()
                 cfg.SYSTEM_forceFeedbackSettings_maxSpeed_km_h = value;
                 needSaveToFile = true;
                 needSendSignal = true;
+            }else{
+                maxSpeedLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_maxSpeed_km_h));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
             }
         });
     });
+
+
+    // 回正力最大强度
+    connect(springGainLineEdit, &QLineEdit::editingFinished, this, [this](){
+        // 修改
+        modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 检验输入的值
+            bool ok;
+            double value = springGainLineEdit->text().toDouble(&ok);
+            if(ok && value >= 0.0 && value <= 1.0){
+                cfg.SYSTEM_forceFeedbackSettings_maxSpringGain = value;
+                needSaveToFile = true;
+                needSendSignal = true;
+            }else{
+                springGainLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_maxSpringGain));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
+            }
+        });
+    });
+
+    // 回正力最大强度
+    connect(damperGainLineEdit, &QLineEdit::editingFinished, this, [this](){
+        // 修改
+        modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 检验输入的值
+            bool ok;
+            double value = damperGainLineEdit->text().toDouble(&ok);
+            if(ok && value >= 0.0 && value <= 1.0){
+                cfg.SYSTEM_forceFeedbackSettings_maxDamperGain = value;
+                needSaveToFile = true;
+                needSendSignal = true;
+            }else{
+                damperGainLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_maxDamperGain));
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::invalidValue);
+            }
+        });
+    });
+
 
     // 回正力强度曲线
     connect(springCurve, &CurveEditor::pointChanged, this, [this](){
@@ -625,50 +706,6 @@ MappingRelation ForceFeedbackSimulatePage::getDevInputAxis()
 
 bool ForceFeedbackSimulatePage::validateForceFeedbackParams(const UserConfig& userConfig)
 {
-    // 转向,油门或者刹车未设置
-    if(userConfig.SYSTEM_forceFeedbackSettings_steeringWheelAxis.isEmpty()
-        || userConfig.SYSTEM_forceFeedbackSettings_throttleAxis.isEmpty()
-                || userConfig.SYSTEM_forceFeedbackSettings_brakeAxis.isEmpty())
-    {
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_deviceNotSettingErrorMsg);
-        ffbSimSwitch->setChecked(false);
-        return false;
-    }
-
-    // 检查设备是否支持力反馈
-    auto steeringWheelAxisDeviceName = userConfig.SYSTEM_forceFeedbackSettings_steeringWheelAxisDeviceName;
-    if(!DirectInputService::checkIsSupportForceFeedback(steeringWheelAxisDeviceName))
-    {
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_steeringWheelDeviceErrorMsg.arg(steeringWheelAxisDeviceName));
-        ffbSimSwitch->setChecked(false);
-        return false;
-    }
-
-    // 初始化设备
-    DirectInputService::initDirectInput();
-    DirectInputService::openDiDevice(DirectInputService::getDeviceNameListFromDeviceInfoList());
-
-    // 获取设备轴的数值范围map
-    auto axisValueRangeMap = DirectInputService::getAxisValueRangeMap();
-
-    // 获取不到油门踏板的数值范围
-    if(!axisValueRangeMap.contains(Global::getBtnOrAxisFullName(userConfig.SYSTEM_forceFeedbackSettings_throttleAxisDeviceName
-                                         , userConfig.SYSTEM_forceFeedbackSettings_throttleAxis)))
-    {
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleAxisRangeErrorMsg);
-        ffbSimSwitch->setChecked(false);
-        return false;
-    }
-
-    // 获取不到刹车踏板的数值范围
-    if(axisValueRangeMap.contains(Global::getBtnOrAxisFullName(userConfig.SYSTEM_forceFeedbackSettings_brakeAxisDeviceName
-                                         , userConfig.SYSTEM_forceFeedbackSettings_brakeAxis)))
-    {
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_brakeAxisRangeErrorMsg);
-        ffbSimSwitch->setChecked(false);
-        return false;
-    }
-
     return true;
 }
 
@@ -686,6 +723,10 @@ void ForceFeedbackSimulatePage::startForceFeedback()
     // 连接信号槽
     connect(thread, &QThread::started, worker, &ForceFeedbackWorker::doWork);
 
+    // 绑定力反馈开启是否成功的信号
+    connect(worker, &ForceFeedbackWorker::startFFBSimResult,
+            this, &ForceFeedbackSimulatePage::startFFBSimResultSlot);
+
     // 绑定力反馈模拟设置更新信号 到 力反馈工作对象的 settingsChangeSlot
     connect(this, &ForceFeedbackSimulatePage::settingsChanged,
             worker, &ForceFeedbackWorker::settingsChangeSlot);
@@ -695,6 +736,11 @@ void ForceFeedbackSimulatePage::startForceFeedback()
             worker, &ForceFeedbackWorker::cancelWorkSlot);
 
     // 任务结束信号
+    connect(worker, &ForceFeedbackWorker::workFinished, this, [this]{
+        LogService::parseWarningLog(StringConstants::ffbSimulateThread_finishedMsg);
+        ffbSimSwitch->setChecked(false);
+        updateUI();
+    });
     connect(worker, &ForceFeedbackWorker::workFinished, thread, &QThread::quit);
     connect(worker, &ForceFeedbackWorker::workFinished, worker, &ForceFeedbackWorker::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
@@ -726,7 +772,7 @@ void ForceFeedbackSimulatePage::updateUI()
     // 转向轴名称
     QString s1 = (!cfg.SYSTEM_forceFeedbackSettings_steeringWheelAxis.isEmpty()
                   && !cfg.SYSTEM_forceFeedbackSettings_steeringWheelAxisDeviceName.isEmpty())
-                        ? cfg.SYSTEM_forceFeedbackSettings_steeringWheelAxisDeviceName + ":"
+                        ? cfg.SYSTEM_forceFeedbackSettings_steeringWheelAxisDeviceName + ": "
                                 + cfg.SYSTEM_forceFeedbackSettings_steeringWheelAxis
                         : StringConstants::notSet;
     steeringAxisNameLabel->setText(s1);
@@ -734,7 +780,7 @@ void ForceFeedbackSimulatePage::updateUI()
     // 油门轴名称
     QString s2 = (!cfg.SYSTEM_forceFeedbackSettings_throttleAxis.isEmpty()
                   && !cfg.SYSTEM_forceFeedbackSettings_throttleAxisDeviceName.isEmpty())
-                     ? cfg.SYSTEM_forceFeedbackSettings_throttleAxisDeviceName + ":"
+                     ? cfg.SYSTEM_forceFeedbackSettings_throttleAxisDeviceName + ": "
                            + cfg.SYSTEM_forceFeedbackSettings_throttleAxis
                      : StringConstants::notSet;
     throttleAxisNameLabel->setText(s2);
@@ -743,24 +789,24 @@ void ForceFeedbackSimulatePage::updateUI()
     // 刹车轴名称
     QString s3 = (!cfg.SYSTEM_forceFeedbackSettings_brakeAxis.isEmpty()
                   && !cfg.SYSTEM_forceFeedbackSettings_brakeAxisDeviceName.isEmpty())
-                     ? cfg.SYSTEM_forceFeedbackSettings_brakeAxisDeviceName + ":"
+                     ? cfg.SYSTEM_forceFeedbackSettings_brakeAxisDeviceName + ": "
                            + cfg.SYSTEM_forceFeedbackSettings_brakeAxis
                      : StringConstants::notSet;
     brakeAxisNameLabel->setText(s3);
     isReverseBrakeCheckBox->setChecked(cfg.SYSTEM_forceFeedbackSettings_isBrakeReverse);
 
-    //
+    // 车辆参数
     speedUpLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_acceleration_100km_time_s));
     speedDownLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_stop_100km_dis_m));
     maxSpeedLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_maxSpeed_km_h));
 
+    // 最大强度
+    springGainLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_maxSpringGain));
+    damperGainLineEdit->setText(QString::number(cfg.SYSTEM_forceFeedbackSettings_maxDamperGain));
+
     // 力反馈强度曲线
-    springCurve->setPoints((cfg.SYSTEM_forceFeedbackSettings_springCurve.isEmpty())
-                                ? defaultSpringPoints
-                                : cfg.SYSTEM_forceFeedbackSettings_springCurve);
-    dampingCurve->setPoints((cfg.SYSTEM_forceFeedbackSettings_dampingCurve.isEmpty())
-                               ? defaultDampingPoints
-                               : cfg.SYSTEM_forceFeedbackSettings_dampingCurve);
+    springCurve->setPoints(cfg.SYSTEM_forceFeedbackSettings_springCurve);
+    dampingCurve->setPoints(cfg.SYSTEM_forceFeedbackSettings_dampingCurve);
 
 
     // ===============================================================
@@ -784,17 +830,7 @@ void ForceFeedbackSimulatePage::updateUI()
         // 覆盖全局
         // 力反馈模拟状态更新
         if(mappingCfg.relatedUserConfig.SYSTEM_enableForceFeedback){
-            // 校验力反馈参数
-            if(validateForceFeedbackParams(mappingCfg.relatedUserConfig)){
-                startForceFeedback();
-            }else{
-                // 校验失败, 重置
-                ffbSimSwitch->setChecked(false);
-                modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
-                    cfg.SYSTEM_enableForceFeedback = false;
-                    needSaveToFile = true;
-                });
-            }
+            startForceFeedback();
         }else{
             isFFBSimRunning = false;
             emit stopForceFeedbackSignal();
@@ -806,23 +842,27 @@ void ForceFeedbackSimulatePage::updateUI()
 
         // 力反馈模拟状态更新
         if(globalCfg.SYSTEM_enableForceFeedback){
-            // 校验力反馈参数
-            if(validateForceFeedbackParams(globalCfg)){
-                startForceFeedback();
-            }else{
-                // 校验失败, 重置
-                ffbSimSwitch->setChecked(false);
-                modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
-                    cfg.SYSTEM_enableForceFeedback = false;
-                    needSaveToFile = true;
-                });
-            }
+            startForceFeedback();
         }else{
             isFFBSimRunning = false;
             emit stopForceFeedbackSignal();
         }
 
     }
+}
+
+void ForceFeedbackSimulatePage::startFFBSimResultSlot(bool result, QString msg)
+{
+    // 开启力反馈模拟失败
+    if(result == false){
+        ffbSimSwitch->setChecked(false);
+        modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            cfg.SYSTEM_enableForceFeedback = false;
+            needSaveToFile = true;
+        });
+        updateUI();
+    }
+
 }
 
 

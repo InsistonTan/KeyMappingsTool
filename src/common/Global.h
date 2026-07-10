@@ -49,9 +49,11 @@ public:
     inline const static QString CURRENT_VERSION = "1.3.0";
 
     // 日志api
-    inline const static QString LOGGER_API = "https://keymappingstoollogger.insistontan.workers.dev/";
+    inline const static QString LOGGER_API = "https://keymappingstoollogger.176334479.xyz";
     // 检查更新 api
-    inline const static QString CHECK_UPDATE_API = "https://keymappingstoolupdate.insistontan.workers.dev/";
+    inline const static QString CHECK_UPDATE_API = "https://keymappingstoolupdate.176334479.xyz";
+
+    //inline static MainWindow* g_mainWindow = nullptr;
 
     //识别轴需要变化的最小值
     inline const static int AXIS_CHANGE_VALUE = 2000;

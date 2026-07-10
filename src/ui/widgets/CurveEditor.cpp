@@ -197,7 +197,7 @@ void CurveEditor::drawAxis(QPainter &painter)
     // 刻度线的线长
     double lineLen = 2;
     // 刻度数字矩形的宽和高
-    int numberWidth = 20, numberHeight = 10;
+    int numberWidth = 25, numberHeight = 10;
     int titleWidth = this->width(), titleHeight = 15;
 
     // xy轴的标题的矩形(矩形左边位置, 顶部位置, 矩形的宽度, 矩形的高度)
@@ -217,7 +217,7 @@ void CurveEditor::drawAxis(QPainter &painter)
         }
 
         // 刻度数字, 整数显示
-        QString label = QString::number(x, 'f', 0);
+        QString label = QString::number(x, 'f', 0) + "%";
         QRect textRect(startP.x() - (numberWidth/2), startP.y(), numberWidth, numberHeight);
         painter.drawText(textRect, Qt::AlignCenter, label);
     }
@@ -235,8 +235,8 @@ void CurveEditor::drawAxis(QPainter &painter)
         if(y > 1){
             painter.drawLine(startP, endP);
             // 刻度数字, 整数显示
-            QString label = QString::number(y, 'f', 0);
-            QRect textRect(startP.x() - numberWidth, startP.y() - (numberHeight/2), 20, 10);
+            QString label = QString::number(y, 'f', 0) + "%";
+            QRect textRect(startP.x() - numberWidth, startP.y() - (numberHeight/2), numberWidth, numberHeight);
             painter.drawText(textRect, Qt::AlignCenter, label);
         }
     }
@@ -405,6 +405,10 @@ void CurveEditor::mouseMoveEvent(QMouseEvent *event)
 
             points[currPressPointIndex].out.xAxisValue += changedX;
             points[currPressPointIndex].out.yAxisValue += changedY;
+
+            forceLogicalPointValid(points[currPressPointIndex].main);
+            forceLogicalPointValid(points[currPressPointIndex].in);
+            forceLogicalPointValid(points[currPressPointIndex].out);
         }
         else if(currPressTarget == In){
             // in的x轴值不能超过当前main的x轴值

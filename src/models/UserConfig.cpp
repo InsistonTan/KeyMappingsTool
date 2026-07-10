@@ -107,6 +107,9 @@ QJsonObject UserConfig::toJson()
     ffbSettingsJsonObj[UserConfigKey::springCurve] = springCurveJsonArray;
     ffbSettingsJsonObj[UserConfigKey::dampingCurve] = dampingCurveJsonArray;
 
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxSpringGain] = SYSTEM_forceFeedbackSettings_maxSpringGain;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxDamperGain] = SYSTEM_forceFeedbackSettings_maxDamperGain;
+
 
     // 力反馈模拟设置
     jsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings] = ffbSettingsJsonObj;
@@ -376,6 +379,27 @@ void UserConfig::readAssistFuncSettingsFromJson(QJsonObject jsonObj, UserConfig 
                 }
             }
         }
+
+        if(out.SYSTEM_forceFeedbackSettings_springCurve.isEmpty()){
+            out.SYSTEM_forceFeedbackSettings_springCurve.append(defaultSpringPoints);
+        }
+        if(out.SYSTEM_forceFeedbackSettings_dampingCurve.isEmpty()){
+            out.SYSTEM_forceFeedbackSettings_dampingCurve.append(defaultDampingPoints);
+        }
+
+
+        // 回正力最大强度
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_maxSpringGain)){
+            out.SYSTEM_forceFeedbackSettings_maxSpringGain =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxSpringGain].toDouble();
+        }
+        // 转向阻尼最大强度
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_maxDamperGain)){
+            out.SYSTEM_forceFeedbackSettings_maxDamperGain =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxDamperGain].toDouble();
+        }
+
+
 
     }
 

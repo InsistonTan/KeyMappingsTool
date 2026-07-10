@@ -113,4 +113,8 @@ public:
     inline const static QString dampingCurve
         = QStringLiteral("dampingCurve");
 
+    inline const static QString SYSTEM_forceFeedbackSettings_maxSpringGain
+        = QStringLiteral("maxSpringGain");
+    inline const static QString SYSTEM_forceFeedbackSettings_maxDamperGain
+        = QStringLiteral("maxDamperGain");
 };

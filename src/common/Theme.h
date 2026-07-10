@@ -555,7 +555,6 @@ QPushButton:disabled {
         QString style = QString(R"(
         QScrollArea{
             border:none;
-            out-line:none;
         }
         /* =========================
            滚动条整体

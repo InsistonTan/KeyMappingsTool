@@ -205,7 +205,7 @@ MappingRelation DirectInputService::getNextActionBtnOrAxis(
     return MappingRelation(false);
 }
 
-bool DirectInputService::openDiDevice(QVector<QString> deviceNameList, bool interruptWhenError)
+bool DirectInputService::openDiDevice(QVector<QString> deviceNameList, bool interruptWhenError, DWORD cooperativeLevel)
 {
     if (deviceNameList.isEmpty()) {
         return false;
@@ -219,7 +219,7 @@ bool DirectInputService::openDiDevice(QVector<QString> deviceNameList, bool inte
 
     int initedCounter = 0;
 
-    // 遍历已选择的设备名称字符串
+    // 遍历设备列表
     for(auto const &deviceName : deviceNameList){
         auto pInitedDevice = getInitedDevice(deviceName);
 
@@ -247,7 +247,7 @@ bool DirectInputService::openDiDevice(QVector<QString> deviceNameList, bool inte
                 LPDIRECTINPUTDEVICE8 g_pDevice = nullptr;
 
                 // 初始化设备
-                auto result = DirectInputCore::initDevice(Global::getHideWindowHWnd(), g_pDirectInput, deviceInfo, &g_pDevice);
+                auto result = DirectInputCore::initDevice(Global::getHideWindowHWnd(), g_pDirectInput, deviceInfo, &g_pDevice, cooperativeLevel);
 
                 // 初始化失败
                 if(result != DiActionResultEnum::Success){
@@ -306,6 +306,64 @@ bool DirectInputService::openDiDevice(QVector<QString> deviceNameList, bool inte
 
     // 成功初始化的计数 跟 设备列表大小一致, 返回true
     return initedCounter == deviceNameList.size();
+}
+
+LPDIRECTINPUTDEVICE8 DirectInputService::openDiDevice(HWND hWnd, QString deviceName, DWORD cooperativeLevel)
+{
+    if (deviceName.isEmpty()) {
+        return nullptr;
+    }
+
+    if(g_pDirectInput == nullptr)
+        initDirectInput();
+
+    // 重新扫描一次设备列表
+    scanDevice();
+
+    // 是否在 g_diDeviceList 找到 deviceName对应的设备
+    bool foundDevice = false;
+
+    // 根据设备名称找到设备guidInstance, 并初始化设备, 添加初始化后的设备到已选择设备列表
+    for(auto const &deviceInfo : getDeviceInfoListSnapshot()){
+        if(deviceName.toStdString() == deviceInfo.name){
+            foundDevice = true;
+
+            LPDIRECTINPUTDEVICE8 g_pDevice = nullptr;
+
+            // 初始化设备
+            auto result = DirectInputCore::initDevice(hWnd, g_pDirectInput, deviceInfo, &g_pDevice, cooperativeLevel);
+
+            // 初始化失败
+            if(result != DiActionResultEnum::Success){
+                // 显示错误信息
+                showInitDeviceFailedMsg(result, deviceInfo.name, true);
+                return nullptr;
+            }
+
+            // 获取各个轴的值范围
+            getDipropRange(g_pDevice, DIJOFS_X, Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisX));
+            getDipropRange(g_pDevice, DIJOFS_Y, Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisY));
+            getDipropRange(g_pDevice, DIJOFS_Z, Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisZ));
+            getDipropRange(g_pDevice, DIJOFS_RX, Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisRX));
+            getDipropRange(g_pDevice, DIJOFS_RY, Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisRY));
+            getDipropRange(g_pDevice, DIJOFS_RZ, Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisRZ));
+            getDipropRange(g_pDevice, DIJOFS_SLIDER(0), Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisS1));
+            getDipropRange(g_pDevice, DIJOFS_SLIDER(1), Global::getBtnOrAxisFullName(deviceInfo.name.data(), StringConstants::axisS1));
+
+            LogService::parseSuccessLog(StringConstants::connectDeviceSuccessMsg.arg(deviceInfo.name.data()));
+
+
+            // 当前设备已处理完成, 结束
+            return g_pDevice;
+        }
+    }
+
+    // 该设备没有在设备信息列表找到
+    if(foundDevice == false){
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::deviceNotFoundErrorMsg.arg(deviceName));
+    }
+
+    return nullptr;
 }
 
 void DirectInputService::getInputState(
@@ -636,65 +694,27 @@ bool DirectInputService::scanDevice()
         g_diDeviceList.append(deviceInfo);
     }
 
-    LogService::parseSuccessLog(StringConstants::scanDeviceSuccessMsg);
+    //LogService::parseSuccessLog(StringConstants::scanDeviceSuccessMsg);
     return true;
 }
 
-bool DirectInputService::checkIsSupportForceFeedback(QString deviceName)
+bool DirectInputService::checkIsSupportForceFeedback(LPDIRECTINPUTDEVICE8 device)
 {
-    //qDebug() << "当前选择的转向轴设备: " << deviceName;
-
-    // 是否支持力反馈
-    bool supportForceFeedback = false;
-
-    // 初始化 g_pDirectInput并扫描设备
-    if(initDirectInput() && scanDevice()){
-        // 打开设备
-        openDiDevice({deviceName});
-
-        // 根据设备名称找到设备guidInstance, 并初始化设备
-        for(const auto& deviceInfo : getDeviceInfoListSnapshot()){
-            if(deviceName.toStdString() == deviceInfo.name){
-                LPDIRECTINPUTDEVICE8 device = nullptr;
-
-                // 初始化设备
-                auto result = DirectInputCore::initDevice(Global::getHideWindowHWnd(), g_pDirectInput, deviceInfo, &device);
-
-                // 初始化失败
-                if(result != DiActionResultEnum::Success){
-                    // 显示错误信息
-                    showInitDeviceFailedMsg(result, deviceInfo.name);
-                    return false;
-                }
-
-                // 获取设备能力
-                DIDEVCAPS diDevCaps;
-                diDevCaps.dwSize = sizeof(DIDEVCAPS);
-                device->GetCapabilities(&diDevCaps);
-
-                // 设备支持力反馈
-                if (diDevCaps.dwFlags & DIDC_FORCEFEEDBACK) {
-                    //qDebug() << "当前选择的设备支持力反馈";
-                    supportForceFeedback = true;
-                }else{
-                    //qDebug() << "当前设备不支持力反馈!";
-                    LogService::parseErrorLog(StringConstants::notSupportFFBErrorMsg.arg(deviceName));
-                }
-
-                if(device){
-                    device->Unacquire();
-                    device->Release();
-                    device = nullptr;
-                }
-            }
-        }
-
-    }else{
-        //qDebug() << "检测设备是否支持力反馈失败: 初始化设备失败!";
-        LogService::parseErrorLog(StringConstants::checkSupportFFBErrorMsg);
+    if(device == nullptr){
+        return false;
     }
 
-    return supportForceFeedback;
+    // 获取设备能力
+    DIDEVCAPS diDevCaps;
+    diDevCaps.dwSize = sizeof(DIDEVCAPS);
+    device->GetCapabilities(&diDevCaps);
+
+    // 设备支持力反馈
+    if (diDevCaps.dwFlags & DIDC_FORCEFEEDBACK) {
+        return true;
+    }
+
+    return false;
 }
 
 bool DirectInputService::isDeviceInited(QString deviceName)

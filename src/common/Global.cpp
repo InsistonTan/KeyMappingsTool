@@ -183,9 +183,6 @@ void Global::showErrorMsgBoxAndPushToLog(QString msg){
 
 // 获取隐藏窗口的句柄
 HWND Global::getHideWindowHWnd(){
-    if(hideWindow == nullptr){
-        hideWindow = new HiddenHostWindow();
-    }
     return hideWindow->hwnd();
 }
 
