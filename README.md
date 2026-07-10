@@ -1,4 +1,4 @@
-# <img src="resources/appIcon.png" align="left" width="128" height="128"/> KeyMappingsTool
+# <img src="resources/app.png" align="left" width="128" height="128"/> KeyMappingsTool
 ![GitHub_Stars](https://img.shields.io/github/stars/InsistonTan/KeyMappingsTool?style=flat&color=ffcf49)
 [![GitHub All Releases](https://img.shields.io/github/downloads/InsistonTan/KeyMappingsTool/total)](https://github.com/InsistonTan/KeyMappingsTool/releases)
 [![GitHub issues by-label](https://img.shields.io/github/issues/InsistonTan/KeyMappingsTool?color=blue)](https://github.com/InsistonTan/KeyMappingsTool/issues)
