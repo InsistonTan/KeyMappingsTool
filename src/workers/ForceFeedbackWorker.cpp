@@ -443,7 +443,7 @@ void ForceFeedbackWorker::doWork(){
     double currentV = 0.0;// 当前车速
     double groundA = GROUND_FRICTION_COEFFICIENT * G;// 地面滚动摩檫力加速度
     double cycleTimeOfEachRound = (WORKER_SLEEP_TIME_MS + 10.0) / 1000.0;// 每轮循环所花费的时间(单位s)
-    double linerThrottleASpeedPer = 0.5;// 油门产生的加速度与踩下的深度呈线性增加关系时的最大车速百分比
+    //double linerThrottleASpeedPer = 0.5;// 油门产生的加速度与踩下的深度呈线性增加关系时的最大车速百分比
 
     isWorkerRunning = true;
 
@@ -514,14 +514,17 @@ void ForceFeedbackWorker::doWork(){
                 double throttleAxisA = 0.0;// 油门加速度
 
                 // 油门产生的加速度与踩下的深度呈线性
-                if(currentV < maxSpeed_m_s * linerThrottleASpeedPer){
+                //if(currentV < maxSpeed_m_s * linerThrottleASpeedPer){
                     // 油门加速度
-                    throttleAxisA = throttlePer * this->maxThrottleAxisA;
-                }else{
+                //    throttleAxisA = throttlePer * this->maxThrottleAxisA;
+                //}else{
                     // 油门产生的加速度将缓慢下降
                     // 油门加速度
-                    throttleAxisA = throttlePer * (this->maxThrottleAxisA - (currentV / maxSpeed_m_s) * this->maxThrottleAxisA - airA - groundA);
-                }
+                    //throttleAxisA = throttlePer * (this->maxThrottleAxisA - (currentV / maxSpeed_m_s) * this->maxThrottleAxisA - airA - groundA);
+                //}
+
+                // 线性
+                throttleAxisA = throttlePer * this->maxThrottleAxisA;
 
                 // 添加到总的加速度
                 totalA += throttleAxisA;
