@@ -3,7 +3,7 @@
 
 #include <QPainter>
 #include <QPainterPath>
-#include <qnamespace.h>
+
 
 CurveEditor::CurveEditor(QString xTitle, QString yTitle, QWidget *parent)
     : QWidget{parent}
@@ -49,9 +49,11 @@ void CurveEditor::sortPoints()
     });
 
     // 显示所有点的 in out
-    for(auto& p : points){
-        p.showIN = true;
-        p.showOut = true;
+    for(int i = 0; i < points.size(); i++){
+        points[i].showIN = true;
+        points[i].showOut = true;
+        // 强制点的位置在有效范围
+        forceBezierLogicalPointValid(points[i], i);
     }
 
     // 如果只有一个点, 隐藏 in out
@@ -144,7 +146,7 @@ bool CurveEditor::isLogicalPointValid(LogicalPoint lp)
     return !(lp.xAxisValue < 0 || lp.xAxisValue > xAxisValueMax || lp.yAxisValue < 0 || lp.yAxisValue > yAxisValueMax);
 }
 
-void CurveEditor::forceLogicalPointValid(LogicalPoint &lp)
+void CurveEditor::forceLogicalPointValid(LogicalPoint& lp, int pIndex, PressTarget target)
 {
     if(lp.xAxisValue < 0)
         lp.xAxisValue = 0;
@@ -155,6 +157,41 @@ void CurveEditor::forceLogicalPointValid(LogicalPoint &lp)
         lp.yAxisValue = 0;
     if(lp.yAxisValue > yAxisValueMax)
         lp.yAxisValue = yAxisValueMax;
+
+    bool hasPrePoint = (pIndex - 1) >= 0;
+    bool hasNextPoint = (pIndex + 1) < points.size();
+
+    if(target == PressTarget::Main){
+        // 主点的x轴值在 前一个out点和后一个in点之间
+        if(hasPrePoint){
+            lp.xAxisValue = std::max(lp.xAxisValue, points[pIndex - 1].out.xAxisValue + 0.000001);
+        }
+        if(hasNextPoint){
+            lp.xAxisValue = std::min(lp.xAxisValue, points[pIndex + 1].in.xAxisValue - 0.000001);
+        }
+    }else if(target == PressTarget::In){
+        // in点, x轴值不能超过主点
+        lp.xAxisValue = std::min(lp.xAxisValue, points[pIndex].main.xAxisValue);
+        // 且不能小于前一个点
+        if(hasPrePoint){
+            lp.xAxisValue = std::max(lp.xAxisValue, points[pIndex - 1].main.xAxisValue);
+        }
+    }else if(target == PressTarget::Out){
+        // out点, x轴值不能小于主点
+        lp.xAxisValue = std::max(lp.xAxisValue, points[pIndex].main.xAxisValue);
+        // 且不能大于后一个点
+        if(hasNextPoint){
+            lp.xAxisValue = std::min(lp.xAxisValue, points[pIndex + 1].main.xAxisValue);
+        }
+    }
+}
+
+void CurveEditor::forceBezierLogicalPointValid(BezierLogicalPoint &blp,  int pIndex)
+{
+    // 强制点的位置在有效区域
+    forceLogicalPointValid(blp.main, pIndex, PressTarget::Main);
+    forceLogicalPointValid(blp.in, pIndex, PressTarget::In);
+    forceLogicalPointValid(blp.out, pIndex, PressTarget::Out);
 }
 
 void CurveEditor::drawBackground(QPainter &painter)
@@ -390,9 +427,6 @@ void CurveEditor::mouseMoveEvent(QMouseEvent *event)
         // 新的逻辑值
         auto newLogicalP = toLogicalPoint(event->pos());
 
-        // 将逻辑值强制在有效范围内
-        forceLogicalPointValid(newLogicalP);
-
         // 主点, 带着in,out跑
         if(currPressTarget == Main){
             double changedX = newLogicalP.xAxisValue - points[currPressPointIndex].main.xAxisValue;
@@ -400,32 +434,23 @@ void CurveEditor::mouseMoveEvent(QMouseEvent *event)
             points[currPressPointIndex].main.xAxisValue += changedX;
             points[currPressPointIndex].main.yAxisValue += changedY;
 
-            points[currPressPointIndex].in.xAxisValue += changedX;
-            points[currPressPointIndex].in.yAxisValue += changedY;
+            //points[currPressPointIndex].in.xAxisValue += changedX;
+            //points[currPressPointIndex].in.yAxisValue += changedY;
 
-            points[currPressPointIndex].out.xAxisValue += changedX;
-            points[currPressPointIndex].out.yAxisValue += changedY;
+            //points[currPressPointIndex].out.xAxisValue += changedX;
+            //points[currPressPointIndex].out.yAxisValue += changedY;
 
-            forceLogicalPointValid(points[currPressPointIndex].main);
-            forceLogicalPointValid(points[currPressPointIndex].in);
-            forceLogicalPointValid(points[currPressPointIndex].out);
+            // 点的位置强制在有效范围
+            forceBezierLogicalPointValid(points[currPressPointIndex], currPressPointIndex);
         }
         else if(currPressTarget == In){
-            // in的x轴值不能超过当前main的x轴值
-            newLogicalP.xAxisValue = std::min(newLogicalP.xAxisValue, points[currPressPointIndex].main.xAxisValue);
-            // 同时不能小于前一个main点的x轴值
-            if(currPressPointIndex - 1 >= 0){
-                newLogicalP.xAxisValue = std::max(newLogicalP.xAxisValue, points[currPressPointIndex - 1].main.xAxisValue);
-            }
+            // 点的位置强制在有效范围
+            forceLogicalPointValid(newLogicalP, currPressPointIndex, PressTarget::In);
             points[currPressPointIndex].in = newLogicalP;
         }
         else if(currPressTarget == Out){
-            // out的x轴值不能小于当前main的x轴值
-            newLogicalP.xAxisValue = std::max(newLogicalP.xAxisValue, points[currPressPointIndex].main.xAxisValue);
-            // 同时不能大于后一个main点的x轴值
-            if(currPressPointIndex + 1 < points.size()){
-                newLogicalP.xAxisValue = std::min(newLogicalP.xAxisValue, points[currPressPointIndex + 1].main.xAxisValue);
-            }
+            // 点的位置强制在有效范围
+            forceLogicalPointValid(newLogicalP, currPressPointIndex, PressTarget::Out);
             points[currPressPointIndex].out = newLogicalP;
         }
 

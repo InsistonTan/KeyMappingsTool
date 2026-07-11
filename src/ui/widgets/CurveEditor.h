@@ -188,7 +188,9 @@ private:
     // 逻辑点是否有效
     bool isLogicalPointValid(LogicalPoint lp);
     // 强制逻辑点有效, 控制值在有效范围内
-    void forceLogicalPointValid(LogicalPoint& lp);
+    void forceLogicalPointValid(LogicalPoint& lp, int pIndex, PressTarget target);
+    // 强制贝塞尔逻辑的位置有效
+    void forceBezierLogicalPointValid(BezierLogicalPoint& blp, int pIndex);
 
 
 
