@@ -70,6 +70,8 @@ A: 使用[HidHide](https://github.com/nefarius/HidHide)工具. 该工具可以�
 - [ViGEmBus](https://github.com/nefarius/ViGEmBus) `xbox虚拟手柄驱动`
 - [scs-sdk-plugin](https://github.com/RenCloud/scs-sdk-plugin) `用于读取欧卡2的游戏数据`
 - [ETS2-KeyBinder](https://github.com/Sab1e-GitHub/ETS2-KeyBinder) `用于欧卡2原生按键绑定`
+- [onnxruntime](https://github.com/microsoft/onnxruntime) `用于运行onnx模型`
+- [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)) `使用PaddleOCR的PP-OCRv5模型进行ocr识别游戏车速`
 
 ## 项目贡献者
 - [m-RNA](https://github.com/m-RNA) `修复多个bug, 以及添加多个功能, 例如: 欧卡2原生按键绑定等等`
