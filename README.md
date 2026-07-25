@@ -33,14 +33,13 @@
 - 方向盘按键和轴映射键盘鼠标
 - 方向盘映射虚拟Xbox手柄
 - 方向盘力反馈模拟
-  - 根据计算的车速模拟出动态的回正弹簧效果和阻尼效果
+  - 支持模拟动态的回正弹簧效果和阻尼效果
   - 支持自定义力反馈动态曲线
+  - 支持OCR识别游戏内车速
     
 ### 其它功能
 - 支持多设备同时映射
-  
-- 欧卡2自动解除手刹 `踩油门将自动解除手刹, 通过使用欧卡2插件将遥测数据存放在共享内存, 再读取共享内存获得油门状态和手刹状态实现该功能`
-  
+   
 - 欧卡2原生按键绑定 `例如: 绑定灯光, 转向灯拨杆, 雨刮器各个档位`
   
 - 支持多种按键触发模式: (默认)同步模式, 延迟触发模式, 按键松开触发模式, 按下触发且松开再次触发模式, 保持按住(再次按下松开)模式
@@ -55,6 +54,7 @@
   
 - 支持设置参数保存到映射配置 `实现不同的游戏配置使用不同的参数`
 - ......
+  
 ---
 
 ## Q&A
@@ -64,17 +64,19 @@ A: 使用[HidHide](https://github.com/nefarius/HidHide)工具. 该工具可以�
 
 ---
 
-
 ## 第三方开源项目声明
 - [ViGEmClient](https://github.com/nefarius/ViGEmClient) `用于连接和使用虚拟xbox手柄`
 - [ViGEmBus](https://github.com/nefarius/ViGEmBus) `xbox虚拟手柄驱动`
 - [scs-sdk-plugin](https://github.com/RenCloud/scs-sdk-plugin) `用于读取欧卡2的游戏数据`
 - [ETS2-KeyBinder](https://github.com/Sab1e-GitHub/ETS2-KeyBinder) `用于欧卡2原生按键绑定`
+- [onnxruntime](https://github.com/microsoft/onnxruntime) `用于运行onnx模型`
+- [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) `使用PaddleOCR的PP-OCRv5模型进行ocr识别游戏车速`
+
+---
 
 ## 项目贡献者
 - [m-RNA](https://github.com/m-RNA) `修复多个bug, 以及添加多个功能, 例如: 欧卡2原生按键绑定等等`
 
-感谢所有贡献者
 
 ---
 
