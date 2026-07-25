@@ -62,8 +62,8 @@ void OcrWorker::start()
     OcrEngine ocr;
     // 加载模型和模型输出的类别字典
     bool ok = ocr.loadModel(
-        QCoreApplication::applicationDirPath() + "/models/RapidOCR/latin_PP-OCRv5_rec_mobile.onnx",
-        QCoreApplication::applicationDirPath() + "/models/RapidOCR/latin_dict.txt"
+        QCoreApplication::applicationDirPath() + "/models/PaddleOCR/latin_PP-OCRv5_rec_mobile.onnx",
+        QCoreApplication::applicationDirPath() + "/models/PaddleOCR/latin_dict.txt"
         );
     // 加载模型失败
     if(!ok)
