@@ -117,4 +117,19 @@ public:
         = QStringLiteral("maxSpringGain");
     inline const static QString SYSTEM_forceFeedbackSettings_maxDamperGain
         = QStringLiteral("maxDamperGain");
+
+    inline const static QString SYSTEM_forceFeedbackSettings_enableOcr
+        = QStringLiteral("enableOcr");
+    inline const static QString SYSTEM_forceFeedbackSettings_ocrRegion_x
+        = QStringLiteral("ocrRegion_x");
+    inline const static QString SYSTEM_forceFeedbackSettings_ocrRegion_y
+        = QStringLiteral("ocrRegion_y");
+    inline const static QString SYSTEM_forceFeedbackSettings_ocrRegion_width
+        = QStringLiteral("ocrRegion_width");
+    inline const static QString SYSTEM_forceFeedbackSettings_ocrRegion_height
+        = QStringLiteral("ocrRegion_height");
+    inline const static QString SYSTEM_forceFeedbackSettings_enableOcrPreview
+        = QStringLiteral("enableOcrPreview");
+
+
 };

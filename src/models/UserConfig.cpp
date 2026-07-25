@@ -87,14 +87,6 @@ QJsonObject UserConfig::toJson()
         = SYSTEM_forceFeedbackSettings_stop_100km_dis_m;
     ffbSettingsJsonObj[UserConfigKey::maxSpeed_km_h]
         = SYSTEM_forceFeedbackSettings_maxSpeed_km_h;
-    // ffbSettingsJsonObj[UserConfigKey::maxForceFeedbackGain]
-    //     = SYSTEM_forceFeedbackSettings_maxForceFeedbackGain;
-    // ffbSettingsJsonObj[UserConfigKey::isConstantForceMode]
-    //     = SYSTEM_forceFeedbackSettings_isConstantForceMode;
-    // ffbSettingsJsonObj[UserConfigKey::constantCorrectiveForceGain]
-    //     = SYSTEM_forceFeedbackSettings_constantCorrectiveForceGain;
-    // ffbSettingsJsonObj[UserConfigKey::constantDampingGain]
-    //     = SYSTEM_forceFeedbackSettings_constantDampingGain;
 
     QJsonArray springCurveJsonArray;
     for(auto& p : SYSTEM_forceFeedbackSettings_springCurve){
@@ -107,8 +99,23 @@ QJsonObject UserConfig::toJson()
     ffbSettingsJsonObj[UserConfigKey::springCurve] = springCurveJsonArray;
     ffbSettingsJsonObj[UserConfigKey::dampingCurve] = dampingCurveJsonArray;
 
-    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxSpringGain] = SYSTEM_forceFeedbackSettings_maxSpringGain;
-    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxDamperGain] = SYSTEM_forceFeedbackSettings_maxDamperGain;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxSpringGain]
+        = SYSTEM_forceFeedbackSettings_maxSpringGain;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_maxDamperGain]
+        = SYSTEM_forceFeedbackSettings_maxDamperGain;
+
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_enableOcr]
+        = SYSTEM_forceFeedbackSettings_enableOcr;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_x]
+        = SYSTEM_forceFeedbackSettings_ocrRegion_x;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_y]
+        = SYSTEM_forceFeedbackSettings_ocrRegion_y;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_width]
+        = SYSTEM_forceFeedbackSettings_ocrRegion_width;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_height]
+        = SYSTEM_forceFeedbackSettings_ocrRegion_height;
+    ffbSettingsJsonObj[UserConfigKey::SYSTEM_forceFeedbackSettings_enableOcrPreview]
+        = SYSTEM_forceFeedbackSettings_enableOcrPreview;
 
 
     // 力反馈模拟设置
@@ -340,26 +347,6 @@ void UserConfig::readAssistFuncSettingsFromJson(QJsonObject jsonObj, UserConfig 
                     : default_maxSpeed_km_h;
         }
 
-        // if(settingsObj.contains(UserConfigKey::maxForceFeedbackGain)){
-        //     out.SYSTEM_forceFeedbackSettings_maxForceFeedbackGain =
-        //         settingsObj[UserConfigKey::maxForceFeedbackGain].toDouble();
-        // }
-
-        // out.SYSTEM_forceFeedbackSettings_isConstantForceMode =
-        //     (settingsObj.contains(UserConfigKey::isConstantForceMode))
-        //         ? settingsObj[UserConfigKey::isConstantForceMode].toBool()
-        //         : false;
-
-        // if(settingsObj.contains(UserConfigKey::constantCorrectiveForceGain)){
-        //     out.SYSTEM_forceFeedbackSettings_constantCorrectiveForceGain =
-        //         settingsObj[UserConfigKey::constantCorrectiveForceGain].toDouble();
-        // }
-
-        // if(settingsObj.contains(UserConfigKey::constantDampingGain)){
-        //     out.SYSTEM_forceFeedbackSettings_constantDampingGain =
-        //         settingsObj[UserConfigKey::constantDampingGain].toDouble();
-        // }
-
         // 回正力曲线的点集合
         if(settingsObj.contains(UserConfigKey::springCurve) && settingsObj[UserConfigKey::springCurve].isArray()){
             for(const auto& item : settingsObj[UserConfigKey::springCurve].toArray()){
@@ -400,6 +387,31 @@ void UserConfig::readAssistFuncSettingsFromJson(QJsonObject jsonObj, UserConfig 
         }
 
 
+        // ocr识别
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_enableOcr)){
+            out.SYSTEM_forceFeedbackSettings_enableOcr =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_enableOcr].toBool();
+        }
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_x)){
+            out.SYSTEM_forceFeedbackSettings_ocrRegion_x =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_x].toInt();
+        }
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_y)){
+            out.SYSTEM_forceFeedbackSettings_ocrRegion_y =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_y].toInt();
+        }
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_width)){
+            out.SYSTEM_forceFeedbackSettings_ocrRegion_width =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_width].toInt();
+        }
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_height)){
+            out.SYSTEM_forceFeedbackSettings_ocrRegion_height =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_ocrRegion_height].toInt();
+        }
+        if(settingsObj.contains(UserConfigKey::SYSTEM_forceFeedbackSettings_enableOcrPreview)){
+            out.SYSTEM_forceFeedbackSettings_enableOcrPreview =
+                settingsObj[UserConfigKey::SYSTEM_forceFeedbackSettings_enableOcrPreview].toBool();
+        }
 
     }
 

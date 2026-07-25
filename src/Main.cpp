@@ -3,6 +3,11 @@
 #include "services/MessageBoxService.h"
 #include "ui/mainwindow/MainWindow.h"
 #include "services/ConfigService.h"
+#include "ui/widgets/CardMessageDialog.h"
+
+#include <qdialog.h>
+#include <windows.h>
+#include <tlhelp32.h>
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -20,6 +25,10 @@ void handleUncaughtException();
 void createTrayIcon(QApplication* app, MainWindow* mainWindow);
 // 显示主窗口, 修复闪白
 void showMainWIndow(MainWindow* w);
+// 检查是否多开了当前软件
+bool checkMultiRunning();
+// 是否存在与当前软件同名的进程
+bool hasSameNameProcesses();
 
 
 
@@ -36,32 +45,38 @@ int main(int argc, char *argv[])
 
     // 设置支持非整数倍dpi缩放（如150%）
     QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-
     QApplication a(argc, argv);
-    // 隐藏窗口
-    Global::hideWindow = new Global::HiddenHostWindow();
-
-
-    // 设置全局字体
-    QFont font;
-    if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows11){
-        font.setFamilies({
-            "Segoe UI"
-        });
-    }
-    else{
-        font.setFamilies({
-            "Segoe UI",
-            "Microsoft YaHei UI"
-        });
-    }
-    font.setPointSizeF(9.0);
-    font.setWeight(QFont::Normal);
-    qApp->setFont(font);
-
-    qApp->setStyleSheet(QString("QWidget{color:%1;}").arg(Theme::textColor()));
 
     try{
+        // 软件多开检查, 如果当前是多开的软件, 并且没有点击 "确认" 继续打开, 将结束当前软件进程
+        if(checkMultiRunning() == true){
+            return 0;
+        }
+
+        // 初始化一个隐藏窗口, directinput设备初始化需要窗口hwnd, 借助一个隐藏的窗口来设置hwnd
+        Global::hideWindow = new Global::HiddenHostWindow();
+
+        // 初始化com, 用于png图片加载和保存
+        HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+        // 设置全局字体
+        QFont font;
+        if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::Windows11){
+            font.setFamilies({
+                "Segoe UI"
+            });
+        }
+        else{
+            font.setFamilies({
+                "Segoe UI",
+                "Microsoft YaHei UI"
+            });
+        }
+        font.setPointSizeF(9.0);
+        font.setWeight(QFont::Normal);
+        qApp->setFont(font);
+        qApp->setStyleSheet(QString("QWidget{color:%1;}").arg(Theme::textColor()));
+
         // 解析命令行参数
         QCommandLineParser parser;
         parser.setApplicationDescription(Global::APP_NAME);
@@ -75,8 +90,6 @@ int main(int argc, char *argv[])
         // 创建主窗口
         MainWindow w;
 
-        //Global::g_mainWindow = &w;
-
         // 创建系统托盘图标
         createTrayIcon(&a, &w);
 
@@ -85,12 +98,19 @@ int main(int argc, char *argv[])
             showMainWIndow(&w);
         }
 
-        return a.exec();
+        auto ret = a.exec();
+
+        // 释放com
+        if (SUCCEEDED(hr)){
+            CoUninitialize();
+        }
+
+        return ret;
 
     }catch(const std::exception& e){
-        QMessageBox::critical(nullptr, StringConstants::appException, QString("Init app failed:\n%1").arg(e.what()));
+        MessageBoxService::showError(StringConstants::appException, QString("Init app failed:\n%1").arg(e.what()));
     }catch (...) {
-        QMessageBox::critical(nullptr, StringConstants::appException, "Init app failed: Unknown exception.");
+        MessageBoxService::showError(StringConstants::appException, "Init app failed: Unknown exception.");
     }
 
     return -1;
@@ -108,7 +128,6 @@ void showMainWIndow(MainWindow* w){
         w->setWindowOpacity(1.0);
     });
 }
-
 
 void createTrayIcon(QApplication* app, MainWindow* mainWindow){
     // 创建系统托盘图标
@@ -157,7 +176,6 @@ void createTrayIcon(QApplication* app, MainWindow* mainWindow){
     });
 }
 
-
 // 系统错误信号处理
 void signalHandler(int signal) {
     const char* errorMsg = nullptr;
@@ -173,7 +191,6 @@ void signalHandler(int signal) {
     std::exit(EXIT_FAILURE);  // 安全退出
 }
 
-
 // 全局异常处理函数
 void handleUncaughtException()
 {
@@ -186,4 +203,44 @@ void handleUncaughtException()
     }
 
     QCoreApplication::exit(-1);
+}
+
+// 检查是否多开了当前软件
+bool checkMultiRunning(){
+    // 运行了多个当前软件, 弹窗提醒
+    if(hasSameNameProcesses()){
+        CardMessageDialog dialog(CardMessageDialog::Type::Warning,
+                                 StringConstants::warning,
+                                 Global::APP_NAME + StringConstants::multiRunningTips);
+        if(dialog.exec() == QDialog::Rejected){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool hasSameNameProcesses(){
+    int counter = 0;
+    QString targetName = QFileInfo(QCoreApplication::applicationFilePath()).fileName();
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if(snapshot == INVALID_HANDLE_VALUE)
+        return false;
+
+    PROCESSENTRY32W pe;
+    pe.dwSize = sizeof(PROCESSENTRY32W);
+
+    if(Process32FirstW(snapshot, &pe)){
+        do{
+            QString processName = QString::fromWCharArray(pe.szExeFile);
+            if(processName.compare(targetName, Qt::CaseInsensitive) == 0){
+                counter++;
+            }
+        }while(Process32NextW(snapshot, &pe));
+    }
+
+    CloseHandle(snapshot);
+
+    return counter > 1;
 }

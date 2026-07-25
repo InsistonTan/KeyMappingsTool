@@ -216,6 +216,10 @@ void SettingsPage::init()
     bindingSiganlsToSlots();
 
     QTimer::singleShot(1000, this, [this](){
+        if(ConfigService::getCurrentMappingConfig().overrideGlobalUserConfig){
+            showGlobalSettings = false;
+            currentMappingRadioButton->setChecked(true);
+        }
         // 更新ui
         updateUI();
     });
@@ -537,7 +541,6 @@ void SettingsPage::updateUI()
         currentMappingRadioButton->setText(StringConstants::currentMappingFileSettings);
     }
 
-
     // 获取当前映射配置
     auto mappingCfg = ConfigService::getCurrentMappingConfig();
     overrideGlobalSettingsSwitch->setChecked(mappingCfg.overrideGlobalUserConfig);
@@ -730,6 +733,18 @@ bool SettingsPage::copyETS2PluginDll(QString ets2PulginPath, QString pluginDllFi
 
     LogService::parseSuccessLog(StringConstants::copyPluginSuccess);
     return true;
+}
+
+void SettingsPage::currentSelectedMappingFileChangedSlot()
+{
+    if(ConfigService::getCurrentMappingConfig().overrideGlobalUserConfig){
+        showGlobalSettings = false;
+        currentMappingRadioButton->setChecked(true);
+    }else{
+        showGlobalSettings = true;
+        globalSettingsRadioButton->setChecked(true);
+    }
+    updateUI();
 }
 
 

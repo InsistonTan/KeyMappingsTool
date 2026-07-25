@@ -182,27 +182,60 @@ void ForceFeedbackSimulatePage::init()
     QVBoxLayout* carSettingsGroupLayout = new QVBoxLayout(carSettingsGroup);
     carSettingsGroupLayout->setContentsMargins(16, 12, 0, 12);
     // 控件
-    // 标题
     QLabel* carSettingsGroupTitle = new QLabel(StringConstants::carParamsSettings, carSettingsGroup);
     speedUpLineEdit = new QLineEdit(carSettingsGroup);
     speedDownLineEdit = new QLineEdit(carSettingsGroup);
     maxSpeedLineEdit = new QLineEdit(carSettingsGroup);
+    // 车速处理类型的单选, 模拟车速/ocr识别车速
+    QWidget* carSpeedHandleTypeWidget = new QWidget(this);
+    Theme::setQWidgetStyleSheet(carSpeedHandleTypeWidget);
+    QHBoxLayout* carSpeedHandleTypeLayout = new QHBoxLayout(carSpeedHandleTypeWidget);
+    carSpeedHandleTypeLayout->setSpacing(16);
+    simCarSpeedRadioButton = new QRadioButton(StringConstants::simCarSpeed);
+    simCarSpeedRadioButton->setChecked(true);
+    ocrCarSpeedRadioButton = new QRadioButton(StringConstants::ocrCarSpeed);
+    carSpeedHandleTypeSelectgroup = new QButtonGroup(this);
+    carSpeedHandleTypeSelectgroup->addButton(simCarSpeedRadioButton, 0);
+    carSpeedHandleTypeSelectgroup->addButton(ocrCarSpeedRadioButton, 1);
+    carSpeedHandleTypeLayout->addWidget(simCarSpeedRadioButton);
+    carSpeedHandleTypeLayout->addWidget(ocrCarSpeedRadioButton);
+    carSpeedHandleTypeLayout->addStretch();
+    // 设置ocr区域
+    setOcrRegionBtn = new QPushButton(StringConstants::settings, this);
+    ocrRegionLabel = new QLabel(StringConstants::notSet, this);
+    // ocr车速悬浮窗开关
+    ocrPreviewSwitch = new WinUISwitch(this);
     // 设置样式
     carSettingsGroupTitle->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
+    Theme::setButtonStyleSheet(setOcrRegionBtn, ButtonLevel::normal, "width: 100px;height:32px;");
     Theme::setLineEditStyleSheet(speedUpLineEdit);
     Theme::setLineEditStyleSheet(speedDownLineEdit);
     Theme::setLineEditStyleSheet(maxSpeedLineEdit);
+    Theme::setRadioButtonStyleSheet(simCarSpeedRadioButton);
+    Theme::setRadioButtonStyleSheet(ocrCarSpeedRadioButton);
     // 固定输入框的宽度
-    int fixedWidthLineEdit = 130;
-    speedUpLineEdit->setFixedWidth(fixedWidthLineEdit);
-    speedDownLineEdit->setFixedWidth(fixedWidthLineEdit);
-    maxSpeedLineEdit->setFixedWidth(fixedWidthLineEdit);
+    int fixedWidth = 130;
+    speedUpLineEdit->setFixedWidth(fixedWidth);
+    speedDownLineEdit->setFixedWidth(fixedWidth);
+    maxSpeedLineEdit->setFixedWidth(fixedWidth);
+    setOcrRegionBtn->setFixedWidth(fixedWidth);
     // 布局内容
     carSettingsGroupLayout->addWidget(carSettingsGroupTitle);
-    carSettingsGroupLayout->addWidget(Global::createSettingsItem(carSettingsGroup, StringConstants::speedUp100km_h, speedUpLineEdit, new QLabel(StringConstants::speedUpDesc), 20));
-    carSettingsGroupLayout->addWidget(Global::createSettingsItem(carSettingsGroup, StringConstants::speedDown100km_h, speedDownLineEdit, new QLabel(StringConstants::speedDownDesc), 20));
+    carSettingsGroupLayout->addWidget(carSpeedHandleTypeWidget);
+
+    setOcrRegionWidget = Global::createSettingsItem(carSettingsGroup, StringConstants::setOcrRegion, setOcrRegionBtn, ocrRegionLabel, 20);
+    carSettingsGroupLayout->addWidget(setOcrRegionWidget);
+
+    speedUpWidget = Global::createSettingsItem(carSettingsGroup, StringConstants::speedUp100km_h, speedUpLineEdit, new QLabel(StringConstants::speedUpDesc), 20);
+    carSettingsGroupLayout->addWidget(speedUpWidget);
+
+    speedDownWidget = Global::createSettingsItem(carSettingsGroup, StringConstants::speedDown100km_h, speedDownLineEdit, new QLabel(StringConstants::speedDownDesc), 20);
+    carSettingsGroupLayout->addWidget(speedDownWidget);
+
     carSettingsGroupLayout->addWidget(Global::createSettingsItem(carSettingsGroup, StringConstants::maxSpeed, maxSpeedLineEdit, new QLabel(StringConstants::maxSpeedDesc), 20));
 
+    ocrPreviewWidget = Global::createSettingsItem(carSettingsGroup, StringConstants::ocrPreviewSwitch, ocrPreviewSwitch, new QLabel(StringConstants::ocrPreviewSwitchDesc), 20);
+    carSettingsGroupLayout->addWidget(ocrPreviewWidget);
 
 
     // ================================
@@ -221,8 +254,8 @@ void ForceFeedbackSimulatePage::init()
     gainSettingsGrouppTitle->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
     Theme::setLineEditStyleSheet(springGainLineEdit);
     Theme::setLineEditStyleSheet(damperGainLineEdit);
-    springGainLineEdit->setFixedWidth(fixedWidthLineEdit);
-    damperGainLineEdit->setFixedWidth(fixedWidthLineEdit);
+    springGainLineEdit->setFixedWidth(fixedWidth);
+    damperGainLineEdit->setFixedWidth(fixedWidth);
     // 布局内容
     gainSettingsGroupLayout->addWidget(gainSettingsGrouppTitle);
     gainSettingsGroupLayout->addWidget(Global::createSettingsItem(gainSettingsGroup,
@@ -274,22 +307,16 @@ void ForceFeedbackSimulatePage::init()
     // 绑定事件
     bindingEvents();
 
-    // 两秒后开启力反馈模拟
+    // 延迟更新UI数据
     QTimer::singleShot(1000, this, [this](){
+        if(ConfigService::getCurrentMappingConfig().overrideGlobalFFBSettings){
+            showGlobalSettings = false;
+            currentMappingRadioButton->setChecked(true);
+        }
+
         // 更新ui
         updateUI();
     });
-
-    // // 是否开启了力反馈模拟
-    // if(ConfigService::get().SYSTEM_enableForceFeedback && isFFBSimRunning == false){
-    //     // 两秒后开启力反馈模拟
-    //     QTimer::singleShot(3000, this, [this](){
-    //         // 检查力反馈参数
-    //         if(validateForceFeedbackParams(ConfigService::get())){
-    //             startForceFeedback();
-    //         }
-    //     });
-    // }
 }
 
 template<typename Func>
@@ -329,8 +356,6 @@ void ForceFeedbackSimulatePage::bindingEvents()
 {
     // 生效范围
     connect(settingScopegroup, QOverload<int>::of(&QButtonGroup::idClicked),this, [this](int id){
-        bool needSaveToFile = false;
-
         // id==0 说明选择了全局设置
         bool selectedGlobal = id == 0;
 
@@ -673,6 +698,101 @@ void ForceFeedbackSimulatePage::bindingEvents()
             needSendSignal = true;
         });
     });
+
+    // 车速处理类型选择, 模拟车速/ocr识别车速
+    connect(carSpeedHandleTypeSelectgroup, QOverload<int>::of(&QButtonGroup::idClicked),this, [this](int id){
+        bool enableOcr = (id == 1);
+        bool needUpdateUi = false;
+
+        // 修改
+        modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            if(enableOcr != cfg.SYSTEM_forceFeedbackSettings_enableOcr){
+                cfg.SYSTEM_forceFeedbackSettings_enableOcr = enableOcr;
+                needSaveToFile = true;
+                needSendSignal = true;
+                needUpdateUi = true;
+            }
+        });
+
+        if(needUpdateUi){
+            // 更新ui
+            updateUI();
+        }
+    });
+
+    // 设置ocr识别区域的按钮
+    connect(setOcrRegionBtn, &QPushButton::clicked, this, [this](){
+        // 显示ocr识别区域窗口
+        if(ocrRegionWindow.isHidden()){
+            // ocr识别区域窗口的位置和大小
+            auto cfg = ConfigService::get();
+            if(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width != 0
+                    && cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height != 0){
+                ocrRegionWindow.setGeo(
+                    cfg.SYSTEM_forceFeedbackSettings_ocrRegion_x,
+                    cfg.SYSTEM_forceFeedbackSettings_ocrRegion_y,
+                    cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width,
+                    cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height
+                );
+            }
+
+            ocrRegionWindow.show();
+            setOcrRegionBtn->setText(StringConstants::setOcrRegionBtnConfirmText);
+            return;
+        }
+
+        // 获取窗口的位置大小
+        QScreen* screen = ocrRegionWindow.screen();
+        // 缩放比例
+        auto scale = screen->devicePixelRatio();
+
+        // 窗口所在屏幕名称
+        //QString screenName = screen->name();
+
+        // 窗口位置和大小
+        int x = int(ocrRegionWindow.x() * scale);
+        int y = int(ocrRegionWindow.y() * scale);
+        int w = int(ocrRegionWindow.width() * scale);
+        int h = int(ocrRegionWindow.height() * scale);
+
+        // 区域的宽度和高度不能为0
+        if(w == 0 || h == 0){
+            Global::showErrorMsgBoxAndPushToLog(StringConstants::ocrRegionTooSmall);
+            return;
+        }
+
+        // 修改
+        modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            //cfg.SYSTEM_forceFeedbackSettings_ocrScreenName = screenName;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_x = x;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_y = y;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width = w;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height = h;
+
+            needSaveToFile = true;
+            needSendSignal = true;
+        });
+
+        // 隐藏窗口
+        ocrRegionWindow.hide();
+        setOcrRegionBtn->setText(StringConstants::settings);
+
+        // 更新UI
+        updateUI();
+    });
+
+    // ocr车速悬浮窗开关
+    connect(ocrPreviewSwitch, &WinUISwitch::toggled, this, [this](bool checked){
+        // 修改
+        modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 值发生改变, 更新
+            if(cfg.SYSTEM_forceFeedbackSettings_enableOcrPreview != checked){
+                cfg.SYSTEM_forceFeedbackSettings_enableOcrPreview = checked;
+                needSaveToFile = true;
+                needSendSignal = true;
+            }
+        });
+    });
 }
 
 MappingRelation ForceFeedbackSimulatePage::getDevInputAxis()
@@ -702,11 +822,6 @@ MappingRelation ForceFeedbackSimulatePage::getDevInputAxis()
 
     // 返回无效对象 valid = false
     return MappingRelation(false);
-}
-
-bool ForceFeedbackSimulatePage::validateForceFeedbackParams(const UserConfig& userConfig)
-{
-    return true;
 }
 
 void ForceFeedbackSimulatePage::startForceFeedback()
@@ -741,6 +856,13 @@ void ForceFeedbackSimulatePage::startForceFeedback()
         ffbSimSwitch->setChecked(false);
         updateUI();
     });
+    // 显示/隐藏ocr预览
+    connect(worker, &ForceFeedbackWorker::enableOcrPreviewWindow,
+            this, &ForceFeedbackSimulatePage::enableOcrPreviewWindow);
+    // 更新ocr结果
+    connect(worker, &ForceFeedbackWorker::updateOcrResultToPreviewWindow,
+            this, &ForceFeedbackSimulatePage::updateOcrResultToPreviewWindow);
+
     connect(worker, &ForceFeedbackWorker::workFinished, thread, &QThread::quit);
     connect(worker, &ForceFeedbackWorker::workFinished, worker, &ForceFeedbackWorker::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
@@ -808,6 +930,31 @@ void ForceFeedbackSimulatePage::updateUI()
     springCurve->setPoints(cfg.SYSTEM_forceFeedbackSettings_springCurve);
     dampingCurve->setPoints(cfg.SYSTEM_forceFeedbackSettings_dampingCurve);
 
+    // 车速处理的单选, 模拟车速/ocr识别车速
+    if(cfg.SYSTEM_forceFeedbackSettings_enableOcr){
+        ocrCarSpeedRadioButton->setChecked(true);
+    }else{
+        simCarSpeedRadioButton->setChecked(true);
+    }
+
+    // ocr识别区域信息
+    if(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width == 0 || cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height == 0){
+        ocrRegionLabel->setText(StringConstants::notSet);
+    }else{
+        QString ocrRegionLabelText;
+        ocrRegionLabelText.append(StringConstants::ocrRegionLabelText.arg(
+            QString::number(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_x),
+            QString::number(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_y),
+            QString::number(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width),
+            QString::number(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height)
+        ));
+
+        ocrRegionLabel->setText(ocrRegionLabelText);
+    }
+
+    // ocr车速悬浮窗开关
+    ocrPreviewSwitch->setChecked(cfg.SYSTEM_forceFeedbackSettings_enableOcrPreview);
+
 
     // ===============================================================
     // 隐藏部分组件
@@ -818,6 +965,17 @@ void ForceFeedbackSimulatePage::updateUI()
         overrideGlobalSettingsWidget->show();
     }
 
+    if(cfg.SYSTEM_forceFeedbackSettings_enableOcr){
+        setOcrRegionWidget->show();
+        ocrPreviewWidget->show();
+        speedUpWidget->hide();
+        speedDownWidget->hide();
+    }else{
+        setOcrRegionWidget->hide();
+        ocrPreviewWidget->hide();
+        speedUpWidget->show();
+        speedDownWidget->show();
+    }
 
 
     // ===============================================================
@@ -825,30 +983,26 @@ void ForceFeedbackSimulatePage::updateUI()
     // ===============================================================
 
     // 当前是否覆盖全局设置, 覆盖则使用专属设置, 否则使用全局设置
-    bool overrideGlobal = mappingCfg.overrideGlobalFFBSettings;
-    if(overrideGlobal){
-        // 覆盖全局
-        // 力反馈模拟状态更新
-        if(mappingCfg.relatedUserConfig.SYSTEM_enableForceFeedback){
-            startForceFeedback();
-        }else{
-            isFFBSimRunning = false;
-            emit stopForceFeedbackSignal();
-        }
-
+    auto ffbCfg = ConfigService::get(ConfigService::GetSource::FFBSim);
+    // 力反馈模拟状态更新
+    if(ffbCfg.SYSTEM_enableForceFeedback){
+        startForceFeedback();
     }else{
-        // 全局设置
-        auto globalCfg = ConfigService::getGlobalUserConfig();
-
-        // 力反馈模拟状态更新
-        if(globalCfg.SYSTEM_enableForceFeedback){
-            startForceFeedback();
-        }else{
-            isFFBSimRunning = false;
-            emit stopForceFeedbackSignal();
-        }
-
+        isFFBSimRunning = false;
+        emit stopForceFeedbackSignal();
     }
+}
+
+void ForceFeedbackSimulatePage::currentSelectedMappingFileChangedSlot()
+{
+    if(ConfigService::getCurrentMappingConfig().overrideGlobalFFBSettings){
+        showGlobalSettings = false;
+        currentMappingRadioButton->setChecked(true);
+    }else{
+        showGlobalSettings = true;
+        globalSettingsRadioButton->setChecked(true);
+    }
+    updateUI();
 }
 
 void ForceFeedbackSimulatePage::startFFBSimResultSlot(bool result, QString msg)

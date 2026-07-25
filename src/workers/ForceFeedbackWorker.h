@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ocr/OcrWorker.h"
+#include "ocr/ui/OcrPreviewWindow.h"
 #include "qmutex.h"
 #include "dinput.h"
 #include "models/UserConfig.h"
@@ -50,13 +52,6 @@ private:
     // value: 转向阻尼强度百分比
     QHash<int, double> damperGainLUT;
 
-    // (废弃)
-    //double maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
-    //bool isConstantForceMode = false;// 是否为恒定力反馈模式
-    //double constantCorrectiveForceGain = default_constant_corrective_force_gain;// 恒定回正力强度
-    //double constantDampingGain = default_constant_damping_gain;// 恒定转向阻尼强度
-
-
     // 油门踏板的数值范围
     DIPROPRANGE throttleValueRange;
     // 刹车踏板的数值范围
@@ -64,7 +59,6 @@ private:
 
     double maxThrottleAxisA = 0;// 最大油门加速度
     double maxBrakeA = 0;// 最大刹车加速度
-
 
     // 已初始化的转向轴设备实例
     LPDIRECTINPUTDEVICE8 pSteeringWheelAxisDeviceInstance = nullptr;
@@ -82,8 +76,26 @@ private:
     LONG springEffectValue = 0;// 弹簧效果系数(0-10000)
     LONG damperEffectValue = 0;// 阻尼效果系数(0-10000)
 
+    // 是否开启ocr服务
+    bool enableOcr = false;
+    // 是否开启ocr预览悬浮窗
+    bool enableOcrPreview = false;
+
+    // ocr worker
+    QThread* ocrThread = nullptr;
+    OcrWorker* ocrWorker = nullptr;
+
+    // 当前车速
+    double currentV = 0.0;
+
+
+private:
     // 初始化
     void init();
+
+    // 初始化ocr服务
+    void initOcr();
+    void stopOcr();
 
     // 检查设备是否已连接
     bool checkDevicesConnected();
@@ -93,7 +105,7 @@ private:
     // 播放力反馈效果
     bool playDynamicEffects();
     // 根据车速更新力回馈
-    void updateForceFeedback(double speed_m_s, double totalA);
+    void updateForceFeedback(double speed_m_s);
     // 关闭资源
     void cleanup();
 
@@ -123,6 +135,10 @@ signals:
     void workFinished();
     // 力反馈模拟开启的结果信息, 成功 result = true, 否则 = false
     void startFFBSimResult(bool result, QString msg);
+    // 显示/隐藏ocr预览窗口
+    void enableOcrPreviewWindow(bool enable);
+    // 更新ocr结果到预览窗口
+    void updateOcrResultToPreviewWindow(QString val);
 
 public slots:
     void doWork();
@@ -132,4 +148,9 @@ public slots:
 
     // 力反馈模拟的设置改变
     void settingsChangeSlot();
+
+    // ocr车速更新
+    void ocrResultUpdate(QString carSpeed);
+    // ocr异常
+    void ocrError();
 };

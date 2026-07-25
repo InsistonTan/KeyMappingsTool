@@ -46,7 +46,7 @@ public:
     // 旧版本的软件名称
     inline const static QString OLD_APP_NAME = "KeyMapping";
     // 当前软件版本号
-    inline const static QString CURRENT_VERSION = "1.3.0";
+    inline const static QString CURRENT_VERSION = "1.3.1";
 
     // 日志api
     inline const static QString LOGGER_API = "https://keymappingstoollogger.176334479.xyz";

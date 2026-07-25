@@ -52,7 +52,7 @@ public:
     // 映射软件的系统功能_开启软件后立即开启映射
     bool SYSTEM_enableMappingAfterOpening = false;
     // 组合键按下时只执行组合键映射，不执行对应子键映射
-    bool SYSTEM_enableOnlyLongestMapping = false;
+    bool SYSTEM_enableOnlyLongestMapping = true;
     // 新增映射时，只返回变化的按键
     bool SYSTEM_enableOnlyChangeKeyWhenNew = false;
     // 开启力反馈模拟
@@ -91,20 +91,26 @@ public:
     int SYSTEM_forceFeedbackSettings_maxSpeed_km_h = default_maxSpeed_km_h;// 车辆最高时速(km/h)
     double SYSTEM_forceFeedbackSettings_maxSpringGain = default_max_forcefeedback_gain;// 最大回正力强度
     double SYSTEM_forceFeedbackSettings_maxDamperGain = default_max_forcefeedback_gain;// 最大阻尼强度
-    //double SYSTEM_forceFeedbackSettings_maxForceFeedbackGain = default_max_forcefeedback_gain; // 最大力回馈强度
-    //bool SYSTEM_forceFeedbackSettings_isConstantForceMode = false;// 是否为恒定力反馈模式
-    //double SYSTEM_forceFeedbackSettings_constantCorrectiveForceGain = default_constant_corrective_force_gain;// 恒定回正力强度
-    //double SYSTEM_forceFeedbackSettings_constantDampingGain = default_constant_damping_gain;// 恒定转向阻尼强度
     // 力反馈模拟-回正力曲线的点集合
     QVector<CurveEditor::BezierLogicalPoint> SYSTEM_forceFeedbackSettings_springCurve = {};
     // 力反馈模拟-转向阻尼曲线的点集合
     QVector<CurveEditor::BezierLogicalPoint> SYSTEM_forceFeedbackSettings_dampingCurve = {};
+    // 是否开启ocr识别游戏车速
+    bool SYSTEM_forceFeedbackSettings_enableOcr = false;
+    // ocr识别区域
+    int SYSTEM_forceFeedbackSettings_ocrRegion_x = 0;
+    int SYSTEM_forceFeedbackSettings_ocrRegion_y = 0;
+    int SYSTEM_forceFeedbackSettings_ocrRegion_width = 0;
+    int SYSTEM_forceFeedbackSettings_ocrRegion_height = 0;
+    // 是否开启ocr实时预览悬浮窗
+    bool SYSTEM_forceFeedbackSettings_enableOcrPreview = true;
 
+
+public:
     UserConfig();
 
     // 将当前用户配置对象转 json对象
     QJsonObject toJson();
-
 
     // 将json对象转当前对象
     static UserConfig fromJsonObject(QJsonObject obj);

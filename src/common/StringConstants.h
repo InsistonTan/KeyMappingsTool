@@ -402,4 +402,32 @@ public:
 
     qstr acquireSteeringDeviceFailed = QStringLiteral("请求转向轴设备失败, 无法开启力反馈效果!");
     qstr playEffectsFailed = QStringLiteral("开启回正力/阻尼效果失败!");
+
+    qstr multiRunningTips = QStringLiteral("已经在运行, 不推荐同时打开多个\n\n确定要再打开一个?");
+
+    qstr d3d11CreateFailed = QStringLiteral("DxgiCapture: 初始化d3d11设备失败!");
+    qstr duplicationFailed = QStringLiteral("DxgiCapture: 初始化duplication失败!");
+    qstr stagingTextureFailed = QStringLiteral("DxgiCapture: 初始化stagingTexture失败, 错误码:%1");
+    qstr getNextFrameFailed = QStringLiteral("DxgiCapture: 获取下一帧画面失败!\n\n错误码:%1");
+    qstr mappedFailed = QStringLiteral("DxgiCapture: stagingTexture mapped失败!");
+    qstr modelDictFailed = QStringLiteral("ocr初始化: 模型输出类别字典文件打开失败!");
+    qstr ocrInvalidParams = QStringLiteral("ocr推理: 无效的输入参数!");
+    qstr ocrResultEmpty = QStringLiteral("ocr推理: 推理结果数组为空!");
+    qstr ocrResultShapeInvlid = QStringLiteral("ocr推理: 推理结果Shape的大小小于3, 该Shape无效!");
+    qstr dxgiFailedMax = QStringLiteral("dxgi截图已连续失败30次, ocr服务已停止, 详情见日志");
+    qstr ocrFailedMax = QStringLiteral("ocr推理已连续失败30次, ocr服务已停止, 详情见日志");
+
+    qstr simCarSpeed = QStringLiteral("模拟计算游戏车速");
+    qstr ocrCarSpeed = QStringLiteral("OCR图像识别游戏车速");
+    qstr setOcrRegion = QStringLiteral("OCR识别区域");
+    qstr ocrPreviewSwitch = QStringLiteral("OCR实时车速悬浮窗");
+    qstr ocrPreviewSwitchDesc = QStringLiteral("在屏幕左上角显示OCR识别的车速");
+    qstr setOcrRegionBtnConfirmText = QStringLiteral("保存区域位置和大小");
+    qstr ocrRegionLabelText = QStringLiteral("x:%1, y:%2, w:%3, h:%4");
+
+    qstr findScreenFailed = QStringLiteral("DxgiCapture: 根据OCR区域的坐标(%1,%2), 找不到目标显示器.\n\n请重新设置OCR识别区域");
+    qstr ocrRegionNotSet = QStringLiteral("力反馈模拟启动失败: OCR识别区域未设置!");
+    qstr ocrRegionTooSmall = QStringLiteral("OCR识别区域的宽度/高度不能为0, 请调整");
+
+    qstr noOcrResult = QStringLiteral("未识别到车速");
 };

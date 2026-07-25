@@ -65,7 +65,7 @@ MainWindow::MainWindow(QMainWindow *parent)
 {
     // 默认窗口大小
     this->resize(1000, 650);
-    this->setWindowTitle(Global::APP_NAME);
+    this->setWindowTitle(Global::APP_NAME + " " + Global::CURRENT_VERSION);
     this->setWindowIcon(QIcon(":/app.ico"));
 
     // 绘制主窗口界面UI

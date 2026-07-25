@@ -275,24 +275,16 @@ void HomePage::initUI()
     QPushButton *saveBtn = new QPushButton(StringConstants::saveCurrentConfig);
     Theme::setButtonStyleSheet(saveBtn, ButtonLevel::normal);
     connect(saveBtn, &QPushButton::clicked, this, [=](){
-        if(getMappingListActualSize() <= 0){
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::error_mappingsListIsEmpty);
-            return;
-        }
+        // if(getMappingListActualSize() <= 0){
+        //     Global::showErrorMsgBoxAndPushToLog(StringConstants::error_mappingsListIsEmpty);
+        //     return;
+        // }
 
         QString srcFileName;
         // 如果当前选择的配置不是下拉框的第一项 "空白配置"
         if(cfgBox->currentIndex() != 0){
             // 当前选择的配置文件名(无后缀)
             srcFileName = cfgBox->currentText();
-            // if(!selectedFileShortName.isEmpty()){
-            //     auto filePath = ConfigService::mappingFileNameMap[selectedFileShortName];
-            //     QFile file(filePath);
-            //     if(file.exists()){
-            //         QFileInfo fileInfo(file);
-            //         srcFileName = fileInfo.completeBaseName();
-            //     }
-            // }
         }
 
         // 输入框
@@ -324,6 +316,7 @@ void HomePage::initUI()
                 ConfigService::currentMappingFileName = text;
                 // 保存成功提醒
                 MessageBoxService::showSuccess(StringConstants::saveMappingsSuccess);
+                emit currentSelectedMappingFileChanged();
             }else {
                 Global::showErrorMsgBoxAndPushToLog(StringConstants::mappingsNameNotAllowEmpty);
                 return;

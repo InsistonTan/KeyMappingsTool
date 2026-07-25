@@ -76,8 +76,6 @@ set(HEADERS
     src/ui/pages/log_page/LogPage.h
     src/ui/pages/settings_page/SettingsPage.h
 
-
-
     src/workers/LogWorker.h
     src/workers/AssistFuncWorker.h
     src/workers/ForceFeedbackWorker.h
@@ -110,6 +108,7 @@ set(HEADERS
     src/ui/ETS2_KeyBinder/ManuallyBinder.h
     src/ui/ETS2_KeyBinder/ShowKeyState.h
     src/ui/ETS2_KeyBinder/Ets2KeyBinderWizard.h
+
     third_party/SCS_Telemetry/scs-telemetry-common.hpp
 
 )
@@ -136,7 +135,12 @@ qt_add_executable(KeyMappingsTool
     ${HEADERS}
     ${UI_FILES}
     ${RESOURCES}
-
+    src/ocr/OcrEngine.h src/ocr/OcrEngine.cpp
+    src/ocr/DxgiCapture.h src/ocr/DxgiCapture.cpp
+    src/ocr/ImageProcessor.h src/ocr/ImageProcessor.cpp
+    src/ocr/ui/CaptureRegionWindow.h src/ocr/ui/CaptureRegionWindow.cpp
+    src/ocr/OcrWorker.h src/ocr/OcrWorker.cpp
+    src/ocr/ui/OcrPreviewWindow.h src/ocr/ui/OcrPreviewWindow.cpp
 )
 
 # =========================
@@ -169,20 +173,42 @@ target_link_libraries(KeyMappingsTool PRIVATE
     dxguid
     user32
     winmm
+    #截屏需要的依赖
+    d3d11.lib
+    dxgi.lib
 )
 
 # =========================
-# 第三方库lib（ViGEm）
+# 第三方库
 # =========================
 
-target_link_directories(KeyMappingsTool PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party/ViGEm
-)
-
+# ViGEm
 target_link_libraries(KeyMappingsTool PRIVATE
-    ViGEmClient
+    ${CMAKE_SOURCE_DIR}/third_party/ViGEm/ViGEmClient.lib
 )
 
+#onnxruntime
+target_include_directories(KeyMappingsTool PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/include
+)
+target_link_libraries(KeyMappingsTool PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib/onnxruntime.lib
+)
+
+#复制dll和模型文件
+add_custom_command(TARGET KeyMappingsTool POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/third_party/ViGEm/ViGEmClient.dll"
+        $<TARGET_FILE_DIR:KeyMappingsTool>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/third_party/onnxruntime/bin/onnxruntime.dll"
+        $<TARGET_FILE_DIR:KeyMappingsTool>
+
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/models"
+        "$<TARGET_FILE_DIR:KeyMappingsTool>/models"
+)
 
 
 # =========================

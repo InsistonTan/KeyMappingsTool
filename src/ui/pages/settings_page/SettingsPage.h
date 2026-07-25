@@ -98,7 +98,5 @@ signals:
 
 public slots:
     // 当前选择的映射配置发生改变
-    void currentSelectedMappingFileChangedSlot(){
-        updateUI();
-    }
+    void currentSelectedMappingFileChangedSlot();
 };

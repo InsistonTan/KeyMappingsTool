@@ -13,18 +13,12 @@
 #include <qwindowdefs_win.h>
 #include <thread>
 
-#define FORCE_GAIN 1 // 力反馈的整体强度系数(0-1), 影响整体的力反馈强度
-#define MIN_FORCE_POWER 300 // 最低力反馈强度的值, 影响弹簧效果(回正力)和转向阻尼的最低强度
-#define MAX_SPEED 350; // 最高车速km/h
 
 #define RHO 1.225  // 空气密度 kg/m³
 #define CAR_Cd 0.3 // 汽车风阻系数
 #define CAR_A 2.2  // 汽车正投影面积 m²
 #define CAR_m 1500 // 汽车质量 kg
 
-#define STATIC_DAMPER_PER 1 // 车辆静止状态下, 方向盘的阻尼系数(0-1)
-#define STATIC_SPRING_PER 0.05 // 车辆静止状态下, 方向盘的弹簧(回正力)系数(0-1)
-#define LOW_SPEED_SPRING_PER 0.1 // 车辆低速状态下, 方向盘的弹簧(回正力)系数(0-1)
 
 ForceFeedbackWorker::ForceFeedbackWorker()
 {
@@ -54,11 +48,8 @@ void ForceFeedbackWorker::init(){
     maxSpringGain = userConfig.SYSTEM_forceFeedbackSettings_maxSpringGain;
     maxDamperGain = userConfig.SYSTEM_forceFeedbackSettings_maxDamperGain;
 
-
-    // maxForceFeedbackGain = userConfig.SYSTEM_forceFeedbackSettings_maxForceFeedbackGain;
-    // isConstantForceMode = userConfig.SYSTEM_forceFeedbackSettings_isConstantForceMode;
-    // constantCorrectiveForceGain = userConfig.SYSTEM_forceFeedbackSettings_constantCorrectiveForceGain;
-    // constantDampingGain = userConfig.SYSTEM_forceFeedbackSettings_constantDampingGain;
+    enableOcr = userConfig.SYSTEM_forceFeedbackSettings_enableOcr;
+    enableOcrPreview = userConfig.SYSTEM_forceFeedbackSettings_enableOcrPreview;
 
     // 生成 回正力强度曲线的查找表
     // 该表总共1001个值(0-1000)
@@ -84,7 +75,6 @@ void ForceFeedbackWorker::init(){
     // 最大刹车加速度
     maxBrakeA = getmaxBrakeA(stop_100km_dis_m);
 
-
     if(isWorkerRunning){
         // 释放旧的设备
         for(auto& d : initedDeviceList){
@@ -94,6 +84,7 @@ void ForceFeedbackWorker::init(){
         // 检查设备
         if(checkDevicesConnected() == false){
             isWorkerRunning = false;
+            emit startFFBSimResult(false, StringConstants::ffbSimulateThread_initDevicesErrorMsg);
         }
 
         // 如果还在运行, 根据新的配置信息重新创建力反馈效果
@@ -101,11 +92,71 @@ void ForceFeedbackWorker::init(){
             if(createDynamicEffects(this->steeringWheelAxis) == false){
                 Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_createEffectsErrorMsg);
                 isWorkerRunning = false;
+                emit startFFBSimResult(false, StringConstants::ffbSimulateThread_createEffectsErrorMsg);
             }else if(playDynamicEffects() == false){
                 isWorkerRunning = false;
+                emit startFFBSimResult(false, "");
             }
         }
     }
+}
+
+void ForceFeedbackWorker::initOcr(){
+    // 关闭ocr服务
+    stopOcr();
+
+    // 如果没有开启ocr, 不执行后续操作
+    if(enableOcr == false){
+        return;
+    }
+
+    auto cfg = ConfigService::get(ConfigService::GetSource::FFBSim);
+
+    // 开启ocr服务
+    // 校验核心参数
+    if(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width == 0 || cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height == 0){
+        Global::showErrorMsgBoxAndPushToLog(StringConstants::ocrRegionNotSet);
+        isWorkerRunning = false;
+        emit startFFBSimResult(false,"");
+        return;
+    }
+
+    // 新建ocr任务
+    ocrThread = new QThread();
+    ocrWorker = new OcrWorker(
+        cfg.SYSTEM_forceFeedbackSettings_ocrRegion_x,
+        cfg.SYSTEM_forceFeedbackSettings_ocrRegion_y,
+        cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width,
+        cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height
+    );
+    ocrWorker->moveToThread(ocrThread);
+    QObject::connect(ocrThread, &QThread::started, ocrWorker, &OcrWorker::start);
+    QObject::connect(ocrWorker, &OcrWorker::finished, ocrThread, &QThread::quit);
+    QObject::connect(ocrWorker, &OcrWorker::finished, ocrWorker, &QObject::deleteLater);
+    QObject::connect(ocrThread, &QThread::finished, ocrThread, &QObject::deleteLater);
+    // ocr结果更新
+    QObject::connect(ocrWorker, &OcrWorker::ocrResult, this, &ForceFeedbackWorker::ocrResultUpdate);
+    // ocr异常
+    QObject::connect(ocrWorker, &OcrWorker::ocrError, this, &ForceFeedbackWorker::ocrError);
+
+    //预览悬浮窗
+    emit enableOcrPreviewWindow(enableOcrPreview);
+
+    // 开启ocr任务
+    ocrThread->start();
+}
+
+void ForceFeedbackWorker::stopOcr(){
+    if(ocrWorker != nullptr && ocrThread != nullptr){
+        ocrWorker->stop();
+        ocrThread->quit();
+        ocrThread->wait();
+        ocrWorker = nullptr;
+        ocrThread = nullptr;
+    }
+
+    // 隐藏ocr预览悬浮窗
+    emit enableOcrPreviewWindow(false);
 }
 
 bool ForceFeedbackWorker::checkDevicesConnected()
@@ -119,7 +170,7 @@ bool ForceFeedbackWorker::checkDevicesConnected()
         return false;
     }
     // 检查油门轴和刹车轴设备
-    if(throttleAxisDeviceName.isEmpty() || brakeAxisDeviceName.isEmpty()){
+    if(enableOcr == false && (throttleAxisDeviceName.isEmpty() || brakeAxisDeviceName.isEmpty())){
         Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceEmptyErrorMsg);
         return false;
     }
@@ -132,6 +183,7 @@ bool ForceFeedbackWorker::checkDevicesConnected()
                                                                         steeringWheelAxisDeviceName,
                                                                         DISCL_EXCLUSIVE | DISCL_BACKGROUND);
 
+    // 转向设备初始化失败
     if(pSteeringWheelAxisDeviceInstance == nullptr){
         Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_WheelDeviceOpenErrorMsg);
         return false;
@@ -153,26 +205,32 @@ bool ForceFeedbackWorker::checkDevicesConnected()
     // 添加设备到列表
     initedDeviceList.append(pSteeringWheelAxisDeviceInstance);
 
-    // 防止相同设备重复初始化
-    if(throttleAxisDeviceName != steeringWheelAxisDeviceName){
-        QVector<QString> deviceNameList = {throttleAxisDeviceName};
+    // 初始化油门和刹车设备
+    if(enableOcr == false){
+        QVector<QString> deviceNameList = {};
+        // 防止相同设备重复初始化
+        if(throttleAxisDeviceName != steeringWheelAxisDeviceName){
+            deviceNameList.append(throttleAxisDeviceName);
+        }
         if(brakeAxisDeviceName != throttleAxisDeviceName){
             deviceNameList.append(brakeAxisDeviceName);
         }
 
-        // 油门轴和刹车轴设备连接失败
-        if(DirectInputService::openDiDevice(deviceNameList) == false){
-            Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceOpenErrorMsg);
-            return false;
-        }else{
-            for(auto& deviceName : deviceNameList){
-                auto initedDevice = DirectInputService::getInitedDevice(deviceName);
-                if(initedDevice == nullptr){
-                    Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceGetInstanceErrorMsg);
-                    return false;
-                }else{
-                    // 添加到已初始化设备列表
-                    initedDeviceList.append(initedDevice);
+        if(deviceNameList.empty() == false){
+            // 油门轴和刹车轴设备连接失败
+            if(DirectInputService::openDiDevice(deviceNameList) == false){
+                Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceOpenErrorMsg);
+                return false;
+            }else{
+                for(auto& deviceName : deviceNameList){
+                    auto initedDevice = DirectInputService::getInitedDevice(deviceName);
+                    if(initedDevice == nullptr){
+                        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleOrBrakeDeviceGetInstanceErrorMsg);
+                        return false;
+                    }else{
+                        // 添加到已初始化设备列表
+                        initedDeviceList.append(initedDevice);
+                    }
                 }
             }
         }
@@ -183,38 +241,39 @@ bool ForceFeedbackWorker::checkDevicesConnected()
     auto axisValueRangeMap = DirectInputService::getAxisValueRangeMap();
 
     // 获取不到转向轴的数值范围
-    auto steeringAxisKey = Global::getBtnOrAxisFullName(steeringWheelAxisDeviceName, steeringWheelAxis);
-    if(axisValueRangeMap.contains(steeringAxisKey) == false)
-    {
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_steeringAxisRangeErrorMsg);
-        return false;
-    }
+    // auto steeringAxisKey = Global::getBtnOrAxisFullName(steeringWheelAxisDeviceName, steeringWheelAxis);
+    // if(axisValueRangeMap.contains(steeringAxisKey) == false)
+    // {
+    //     Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_steeringAxisRangeErrorMsg);
+    //     return false;
+    // }
 
-    // 获取不到油门踏板的数值范围
-    auto throttleAxisKey = Global::getBtnOrAxisFullName(throttleAxisDeviceName, throttleAxis);
-    if(axisValueRangeMap.contains(throttleAxisKey) == false)
-    {
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleAxisRangeErrorMsg);
-        return false;
-    }
+    if(enableOcr == false){
+        // 获取不到油门踏板的数值范围
+        auto throttleAxisKey = Global::getBtnOrAxisFullName(throttleAxisDeviceName, throttleAxis);
+        if(axisValueRangeMap.contains(throttleAxisKey) == false)
+        {
+            Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_throttleAxisRangeErrorMsg);
+            return false;
+        }
 
-    // 获取不到刹车踏板的数值范围
-    auto brakeAxisKey = Global::getBtnOrAxisFullName(brakeAxisDeviceName, brakeAxis);
-    if(axisValueRangeMap.contains(brakeAxisKey) == false)
-    {
-        Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_brakeAxisRangeErrorMsg);
-        return false;
-    }
+        // 获取不到刹车踏板的数值范围
+        auto brakeAxisKey = Global::getBtnOrAxisFullName(brakeAxisDeviceName, brakeAxis);
+        if( axisValueRangeMap.contains(brakeAxisKey) == false)
+        {
+            Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_brakeAxisRangeErrorMsg);
+            return false;
+        }
 
-    // 油门踏板的数值范围
-    this->throttleValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(throttleAxisDeviceName, throttleAxis));
-    // 刹车踏板的数值范围
-    this->brakeValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(brakeAxisDeviceName, brakeAxis));
+        // 油门踏板的数值范围
+        this->throttleValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(throttleAxisDeviceName, throttleAxis));
+        // 刹车踏板的数值范围
+        this->brakeValueRange = axisValueRangeMap.value(Global::getBtnOrAxisFullName(brakeAxisDeviceName, brakeAxis));
+    }
 
     return true;
 }
 
-// 枚举设备支持的力反馈效果回调
 BOOL CALLBACK EnumEffectsCallback(const DIEFFECTINFO *pdei, VOID *pvRef){
     qDebug() << "Effect:" << QString::fromWCharArray(pdei->tszName);
 
@@ -223,7 +282,6 @@ BOOL CALLBACK EnumEffectsCallback(const DIEFFECTINFO *pdei, VOID *pvRef){
     return DIENUM_CONTINUE;
 }
 
-// 创建力回馈效果
 bool ForceFeedbackWorker::createDynamicEffects(QString steerWheelAxis){
     // 枚举设备支持的力反馈效果
     // pSteeringWheelAxisDeviceInstance->EnumEffects(
@@ -374,8 +432,7 @@ bool ForceFeedbackWorker::playDynamicEffects()
     return true;
 }
 
-// 根据车速更新力回馈
-void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double totalA){
+void ForceFeedbackWorker::updateForceFeedback(double speed_m_s){
     // 当前车速百分比
     double speedPer = speed_m_s / maxSpeed_m_s;
 
@@ -398,6 +455,7 @@ void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double totalA){
         damperEffectValue = DI_FFNOMINALMAX;
     }
 
+    //qDebug() << "speed_m_s: " << speed_m_s << ", spring: " << springEffectValue << ", damper: " << damperEffectValue;
     //qDebug() << "springEffectValue: " << springEffectValue << "speed_m_s: " << speed_m_s << ", maxSpeed_m_s: " <<  maxSpeed_m_s << ", speedPer: " << speedPer << ", springGainLUT.value:" << springGainLUT.value(((int)(speedPer*1000)));
     //qDebug() << "speedPer: " << speedPer << ", springEffectValue: " << springEffectValue << ", damperEffectValue: " << damperEffectValue;
 
@@ -432,28 +490,36 @@ void ForceFeedbackWorker::updateForceFeedback(double speed_m_s, double totalA){
     }
 }
 
-// 关闭资源
 void ForceFeedbackWorker::cleanup() {
-    if (g_pSpringForce) g_pSpringForce->Release();
-    if (g_pDamper) g_pDamper->Release();
+    if (g_pSpringForce)
+        g_pSpringForce->Release();
+
+    if (g_pDamper)
+        g_pDamper->Release();
+
+    stopOcr();
 }
 
-
 void ForceFeedbackWorker::doWork(){
-    double currentV = 0.0;// 当前车速
     double groundA = GROUND_FRICTION_COEFFICIENT * G;// 地面滚动摩檫力加速度
     double cycleTimeOfEachRound = (WORKER_SLEEP_TIME_MS + 10.0) / 1000.0;// 每轮循环所花费的时间(单位s)
     //double linerThrottleASpeedPer = 0.5;// 油门产生的加速度与踩下的深度呈线性增加关系时的最大车速百分比
 
     isWorkerRunning = true;
 
-    // 检查方向盘设备是否连接
+    // 检查设备连接
     if(checkDevicesConnected() == false){
         LogService::parseErrorLog(StringConstants::ffbSimulateThread_initDevicesErrorMsg);
         isWorkerRunning = false;
         emit startFFBSimResult(false, StringConstants::ffbSimulateThread_initDevicesErrorMsg);
     }
 
+    // 初始化ocr任务
+    if(isWorkerRunning){
+        initOcr();
+    }
+
+    // 初始化力反馈效果
     if(isWorkerRunning){
         if(createDynamicEffects(this->steeringWheelAxis) == false || playDynamicEffects() == false){
             Global::showErrorMsgBoxAndPushToLog(StringConstants::ffbSimulateThread_createEffectsErrorMsg);
@@ -493,76 +559,83 @@ void ForceFeedbackWorker::doWork(){
             pSteeringWheelAxisDeviceInstance->Acquire();
         }
 
-        // 获取设备状态数据, 只获取轴数据, 不获取按键数据
-        DirectInputService::getInputState(res, initedDeviceList, false, true);
+        // 没有开启ocr识别车速, 根据刹车和油门踏板计算出模拟的车速
+        if(enableOcr == false){
+            // 获取设备状态数据, 只获取轴数据, 不获取按键数据
+            DirectInputService::getInputState(res, initedDeviceList, false, true);
 
-        double totalA = 0.0;// 总的加速度
+            double totalA = 0.0;// 总的加速度
 
-        // 计算当前车速下空气阻力f
-        double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
-        // 得到空气阻力的加速度a
-        double airA = - airF / CAR_m;
+            // 计算当前车速下空气阻力f
+            double airF = 0.5 * RHO * CAR_Cd * CAR_A * currentV * currentV;
+            // 得到空气阻力的加速度a
+            double airA = - airF / CAR_m;
 
-        for(auto devData : res){
-            // 获取油门数据
-            if(devData.deviceName == this->throttleAxisDeviceName && devData.dev_btn_name == this->throttleAxis){
-                // 油门踩下的程度(0-1)
-                double throttlePer = (!this->isThrottleReverse)
-                                         ? (static_cast<double>(devData.dev_btn_value) - this->throttleValueRange.lMin)/(this->throttleValueRange.lMax - this->throttleValueRange.lMin)
-                                        : (this->throttleValueRange.lMax - static_cast<double>(devData.dev_btn_value))/(this->throttleValueRange.lMax - this->throttleValueRange.lMin);
+            for(auto devData : res){
+                // 获取油门数据
+                if(devData.deviceName == this->throttleAxisDeviceName && devData.dev_btn_name == this->throttleAxis){
+                    // 油门踩下的程度(0-1)
+                    double throttlePer = (!this->isThrottleReverse)
+                                             ? (static_cast<double>(devData.dev_btn_value) - this->throttleValueRange.lMin)/(this->throttleValueRange.lMax - this->throttleValueRange.lMin)
+                                             : (this->throttleValueRange.lMax - static_cast<double>(devData.dev_btn_value))/(this->throttleValueRange.lMax - this->throttleValueRange.lMin);
 
-                double throttleAxisA = 0.0;// 油门加速度
+                    double throttleAxisA = 0.0;// 油门加速度
 
-                // 油门产生的加速度与踩下的深度呈线性
-                //if(currentV < maxSpeed_m_s * linerThrottleASpeedPer){
+                    // 油门产生的加速度与踩下的深度呈线性
+                    //if(currentV < maxSpeed_m_s * linerThrottleASpeedPer){
                     // 油门加速度
-                //    throttleAxisA = throttlePer * this->maxThrottleAxisA;
-                //}else{
+                    //    throttleAxisA = throttlePer * this->maxThrottleAxisA;
+                    //}else{
                     // 油门产生的加速度将缓慢下降
                     // 油门加速度
                     //throttleAxisA = throttlePer * (this->maxThrottleAxisA - (currentV / maxSpeed_m_s) * this->maxThrottleAxisA - airA - groundA);
-                //}
+                    //}
 
-                // 线性
-                throttleAxisA = throttlePer * this->maxThrottleAxisA;
+                    // 线性
+                    throttleAxisA = throttlePer * this->maxThrottleAxisA;
 
-                // 添加到总的加速度
-                totalA += throttleAxisA;
+                    // 添加到总的加速度
+                    totalA += throttleAxisA;
 
+                }
+                // 获取刹车数据
+                if(devData.deviceName == this->brakeAxisDeviceName && devData.dev_btn_name == this->brakeAxis){
+                    // 刹车踩下的程度(0-1)
+                    double brakePer = (!this->isBrakeReverse)
+                                          ? (static_cast<double>(devData.dev_btn_value) - this->brakeValueRange.lMin)/(this->brakeValueRange.lMax - this->brakeValueRange.lMin)
+                                          : (this->brakeValueRange.lMax - static_cast<double>(devData.dev_btn_value))/(this->brakeValueRange.lMax - this->brakeValueRange.lMin);
+                    // 刹车加速度
+                    double brakeAxisA = brakePer * this->maxBrakeA;
+
+                    // 添加到总的加速度
+                    totalA += brakeAxisA;
+                }
             }
-            // 获取刹车数据
-            if(devData.deviceName == this->brakeAxisDeviceName && devData.dev_btn_name == this->brakeAxis){
-                // 刹车踩下的程度(0-1)
-                double brakePer = (!this->isBrakeReverse)
-                                         ? (static_cast<double>(devData.dev_btn_value) - this->brakeValueRange.lMin)/(this->brakeValueRange.lMax - this->brakeValueRange.lMin)
-                                         : (this->brakeValueRange.lMax - static_cast<double>(devData.dev_btn_value))/(this->brakeValueRange.lMax - this->brakeValueRange.lMin);
-                // 刹车加速度
-                double brakeAxisA = brakePer * this->maxBrakeA;
 
-                // 添加到总的加速度
-                totalA += brakeAxisA;
+            // 添加到总的加速度
+            totalA += groundA + airA;
+
+            // 根据总的加速度 计算出当前速度
+            currentV += totalA * each_mstime/1000;
+
+            // 车速达到上限
+            if(currentV >= this->maxSpeed_m_s){
+                currentV = this->maxSpeed_m_s;
             }
-        }
-
-        // 添加到总的加速度
-        totalA += groundA + airA;
-
-        // 根据总的加速度 计算出当前速度
-        currentV += totalA * each_mstime/1000;
-
-        // 车速达到上限
-        if(currentV >= this->maxSpeed_m_s){
-            currentV = this->maxSpeed_m_s;
-        }
-        // 车速最低值为0
-        if(currentV <= 0){
-            currentV = 0;
+            // 车速最低值为0
+            if(currentV <= 0){
+                currentV = 0;
+            }
+        }else{
+            // ocr识别的车速 km/h
+            // 转换成 m/s
+            currentV /= 3.6;
         }
 
         //qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
 
         // 根据车速模拟力反馈效果
-        updateForceFeedback(currentV, totalA);
+        updateForceFeedback(currentV);
 
         // 处理事件队列
         QCoreApplication::processEvents();
@@ -581,13 +654,28 @@ void ForceFeedbackWorker::doWork(){
     emit workFinished();
 }
 
-// 取消运行
 void ForceFeedbackWorker::cancelWorkSlot(){
     this->isWorkerRunning = false;
 }
 
-// 力反馈模拟的设置改变
 void ForceFeedbackWorker::settingsChangeSlot(){
     qDebug() << "ForceFeedbackWorker: 力反馈设置更新";
     init();
+    initOcr();
 }
+
+void ForceFeedbackWorker::ocrResultUpdate(QString carSpeed){
+    bool ok;
+    double val = carSpeed.toDouble(&ok);
+    if(ok){
+        currentV = val;
+        emit updateOcrResultToPreviewWindow(carSpeed);
+    }
+}
+
+void ForceFeedbackWorker::ocrError()
+{
+    emit startFFBSimResult(false,"");
+    isWorkerRunning = false;
+}
+

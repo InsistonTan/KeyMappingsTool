@@ -1,7 +1,8 @@
 #pragma once
 
 #include "models/MappingRelation.h"
-#include "models/UserConfig.h"
+#include "ocr/ui/CaptureRegionWindow.h"
+#include "ocr/ui/OcrPreviewWindow.h"
 #include "ui/widgets/CurveEditor.h"
 #include "ui/widgets/WinUISwitch.h"
 #include <QWidget>
@@ -38,9 +39,22 @@ private:
     // 最大力反馈强度
     QLineEdit* springGainLineEdit;
     QLineEdit* damperGainLineEdit;
+    // 模拟车速/ocr识别游戏车速 的单选
+    QButtonGroup* carSpeedHandleTypeSelectgroup;
+    QRadioButton* simCarSpeedRadioButton;
+    QRadioButton* ocrCarSpeedRadioButton;
+    // 设置ocr区域
+    QPushButton* setOcrRegionBtn;
+    QLabel* ocrRegionLabel;
+    QWidget* setOcrRegionWidget;
+    // ocr车速悬浮窗开关
+    WinUISwitch* ocrPreviewSwitch;
+    QWidget* ocrPreviewWidget;
     // 车辆参数
     QLineEdit* speedUpLineEdit;
+    QWidget* speedUpWidget;
     QLineEdit* speedDownLineEdit;
+    QWidget* speedDownWidget;
     QLineEdit* maxSpeedLineEdit;
     // 回正力-车速曲线
     CurveEditor* springCurve;
@@ -53,6 +67,13 @@ private:
     // 力反馈模拟当前是否正在运行
     bool isFFBSimRunning = false;
 
+    // 设置ocr识别区域的窗口
+    CaptureRegionWindow ocrRegionWindow;
+    // ocr实时预览悬浮窗
+    OcrPreviewWindow ocrPreviewWindow;
+
+private:
+
     // 绑定控件的事件
     void bindingEvents();
 
@@ -60,7 +81,7 @@ private:
     MappingRelation getDevInputAxis();
 
     // 校验力反馈参数
-    bool validateForceFeedbackParams(const UserConfig& userConfig);
+    //bool validateForceFeedbackParams(const UserConfig& userConfig);
 
     // 开启力反馈模拟任务
     void startForceFeedback();
@@ -82,10 +103,22 @@ signals:
 
 public slots:
     // 当前选择的映射配置发生改变
-    void currentSelectedMappingFileChangedSlot(){
-        updateUI();
-    }
+    void currentSelectedMappingFileChangedSlot();
 
     // 开启力反馈模拟是否成功的slot
     void startFFBSimResultSlot(bool result, QString msg);
+
+    // 显示/隐藏 ocr预览窗口
+    void enableOcrPreviewWindow(bool enable){
+        if(enable){
+            ocrPreviewWindow.show();
+        }else{
+            ocrPreviewWindow.hide();
+        }
+    }
+
+    // 更新ocr结果到预览窗口
+    void updateOcrResultToPreviewWindow(QString val){
+        ocrPreviewWindow.updateOcrPreview(val);
+    }
 };
