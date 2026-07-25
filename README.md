@@ -56,6 +56,7 @@
   
 - 支持设置参数保存到映射配置 `实现不同的游戏配置使用不同的参数`
 - ......
+  
 ---
 
 ## Q&A
@@ -65,7 +66,6 @@ A: 使用[HidHide](https://github.com/nefarius/HidHide)工具. 该工具可以�
 
 ---
 
-
 ## 第三方开源项目声明
 - [ViGEmClient](https://github.com/nefarius/ViGEmClient) `用于连接和使用虚拟xbox手柄`
 - [ViGEmBus](https://github.com/nefarius/ViGEmBus) `xbox虚拟手柄驱动`
@@ -74,10 +74,11 @@ A: 使用[HidHide](https://github.com/nefarius/HidHide)工具. 该工具可以�
 - [onnxruntime](https://github.com/microsoft/onnxruntime) `用于运行onnx模型`
 - [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) `使用PaddleOCR的PP-OCRv5模型进行ocr识别游戏车速`
 
+---
+
 ## 项目贡献者
 - [m-RNA](https://github.com/m-RNA) `修复多个bug, 以及添加多个功能, 例如: 欧卡2原生按键绑定等等`
 
-感谢所有贡献者
 
 ---
 
