@@ -626,10 +626,6 @@ void ForceFeedbackWorker::doWork(){
             if(currentV <= 0){
                 currentV = 0;
             }
-        }else{
-            // ocr识别的车速 km/h
-            // 转换成 m/s
-            currentV /= 3.6;
         }
 
         //qDebug() << "current V: " << currentV << " m/s, " << (currentV * 3600 / 1000 ) << "km/h";
@@ -668,7 +664,9 @@ void ForceFeedbackWorker::ocrResultUpdate(QString carSpeed){
     bool ok;
     double val = carSpeed.toDouble(&ok);
     if(ok){
-        currentV = val;
+        // 转换成 m/s
+        currentV = val/3.6;
+
         emit updateOcrResultToPreviewWindow(carSpeed);
     }
 }
