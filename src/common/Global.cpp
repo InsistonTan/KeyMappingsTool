@@ -106,8 +106,8 @@ BUTTONS_VALUE_TYPE Global::stringToButtonsValueType(const QString& btnValueStr) 
                 bool ok;
                 int angle = subParts[1].mid(2).toInt(&ok);
                 if (ok && angle >= 0 && angle < 360) {
-                    uint16_t angleValue = ~angle; // 角度得反码
-                    btnValue |= (BUTTONS_VALUE_TYPE)(angleValue << ((subParts[0].mid(2).toInt() - 1) * 16 + DINPUT_MAX_BUTTONS));
+                    BUTTONS_VALUE_TYPE angleValue = (uint16_t)~angle; // 角度得反码
+                    btnValue |= angleValue.operator<<(((subParts[0].mid(2).toInt() - 1) * 16 + DINPUT_MAX_BUTTONS));
                 }
             }
         }
