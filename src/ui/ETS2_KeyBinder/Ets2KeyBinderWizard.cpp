@@ -684,13 +684,13 @@ bool ETS2KeyBinderWizard::openDiDevice(int deviceIndex, HWND hWnd) {
     //     return false;
     // }
 
-    // // 获取控制器能力
-    // capabilities.dwSize = sizeof(DIDEVCAPS);
-    // if (FAILED(pDevice->GetCapabilities(&capabilities))) {
-    //     qDebug() << "获取设备能力失败！";
-    //     QMessageBox::warning(this, "警告", "初始化设备： 获取设备能力失败！");
-    //     return false;
-    // }
+    // 获取控制器能力
+    capabilities.dwSize = sizeof(DIDEVCAPS);
+    if (FAILED(pDevice->GetCapabilities(&capabilities))) {
+        qDebug() << "获取设备能力失败！";
+        QMessageBox::warning(this, "警告", "初始化设备： 获取设备能力失败！");
+        return false;
+    }
 
     // 获取按钮数量
     qDebug() << "按钮数量：" << capabilities.dwButtons;
