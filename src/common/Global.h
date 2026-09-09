@@ -46,7 +46,7 @@ public:
     // 旧版本的软件名称
     inline const static QString OLD_APP_NAME = "KeyMapping";
     // 当前软件版本号
-    inline const static QString CURRENT_VERSION = "1.3.3";
+    inline const static QString CURRENT_VERSION = "1.3.3 beta1";
 
     // 日志api
     inline const static QString LOGGER_API = "https://keymappingstoollogger.176334479.xyz";
@@ -164,6 +164,9 @@ public:
                                        QWidget* customWidget,
                                        QLabel* settingsDescLabel = nullptr,
                                        int fixedHeight = 0);
+
+    // 判断当前映射是不是 方向盘的轴 映射 xbox轴
+    static bool isDevAxisMappedToXboxAxis(const MappingRelation &mapping);
 };
 
 ///

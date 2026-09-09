@@ -33,6 +33,8 @@ private:
     QVector<MappingRelation> mappingList;// 已配置的按键映射列表
     QMap<QString, QString> handleMap;// 设备按键对应键盘扫描码map; key: 设备-按键名称, value: 键盘扫描码
 
+    QMap<QString, MappingRelation> devBtnNameToMappingRelationMap;// 设备按键名称对应映射记录的Map
+
     inline static std::vector<MappingRelation> handleMultiBtnVector = {};// 当前在使用的 设备组合键映射列表
     inline static std::vector<MappingRelation> handleMultiBtnVectorUnsort = {};// 未排序的 设备组合键映射列表
     inline static std::vector<MappingRelation> handleMultiBtnVectorSorted = {};// 已排序的 设备组合键映射列表(根据组合键的子键数量倒序)

@@ -1,4 +1,5 @@
 #include "HomePage.h"
+#include "common/DeviceDataTypeEnum.h"
 #include "qboxlayout.h"
 #include "qcoreapplication.h"
 #include "qdialog.h"
@@ -707,6 +708,9 @@ void HomePage::paintOneLineMapping(MappingRelation &srcMapping, bool isAddNewMap
     QLabel *devBtnlabel = new QLabel(devBtnText);
     devBtnlabel->setToolTip(devBtnText);
 
+    // 按键触发模式下拉框
+    NoWheelComboBox *triggerTypeComboBox = new NoWheelComboBox();
+
 
     // ===========================================================================
     // 键盘按键下拉框
@@ -758,6 +762,18 @@ void HomePage::paintOneLineMapping(MappingRelation &srcMapping, bool isAddNewMap
                         = keyboardValueList.size() > 0
                             ? keyboardValueList.join(KEYBOARD_COMBINE_KEY_SPE)
                             : "";
+
+                    // 设备的轴映射xbox的轴, 需要禁用 按键触发模式下拉框
+                    if(Global::isDevAxisMappedToXboxAxis(ConfigService::currentMappingConfig.mappingList[i])){
+                        // 按键触发模式 恢复默认选项
+                        triggerTypeComboBox->setCurrentIndex(0);
+                        ConfigService::currentMappingConfig.mappingList[i].btnTriggerType = TriggerTypeEnum::Normal;
+                        // 按键触发模式下拉框 设置为 不可用
+                        triggerTypeComboBox->setDisabled(true);
+                    }else{
+                        triggerTypeComboBox->setDisabled(false);
+                    }
+
                 }
             }
         }
@@ -767,7 +783,6 @@ void HomePage::paintOneLineMapping(MappingRelation &srcMapping, bool isAddNewMap
     // ===========================================================================
     // 按键触发模式下拉框
     // ===========================================================================
-    NoWheelComboBox *triggerTypeComboBox = new NoWheelComboBox();
     Theme::setComboBoxStyleSheet(triggerTypeComboBox, 140);
 
     // 添加下拉框选择项
@@ -856,11 +871,9 @@ void HomePage::paintOneLineMapping(MappingRelation &srcMapping, bool isAddNewMap
                     // 恢复默认选项
                     triggerTypeComboBox->setCurrentIndex(0);
                     ConfigService::currentMappingConfig.mappingList[i].btnTriggerType = TriggerTypeEnum::Normal;
-                    // 设置为不可用
-                    triggerTypeComboBox->setDisabled(true);
 
-                    // 轴映射xbox, 映射按键下拉框只能单选
-                    keyBoardComboBox->setSelectionMode(true);
+                    // 按键触发模式下拉框 设置为 不可用
+                    triggerTypeComboBox->setDisabled(true);
                 }
 
                 // 轴映射 键盘按键, 显示按键触发模式的下拉框
@@ -1216,6 +1229,23 @@ void HomePage::updateAKeyBoardComboBox(MultiSelectComboBox *comboBox, DeviceData
         }
         comboBox->addItem(item->first.data());
     }
+
+    // 如果是方向盘的轴 映射 xbox手柄, 新增支持映射xbox按键, 需要手动添加xbox按键到该下拉框
+    if(dev_btn_type == DeviceDataTypeEnum::WHEEL_AXIS && mappingType == MappingType::Xbox){
+        const auto xboxBtnMap = VK_XBOX_BTN_MAP;
+        for (std::map<std::string, short>::const_iterator item = xboxBtnMap.cbegin(); item != xboxBtnMap.cend(); ++item) {
+            // 只添加按键值 大于 0 的按键 , 或者 Y键(short类型 0x8000 为 -32768)
+            if(item->second > 0 || item->second  == (short)0x8000){
+                comboBox->addItem(item->first.data());
+            }
+        }
+
+        // 轴映射xbox, 映射按键下拉框只能单选
+        comboBox->setSelectionMode(true);
+    }else{
+        comboBox->setSelectionMode(false);
+    }
+
     comboBox->setCurrentIndex(-1);
 }
 

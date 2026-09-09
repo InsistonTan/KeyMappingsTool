@@ -148,6 +148,7 @@ private slots:
                     for(int i = 0; i < m->rowCount(); i++){
                         m->item(i)->setCheckState(Qt::Unchecked);
                     }
+                    m_selectedItemList.clear();
                 }
 
                 currentItem->setCheckState(currentItem->checkState() == Qt::Checked ? Qt::Unchecked : Qt::Checked);

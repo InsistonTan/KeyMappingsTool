@@ -1,4 +1,5 @@
 #include "SimulateTask.h"
+#include "common/DeviceDataTypeEnum.h"
 #include "common/StringConstants.h"
 #include "models/MappingRelation.h"
 #include "services/ConfigService.h"
@@ -25,6 +26,9 @@ SimulateTask::SimulateTask(QVector<MappingRelation> mappingList, const QVector<L
 
     for(MappingRelation& mapping : mappingList){
         if(isMappingValid(mapping)){
+            // 记录到devBtnNameToMappingRelationMap
+            devBtnNameToMappingRelationMap[Global::getBtnOrAxisFullName(mapping.deviceName, mapping.dev_btn_name)] = mapping;
+
             // 添加到按键模拟需要的map, key 按键名称 : value 按键值
             addMappingToHandleMap(mapping);
 
@@ -540,12 +544,25 @@ void SimulateTask::handleResult(QVector<MappingRelation>& res){
 
         for(auto &currentBtn : res){
             // 按键名称补上设备名称
-            auto btnStr = Global::getBtnOrAxisFullName(currentBtn.deviceName,
-                                                       currentBtn.dev_btn_name);
+            auto btnStr = Global::getBtnOrAxisFullName(currentBtn.deviceName, currentBtn.dev_btn_name);
 
-            // 轴映射键盘
-            if((keyMappingTypeMap[btnStr] == MappingType::Keyboard)
-                && btnStr.contains(StringConstants::axisString)){
+            // 给currentBtn补上映射的按键信息
+            if(devBtnNameToMappingRelationMap.contains(btnStr)){
+                auto& mapping = devBtnNameToMappingRelationMap[btnStr];
+                currentBtn.keyboard_name = mapping.keyboard_name;
+                currentBtn.keyboard_value = mapping.keyboard_value;
+
+                currentBtn.dev_btn_type = mapping.dev_btn_type;
+                currentBtn.mappingType = mapping.mappingType;
+            }
+
+            // 轴映射键盘按键 或者 轴映射xbox按键
+            if(currentBtn.dev_btn_type == DeviceDataTypeEnum::WHEEL_AXIS
+                    && (keyMappingTypeMap[btnStr] == MappingType::Keyboard
+                            || (keyMappingTypeMap[btnStr] == MappingType::Xbox
+                                    && devBtnNameToMappingRelationMap.contains(btnStr)
+                                    && Global::isDevAxisMappedToXboxAxis(devBtnNameToMappingRelationMap[btnStr]) == false))){
+
                 // 当前轴的值范围
                 auto currentRange = DirectInputService::getAxisValueRangeMap().value(btnStr);
                 int currentMin = currentRange.lMin, currentMax = currentRange.lMax;
@@ -590,14 +607,14 @@ void SimulateTask::handleResult(QVector<MappingRelation>& res){
                     if(isAxisRotate(btnStr)){
                         // 值小于内部死区范围不生效
                         if(currentBtn.dev_btn_value > (currentMax - ((currentMax - currentMin) * userConfig.steeringAxisInnerDeadZone))){
-                            //btnStr = "000000";
-                            currentBtn.dev_btn_name += "000000";
+                            // 当前轴的值在死区内, 设置为无效
+                            currentBtn.dev_btn_name += " invalid action";
                         }
                     }else{
                         // 值小于内部死区范围不生效
                         if(currentBtn.dev_btn_value < (currentMin + ((currentMax - currentMin) * userConfig.steeringAxisInnerDeadZone))){
-                            //btnStr = "000000";
-                            currentBtn.dev_btn_name += "000000";
+                            // 当前轴的值在死区内, 设置为无效
+                            currentBtn.dev_btn_name += " invalid action";
                         }
                     }
                 }
@@ -788,10 +805,8 @@ void SimulateTask::doWork(){
 
                     }else{
                         // 映射xbox
-                        //auto currentBtn = res[i];
-
                         // 映射普通xbox按键
-                        if(currentBtn.dev_btn_type == DeviceDataTypeEnum::WHEEL_BUTTON){
+                        if(Global::isDevAxisMappedToXboxAxis(currentBtn) == false){
                             // qDebug("映射Xbox模式-按键按下:%s", btnStr.data());
 
                             if(keyHoldingMap.find(btnStr) != keyHoldingMap.end()){

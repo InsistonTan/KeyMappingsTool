@@ -319,4 +319,18 @@ QWidget *Global::createSettingsItem(QWidget *parent, QString settingsName, QWidg
     return widget;
 }
 
+bool Global::isDevAxisMappedToXboxAxis(const MappingRelation &mapping)
+{
+    if(mapping.dev_btn_type == DeviceDataTypeEnum::WHEEL_AXIS && mapping.mappingType == MappingType::Xbox){
+        // 遍历xbox的轴, 判断当前映射的目标是否为xbox的轴, 如果映射的是xbox轴, 返回true
+        for (std::map<std::string, short>::const_iterator item = VK_XBOX_AXIS_MAP.cbegin(); item != VK_XBOX_AXIS_MAP.cend(); ++item) {
+            if(mapping.keyboard_name.toStdString() == item->first){
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 
