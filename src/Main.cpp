@@ -122,6 +122,9 @@ void showMainWIndow(MainWindow* w){
     w->setWindowOpacity(0);
     // 显示主窗口
     w->show();
+    // 清除最小化状态
+    w->setWindowState(w->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
+    // 激活窗口
     w->activateWindow();
     QTimer::singleShot(50, w, [w](){
         // 再恢复不透明
@@ -167,11 +170,7 @@ void createTrayIcon(QApplication* app, MainWindow* mainWindow){
     // 鼠标左键点击托盘图标, 显示/隐藏主窗口
     QObject::connect(trayIcon, &QSystemTrayIcon::activated, [mainWindow](QSystemTrayIcon::ActivationReason reason) {
         if (reason == QSystemTrayIcon::Trigger) {
-            if (mainWindow->isHidden()) {
-                showMainWIndow(mainWindow);
-            } else {
-                mainWindow->hide();
-            }
+            showMainWIndow(mainWindow);
         }
     });
 }
