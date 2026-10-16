@@ -202,12 +202,20 @@ void ForceFeedbackSimulatePage::init()
     carSpeedHandleTypeLayout->addStretch();
     // 设置ocr区域
     setOcrRegionBtn = new QPushButton(StringConstants::settings, this);
+    resetOcrRegionBtn = new QPushButton(StringConstants::reset, this);
     ocrRegionLabel = new QLabel(StringConstants::notSet, this);
+    QWidget* ocrSettingsWidget = new QWidget(this);
+    QHBoxLayout* ocrSettingsWidgetLayout = new QHBoxLayout(ocrSettingsWidget);
+    ocrSettingsWidgetLayout->setContentsMargins(0,0,0,0);
+    ocrSettingsWidgetLayout->setSpacing(8);
+    ocrSettingsWidgetLayout->addWidget(resetOcrRegionBtn);
+    ocrSettingsWidgetLayout->addWidget(setOcrRegionBtn);
     // ocr车速悬浮窗开关
     ocrPreviewSwitch = new WinUISwitch(this);
     // 设置样式
     carSettingsGroupTitle->setStyleSheet(QString("font: 14px;color:%1;").arg(Theme::textColor()));
-    Theme::setButtonStyleSheet(setOcrRegionBtn, ButtonLevel::normal, "width: 100px;height:32px;");
+    Theme::setButtonStyleSheet(setOcrRegionBtn, ButtonLevel::normal, "height:32px;");
+    Theme::setButtonStyleSheet(resetOcrRegionBtn, ButtonLevel::normal, "height:32px;");
     Theme::setLineEditStyleSheet(speedUpLineEdit);
     Theme::setLineEditStyleSheet(speedDownLineEdit);
     Theme::setLineEditStyleSheet(maxSpeedLineEdit);
@@ -223,7 +231,7 @@ void ForceFeedbackSimulatePage::init()
     carSettingsGroupLayout->addWidget(carSettingsGroupTitle);
     carSettingsGroupLayout->addWidget(carSpeedHandleTypeWidget);
 
-    setOcrRegionWidget = Global::createSettingsItem(carSettingsGroup, StringConstants::setOcrRegion, setOcrRegionBtn, ocrRegionLabel, 20);
+    setOcrRegionWidget = Global::createSettingsItem(carSettingsGroup, StringConstants::setOcrRegion, ocrSettingsWidget, ocrRegionLabel, 20);
     carSettingsGroupLayout->addWidget(setOcrRegionWidget);
 
     speedUpWidget = Global::createSettingsItem(carSettingsGroup, StringConstants::speedUp100km_h, speedUpLineEdit, new QLabel(StringConstants::speedUpDesc), 20);
@@ -726,8 +734,7 @@ void ForceFeedbackSimulatePage::bindingEvents()
         if(ocrRegionWindow.isHidden()){
             // ocr识别区域窗口的位置和大小
             auto cfg = ConfigService::get();
-            if(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width != 0
-                    && cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height != 0){
+            if(cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width != 0 && cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height != 0){
                 ocrRegionWindow.setGeo(
                     cfg.SYSTEM_forceFeedbackSettings_ocrRegion_x,
                     cfg.SYSTEM_forceFeedbackSettings_ocrRegion_y,
@@ -792,6 +799,24 @@ void ForceFeedbackSimulatePage::bindingEvents()
                 needSendSignal = true;
             }
         });
+    });
+
+    // 重置ocr识别区域位置和大小
+    connect(resetOcrRegionBtn, &QPushButton::clicked, this, [this](){
+        // 修改
+        modifySetting([&](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            //cfg.SYSTEM_forceFeedbackSettings_ocrScreenName = screenName;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_x = 0;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_y = 0;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_width = 0;
+            cfg.SYSTEM_forceFeedbackSettings_ocrRegion_height = 0;
+
+            needSaveToFile = true;
+            needSendSignal = true;
+        });
+
+        // 更新ui
+        updateUI();
     });
 }
 

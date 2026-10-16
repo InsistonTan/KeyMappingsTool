@@ -37,6 +37,7 @@ public:
     qstr log = QStringLiteral("日志");
     qstr configManage = QStringLiteral("配置管理");
     qstr settings = QStringLiteral("设置");
+    qstr reset = QStringLiteral("重置");
     qstr about = QStringLiteral("支持项目");
     qstr addMapping = QStringLiteral("新增映射");
     qstr btnLog = QStringLiteral("按键日志");
@@ -422,7 +423,7 @@ public:
     qstr setOcrRegion = QStringLiteral("OCR识别区域");
     qstr ocrPreviewSwitch = QStringLiteral("OCR实时车速悬浮窗");
     qstr ocrPreviewSwitchDesc = QStringLiteral("在屏幕左上角显示OCR识别的车速");
-    qstr setOcrRegionBtnConfirmText = QStringLiteral("保存区域位置和大小");
+    qstr setOcrRegionBtnConfirmText = QStringLiteral("保存区域设置");
     qstr ocrRegionLabelText = QStringLiteral("x:%1, y:%2, w:%3, h:%4");
 
     qstr findScreenFailed = QStringLiteral("DxgiCapture: 根据OCR区域的坐标(%1,%2), 找不到目标显示器.\n\n请重新设置OCR识别区域");

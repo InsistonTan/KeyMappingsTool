@@ -45,6 +45,7 @@ private:
     QRadioButton* ocrCarSpeedRadioButton;
     // 设置ocr区域
     QPushButton* setOcrRegionBtn;
+    QPushButton* resetOcrRegionBtn;
     QLabel* ocrRegionLabel;
     QWidget* setOcrRegionWidget;
     // ocr车速悬浮窗开关
