@@ -53,20 +53,18 @@
 - 支持映射多个键盘按键(实现键盘组合键功能)
   
 - 支持设置参数保存到映射配置 `实现不同的游戏配置使用不同的参数`
+
+- 支持在映射期间隐藏物理设备
+
 - ......
   
----
-
-## Q&A
-Q: 如何解决方向盘映射虚拟xbox手柄时, 游戏只接收方向盘输入或者同时接收了方向盘和虚拟手柄的输入, 导致操作异常的问题?
-
-A: 使用[HidHide](https://github.com/nefarius/HidHide)工具. 该工具可以实现只让白名单的程序识别到方向盘设备, 不在白名单的程序将无法识别到方向盘设备. 这样就可以让游戏识别不到方向盘, 也就不会有输入冲突
 
 ---
 
 ## 第三方开源项目声明
 - [ViGEmClient](https://github.com/nefarius/ViGEmClient) `用于连接和使用虚拟xbox手柄`
 - [ViGEmBus](https://github.com/nefarius/ViGEmBus) `xbox虚拟手柄驱动`
+- [HidHide](https://github.com/nefarius/HidHide) `用于隐藏物理设备`
 - [scs-sdk-plugin](https://github.com/RenCloud/scs-sdk-plugin) `用于读取欧卡2的游戏数据`
 - [ETS2-KeyBinder](https://github.com/Sab1e-GitHub/ETS2-KeyBinder) `用于欧卡2原生按键绑定`
 - [onnxruntime](https://github.com/microsoft/onnxruntime) `用于运行onnx模型`
