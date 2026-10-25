@@ -56,6 +56,7 @@ QJsonObject UserConfig::toJson()
 
     jsonObj[UserConfigKey::SYSTEM_lastUsedMappingConfigPath] = SYSTEM_lastUsedMappingConfigPath;
 
+    jsonObj[UserConfigKey::SYSTEM_hideDeivce] = SYSTEM_hideDeivce;
 
     /////////////////////////////////////////////
     /// 力反馈设置
@@ -178,6 +179,11 @@ void UserConfig::readSettingsFromJson(QJsonObject jsonObj, UserConfig& out)
     // 关闭主窗口时隐藏到系统托盘
     if(jsonObj.contains(UserConfigKey::SYSTEM_enableHideWindowOnClose)){
         out.SYSTEM_enableHideWindowOnClose = jsonObj[UserConfigKey::SYSTEM_enableHideWindowOnClose].toBool();
+    }
+
+    // 隐藏物理设备
+    if(jsonObj.contains(UserConfigKey::SYSTEM_hideDeivce)){
+        out.SYSTEM_hideDeivce = jsonObj[UserConfigKey::SYSTEM_hideDeivce].toBool();
     }
 
 }

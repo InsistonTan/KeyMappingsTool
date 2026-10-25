@@ -121,6 +121,8 @@ public:
     qstr addMappingOnlyKeyChangeDesc = QStringLiteral("新增映射时只识别新按下的按键, 在新增映射前就一直按下的按键将被忽略");
     qstr multiKeyFirstMode = QStringLiteral("最长组合键优先模式");
     qstr addMappingOnlyKeyChange = QStringLiteral("新增映射只识别变化按键");
+    qstr hideDevice = QStringLiteral("全局映射运行期间隐藏物理设备");
+    qstr hideDeviceDesc = QStringLiteral("开启后在映射期间其它进程将识别不到映射的物理设备, 停止映射或者软件退出后恢复");
     qstr deadZoneSettings = QStringLiteral("死区设置");
     qstr xboxJoyStickDeadZoneDesc = QStringLiteral("数值范围:-1到1, 如果需要抵消游戏自带的死区, 请设置成负值");
     qstr xboxJoyStickDeadZone = QStringLiteral("虚拟手柄-摇杆内部死区");
@@ -348,7 +350,9 @@ public:
     qstr multiActionBinding = QStringLiteral("多操作绑定");
 
     qstr installXboxDriverTips = QStringLiteral("检测到虚拟手柄驱动未安装, 驱动安装包所在位置:\n%1\n\n点击确认将运行驱动安装包");
+    qstr installHidHideDriverTips = QStringLiteral("检测到HidHide驱动未安装, 驱动安装包所在位置:\n%1\n\n点击确认将运行驱动安装包");
     qstr xboxDriverFileNotExistsTips = QStringLiteral("虚拟手柄驱动的安装包不存在:\n%1");
+    qstr hidHideDriverFileNotExistsTips = QStringLiteral("HidHide驱动安装包不存在:\n%1");
 
     qstr ets2AssistFuncWorkerFinished = QStringLiteral("欧卡2辅助功能线程结束!");
     qstr ets2AssistFuncWorkerStart = QStringLiteral("欧卡2辅助功能线程正在运行...");
@@ -431,4 +435,19 @@ public:
     qstr ocrRegionTooSmall = QStringLiteral("OCR识别区域的宽度/高度不能为0, 请调整");
 
     qstr noOcrResult = QStringLiteral("未识别到车速");
+
+    qstr runHidHideCLIFailed = QStringLiteral("开启设备隐藏失败: runHidHideCLI()执行失败, 详情见日志");
+
+    qstr hidHideCLINotExist = QStringLiteral("HidHideCLI.exe 不存在: ");
+    qstr hidHideCLIStartFailed = QStringLiteral("启动 HidHideCLI 失败: ");
+    qstr hidHideCLITimeout = QStringLiteral("HidHideCLI 执行超时");
+    qstr hidHideCLIExecuteFailed = QStringLiteral("HidHideCLI 执行失败, exitCode:%1, stdout:%2, stderr:%3");
+
+    qstr addBlacklistSucceed = QStringLiteral("添加\"%1\"进设备隐藏名单成功!");
+    qstr devHideSucceed = QStringLiteral("隐藏物理设备服务启动成功!");
+    qstr devHideStopSucceed = QStringLiteral("隐藏物理设备服务已停止");
+    qstr devHideStopFailed = QStringLiteral("隐藏物理设备服务停止失败, 详情见日志\n\n可手动运行 HidHide Configuration Client 程序管理设备隐藏服务");
+
+    //qstr = QStringLiteral();
+
 };

@@ -58,6 +58,9 @@ public:
     inline const static QString SYSTEM_lastUsedMappingCache
         = QStringLiteral("SYSTEM_lastUsedMappingCache");
 
+    inline const static QString SYSTEM_hideDeivce
+        = QStringLiteral("SYSTEM_hideDeivce");
+
     ////////////////////////////////////////////////////
     /// 力反馈设置的 key
     inline const static QString SYSTEM_forceFeedbackSettings

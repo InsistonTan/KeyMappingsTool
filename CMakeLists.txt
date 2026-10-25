@@ -141,6 +141,7 @@ qt_add_executable(KeyMappingsTool
     src/ocr/ui/CaptureRegionWindow.h src/ocr/ui/CaptureRegionWindow.cpp
     src/ocr/OcrWorker.h src/ocr/OcrWorker.cpp
     src/ocr/ui/OcrPreviewWindow.h src/ocr/ui/OcrPreviewWindow.cpp
+    src/services/HidHideService.h src/services/HidHideService.cpp
 )
 
 # =========================

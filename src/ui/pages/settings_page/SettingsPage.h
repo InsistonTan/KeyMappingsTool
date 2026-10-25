@@ -37,6 +37,13 @@ private:
     WinUISwitch* deviceNameUniqueModeSwicth;
     WinUISwitch* multiKeyFirstModeSwitch;
     WinUISwitch* addMappingOnlyKeyChangeSwitch;
+    WinUISwitch* hideDeviceSwitch;
+    //  控制部分设置项的显示和隐藏
+    QWidget* autoMappingSwicthWidget;
+    QWidget* deviceNameUniqueModeSwicthWidget;
+    QWidget* multiKeyFirstModeSwitchWidget;
+    QWidget* addMappingOnlyKeyChangeSwitchWidget;
+    QWidget* hideDeviceSwitchWidget;
     //死区设置
     QLineEdit* xboxJoyStickDeadZoneLineEdit;
     QLineEdit* xboxTriggerDeadZoneLineEdit;
@@ -89,12 +96,16 @@ private:
     template<typename Func>
     void modifySetting(Func modifyFunc);
 
+
 signals:
     // 停止欧卡2的辅助功能任务
     void stopETS2AssitFuncWorkerSignal();
 
     // 设置改动信号
     void settingsChanged();
+
+    // 开启设备隐藏的信号
+    void startDevHideSignal();
 
 public slots:
     // 当前选择的映射配置发生改变

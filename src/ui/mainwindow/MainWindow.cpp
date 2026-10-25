@@ -5,6 +5,7 @@
 #include "common/Theme.h"
 #include "services/ConfigService.h"
 #include "services/DirectInputService.h"
+#include "services/HidHideService.h"
 #include "services/LogService.h"
 #include "ui/pages/forcefeedback_simulate_page/ForceFeedbackSimulatePage.h"
 #include "ui/pages/about_page/AboutPage.h"
@@ -304,6 +305,8 @@ void MainWindow::paintMainWindowUI()
     // 绑定 当前选择的映射配置改变 信号
     connect(homePage, &HomePage::currentSelectedMappingFileChanged, forceFeedbackSimulatePage, &ForceFeedbackSimulatePage::currentSelectedMappingFileChangedSlot);
     connect(homePage, &HomePage::currentSelectedMappingFileChanged, settingsPage, &SettingsPage::currentSelectedMappingFileChangedSlot);
+    // 绑定设备隐藏开关的信号
+    connect(settingsPage, &SettingsPage::startDevHideSignal, homePage, &HomePage::startDevHideSlot);
 
     stackedWidget->addWidget(homePage);
     stackedWidget->addWidget(forceFeedbackSimulatePage);
@@ -426,6 +429,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
         this->hide();
         // 阻止事件
         event->ignore();
+    }else{
+        // 停止隐藏物理设备
+        HidHideService::stop();
     }
 }
 

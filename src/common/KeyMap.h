@@ -20,6 +20,9 @@ enum XboxInputType {
 
     RightJoystickUpperY = 8,// 右摇杆Y轴的上半轴
     RightJoystickLowerY = 9,// 右摇杆Y轴的下半轴
+
+    LeftJoystickY = 10,// 左摇杆y轴
+    RightJoystickY = 11,// 右摇杆y轴
 };
 
 struct VALUE_RANGE {
@@ -30,10 +33,12 @@ struct VALUE_RANGE {
 //xbox 各个轴的数值范围 Map
 inline const std::map<short, VALUE_RANGE> XBOX_AXIS_VALUE_RANGE_MAP = {
     {static_cast<int>(LeftJoystick), VALUE_RANGE{-32768, 32767}},
+    {static_cast<int>(LeftJoystickY), VALUE_RANGE{-32768, 32767}},
     {static_cast<int>(LeftJoystickUpperY), VALUE_RANGE{0, 32767}},
     {static_cast<int>(LeftJoystickLowerY), VALUE_RANGE{-32768, 0}},
 
     {static_cast<int>(RightJoystick), VALUE_RANGE{-32768, 32767}},
+    {static_cast<int>(RightJoystickY), VALUE_RANGE{-32768, 32767}},
     {static_cast<int>(RightJoystickUpperY), VALUE_RANGE{0, 32767}},
     {static_cast<int>(RightJoystickLowerY), VALUE_RANGE{-32768, 0}},
 
@@ -45,10 +50,12 @@ inline const std::map<short, VALUE_RANGE> XBOX_AXIS_VALUE_RANGE_MAP = {
 // xbox轴名称与值 的Map
 inline const std::map<std::string, short> VK_XBOX_AXIS_MAP = {
     {"左摇杆-X轴", static_cast<int>(LeftJoystick)},
+    {"左摇杆-Y轴", static_cast<int>(LeftJoystickY)},
     {"左摇杆-Y轴上半轴", static_cast<int>(LeftJoystickUpperY)},
     {"左摇杆-Y轴下半轴", static_cast<int>(LeftJoystickLowerY)},
 
     {"右摇杆-X轴", static_cast<int>(RightJoystick)},
+    {"右摇杆-Y轴", static_cast<int>(RightJoystickY)},
     {"右摇杆-Y轴上半轴", static_cast<int>(RightJoystickUpperY)},
     {"右摇杆-Y轴下半轴", static_cast<int>(RightJoystickLowerY)},
 

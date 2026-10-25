@@ -136,6 +136,10 @@ private:
     int getGridLayoutRowCount(QGridLayout* grid);
     // ================================================================
 
+
+    // 隐藏当前选择的设备
+    void hideDevices();
+
 signals:
     void settingsChangedSignal();
     void currentSelectedMappingFileChanged();
@@ -145,4 +149,7 @@ public slots:
     void on_startBtn_clicked();
     // 用户设置改变的slot
     void settingsChangedSlot();
+
+    // 开启物理设备隐藏的slot
+    void startDevHideSlot();
 };

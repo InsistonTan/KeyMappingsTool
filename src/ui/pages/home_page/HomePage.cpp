@@ -4,7 +4,6 @@
 #include "qcoreapplication.h"
 #include "qdialog.h"
 #include "qdir.h"
-#include "qheaderview.h"
 #include "qjsondocument.h"
 #include "qlabel.h"
 #include "qlineedit.h"
@@ -14,10 +13,8 @@
 #include "qwidget.h"
 #include "common/KeyMap.h"
 #include "models/MappingRelation.h"
+#include "services/HidHideService.h"
 #include "services/MessageBoxService.h"
-#include "ui/mainwindow/MainWindow.h"
-#include "ui/pages/forcefeedback_simulate_page/ForceFeedbackSimulatePage.h"
-#include "ui/pages/settings_page/SettingsPage.h"
 #include "ui/widgets/CardMessageDialog.h"
 #include "ui/widgets/NoWheelComboBox.h"
 
@@ -36,7 +33,9 @@
 #include <QInputDialog>
 #include <QScrollBar>
 #include <QTimer>
+#include <QThreadPool>
 
+#include <qcontainerfwd.h>
 #include <services/ConfigService.h>
 #include <services/DirectInputService.h>
 #include <services/LogService.h>
@@ -49,6 +48,7 @@
 
 #include <workers/SimulateTask.h>
 #include <winsock.h>
+
 
 HomePage::HomePage(QWidget *parent)
     : QWidget{parent}
@@ -1293,8 +1293,8 @@ std::map<string, short> HomePage::getConstKeyMap(DeviceDataTypeEnum dev_btn_type
 
 bool HomePage::checkDriverInstalled()
 {
-    QSettings *settings = new QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Nefarius Software Solutions e.U.\\ViGEm Bus Driver", QSettings::NativeFormat);
-    if(settings->contains("Version")){
+    QSettings settings("HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Nefarius Software Solutions e.U.\\ViGEm Bus Driver", QSettings::NativeFormat);
+    if(settings.contains("Version")){
         //qDebug("驱动已安装");
         return true;
     }else{
@@ -1526,6 +1526,37 @@ int HomePage::getGridLayoutRowCount(QGridLayout *grid)
     return counter;
 }
 
+void HomePage::hideDevices()
+{
+    // 检查是否开启了设备隐藏选项
+    if(ConfigService::get().SYSTEM_hideDeivce == false){
+        return;
+    }
+
+    // 存储设备名称和设备实例ID的需要隐藏的设备列表
+    QVector<HidHideService::DevInfo> needToHideDevList;
+
+    // 获取设备列表快照
+    auto devInfoList = DirectInputService::getDeviceInfoListSnapshot();
+
+    // 根据当前选择的设备名称, 获取设备接口路径, 再转换设备接口路径 为 设备实例ID
+    for(const auto devName : getCurrentSelectedDeviceList()){
+        for(auto const devInfo : devInfoList){
+            if(devInfo.name == devName){
+                needToHideDevList.append({devName, HidHideService::getDevInstancePath(devInfo.devInterfacePath.data())});
+            }
+        }
+    }
+
+    // 如果设备列表不为空, 开启设备隐藏
+    if(needToHideDevList.isEmpty() == false){
+        // 异步执行
+        QThreadPool::globalInstance()->start([needToHideDevList]() {
+            HidHideService::hideMappedDevices(needToHideDevList);
+        });
+    }
+}
+
 void HomePage::on_startBtn_clicked()
 {
     if(!RunningStatus::getIsRunning()){
@@ -1603,6 +1634,9 @@ void HomePage::on_startBtn_clicked()
         saveCurrentMappingsAndDeviceToFile();
 
         updateRunningStateText();
+
+        // 隐藏物理设备
+        hideDevices();
     }
     else{
         // 如果处于暂停状态, 将其重置
@@ -1613,6 +1647,9 @@ void HomePage::on_startBtn_clicked()
         RunningStatus::setIsRuning(false);
 
         updateRunningStateText();
+
+        // 取消隐藏设备
+        HidHideService::stop();
     }
 
 }
@@ -1620,6 +1657,11 @@ void HomePage::on_startBtn_clicked()
 void HomePage::settingsChangedSlot()
 {
     emit settingsChangedSignal();
+}
+
+void HomePage::startDevHideSlot()
+{
+    hideDevices();
 }
 
 

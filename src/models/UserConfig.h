@@ -72,6 +72,8 @@ public:
     // 但如果用户没有保存映射配置到文件, 然后启动了全局映射, 就需要这个cache来记录用户使用的映射列表;
     // 保证下次启动能恢复上一次使用的映射;
     QVector<MappingRelation> SYSTEM_lastUsedMappingCache = {};
+    // 映射运行期间隐藏物理设备
+    bool SYSTEM_hideDeivce = false;
 
 
     QString SYSTEM_forceFeedbackSettings_throttleAxis = ""; // 油门所在的轴

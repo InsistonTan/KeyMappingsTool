@@ -447,16 +447,14 @@ void SimulateTask::simulateXboxKeyPress(XboxInputType inputType, int inputValue1
     }else if(inputType == LeftJoystick){
         // 设置左摇杆的X、Y值 (-32768 到 32767)
         report.sThumbLX = inputValue1;
-        //report.sThumbLY = inputValue2;
-    }else if((inputType == LeftJoystickUpperY || inputType == LeftJoystickLowerY)){
+    }else if(inputType == LeftJoystickY || inputType == LeftJoystickUpperY || inputType == LeftJoystickLowerY){
         report.sThumbLY = inputValue1;
     }
 
     else if(inputType == RightJoystick){
         // 设置右摇杆的X、Y值 (-32768 到 32767)
         report.sThumbRX = inputValue1;
-        //report.sThumbRY = inputValue2;
-    }else if((inputType == RightJoystickUpperY || inputType == RightJoystickLowerY)){
+    }else if(inputType == RightJoystickY || inputType == RightJoystickUpperY || inputType == RightJoystickLowerY){
         report.sThumbRY = inputValue1;
     }
 
@@ -900,7 +898,9 @@ void SimulateTask::doWork(){
                             int finalValue = 0;// 最终映射成手柄的值
 
                             // 设置的摇杆内部死区值
-                            if(inputType == XboxInputType::LeftJoystick || inputType == XboxInputType::RightJoystick){
+                            if(inputType == XboxInputType::LeftJoystick || inputType == XboxInputType::RightJoystick
+                                    || inputType == XboxInputType::LeftJoystickY || inputType == XboxInputType::RightJoystickY){
+
                                 // 摇杆内部死区值
                                 int innerDeadAreaValue = (xboxMax - xboxMin) / 2 * userConfig.xboxJoystickInnerDeadAreaValue;
 

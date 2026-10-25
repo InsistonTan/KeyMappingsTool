@@ -1,5 +1,6 @@
 #include "common/Global.h"
 #include "common/StringConstants.h"
+#include "services/HidHideService.h"
 #include "services/MessageBoxService.h"
 #include "ui/mainwindow/MainWindow.h"
 #include "services/ConfigService.h"
@@ -165,7 +166,12 @@ void createTrayIcon(QApplication* app, MainWindow* mainWindow){
     });
 
     // 点击"退出"：退出应用程序
-    QObject::connect(quitAction, &QAction::triggered, app, &QApplication::quit);
+    QObject::connect(quitAction, &QAction::triggered, app, [=](){
+        // 停止隐藏物理设备
+        HidHideService::stop();
+        // 软件退出
+        QApplication::quit();
+    });
 
     // 鼠标左键点击托盘图标, 显示/隐藏主窗口
     QObject::connect(trayIcon, &QSystemTrayIcon::activated, [mainWindow](QSystemTrayIcon::ActivationReason reason) {

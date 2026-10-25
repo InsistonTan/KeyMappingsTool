@@ -21,6 +21,7 @@
 #include<QRegularExpression>
 #include <QApplication>
 #include <QSettings>
+#include <QProcess>
 
 
 

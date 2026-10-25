@@ -1,4 +1,5 @@
 #include "SettingsPage.h"
+#include "services/HidHideService.h"
 #include "ui/ETS2_KeyBinder/Ets2KeyBinderWizard.h"
 #include "qboxlayout.h"
 #include "qcoreapplication.h"
@@ -127,11 +128,19 @@ void SettingsPage::init()
     deviceNameUniqueModeSwicth = new WinUISwitch(keyMappingSettingsGroup);
     multiKeyFirstModeSwitch = new WinUISwitch(keyMappingSettingsGroup);
     addMappingOnlyKeyChangeSwitch = new WinUISwitch(keyMappingSettingsGroup);
+    hideDeviceSwitch = new WinUISwitch(keyMappingSettingsGroup);
     // 布局内容
-    keyMappingSettingsGroupLayout->addWidget(Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::autoMapping, autoMappingSwicth, new QLabel(StringConstants::autoMappingDesc)));
-    keyMappingSettingsGroupLayout->addWidget(Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::deviceNameUniqueMode, deviceNameUniqueModeSwicth, new QLabel(StringConstants::deviceNameUniqueModeDesc)));
-    keyMappingSettingsGroupLayout->addWidget(Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::multiKeyFirstMode, multiKeyFirstModeSwitch, new QLabel(StringConstants::multiKeyFirstModeDesc)));
-    keyMappingSettingsGroupLayout->addWidget(Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::addMappingOnlyKeyChange, addMappingOnlyKeyChangeSwitch, new QLabel(StringConstants::addMappingOnlyKeyChangeDesc)));
+    autoMappingSwicthWidget = Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::autoMapping, autoMappingSwicth, new QLabel(StringConstants::autoMappingDesc));
+    deviceNameUniqueModeSwicthWidget = Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::deviceNameUniqueMode, deviceNameUniqueModeSwicth, new QLabel(StringConstants::deviceNameUniqueModeDesc));
+    multiKeyFirstModeSwitchWidget = Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::multiKeyFirstMode, multiKeyFirstModeSwitch, new QLabel(StringConstants::multiKeyFirstModeDesc));
+    addMappingOnlyKeyChangeSwitchWidget = Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::addMappingOnlyKeyChange, addMappingOnlyKeyChangeSwitch, new QLabel(StringConstants::addMappingOnlyKeyChangeDesc));
+    hideDeviceSwitchWidget = Global::createSettingsItem(keyMappingSettingsGroup, StringConstants::hideDevice, hideDeviceSwitch, new QLabel(StringConstants::hideDeviceDesc));
+
+    keyMappingSettingsGroupLayout->addWidget(autoMappingSwicthWidget);
+    keyMappingSettingsGroupLayout->addWidget(deviceNameUniqueModeSwicthWidget);
+    keyMappingSettingsGroupLayout->addWidget(multiKeyFirstModeSwitchWidget);
+    keyMappingSettingsGroupLayout->addWidget(addMappingOnlyKeyChangeSwitchWidget);
+    keyMappingSettingsGroupLayout->addWidget(hideDeviceSwitchWidget);
 
 
     // =====================================================================================
@@ -390,6 +399,34 @@ void SettingsPage::bindingSiganlsToSlots()
             }
         });
     });
+    // 映射期间隐藏物理设备
+    connect(hideDeviceSwitch, &WinUISwitch::toggled, this, [this](bool checked){
+        // 检查驱动是否未安装
+        if(checked && HidHideService::checkHidHideDriver() == false){
+            hideDeviceSwitch->setChecked(false);
+            return;
+        }
+
+        // 修改
+        modifySetting([=](UserConfig& cfg, bool& needSaveToFile, bool& needSendSignal){
+            // 值发生改变
+            if(cfg.SYSTEM_hideDeivce != checked){
+                cfg.SYSTEM_hideDeivce = checked;
+                needSaveToFile = true;
+                //needSendSignal = true;
+            }
+        });
+
+        if(checked && RunningStatus::getIsRunning()){
+            emit startDevHideSignal();
+            return;
+        }
+
+        // 停止设备隐藏
+        if(checked == false){
+            HidHideService::stop();
+        }
+    });
 
     // 虚拟xbox手柄-摇杆内部死区
     connect(xboxJoyStickDeadZoneLineEdit, &QLineEdit::editingFinished, this, [this](){
@@ -554,6 +591,7 @@ void SettingsPage::updateUI()
     deviceNameUniqueModeSwicth->setChecked(cfg.SYSTEM_enableStrongUniqueDeviceNameMode);
     multiKeyFirstModeSwitch->setChecked(cfg.SYSTEM_enableOnlyLongestMapping);
     addMappingOnlyKeyChangeSwitch->setChecked(cfg.SYSTEM_enableOnlyChangeKeyWhenNew);
+    hideDeviceSwitch->setChecked(cfg.SYSTEM_hideDeivce);
 
     //
     xboxJoyStickDeadZoneLineEdit->setText(QString::number(cfg.xboxJoystickInnerDeadAreaValue));
@@ -569,18 +607,29 @@ void SettingsPage::updateUI()
     mouseSpeedLineEdit->setText(QString::number(cfg.mouseMoveSpeedTimes));
 
 
+    // 根据全局设置/专属设置 隐藏/显示部分组件
     if(showGlobalSettings){
-        baseSettingsGroup->show();
-        keyMappingSettingsGroup->show();
-
         // 显示全局设置时隐藏部分组件
         overrideGlobalSettingsWidget->hide();
-    }else{
-        overrideGlobalSettingsWidget->show();
 
+        // 恢复显示
+        baseSettingsGroup->show();
+        //keyMappingSettingsGroup->show();
+        autoMappingSwicthWidget->show();
+        deviceNameUniqueModeSwicthWidget->show();
+        multiKeyFirstModeSwitchWidget->show();
+        addMappingOnlyKeyChangeSwitchWidget->show();
+    }else{
         // 显示当前映射配置专属设置时, 隐藏部分组件
         baseSettingsGroup->hide();
-        keyMappingSettingsGroup->hide();
+        //keyMappingSettingsGroup->hide();
+        autoMappingSwicthWidget->hide();
+        deviceNameUniqueModeSwicthWidget->hide();
+        multiKeyFirstModeSwitchWidget->hide();
+        addMappingOnlyKeyChangeSwitchWidget->hide();
+
+        // 恢复显示
+        overrideGlobalSettingsWidget->show();
     }
 
 
